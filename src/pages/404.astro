@@ -1,0 +1,19 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+---
+
+<BaseLayout title="404" noindex>
+  <header class="page-header" data-reveal>
+    <div class="page-header__kicker">
+      <span>404</span>
+      <span aria-hidden="true">/</span>
+      <span>这一页不存在</span>
+    </div>
+    <h1 class="display-title">这一页<br />留白了。</h1>
+    <p class="page-lead">你要找的东西可能被移走了，也可能从来没有写下来。没关系，回到有字的地方。</p>
+    <a class="article-back" href="/">
+      <span aria-hidden="true">←</span>
+      回到首页
+    </a>
+  </header>
+</BaseLayout>

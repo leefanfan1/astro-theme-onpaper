@@ -1,0 +1,26 @@
+---
+import type { MarkdownHeading } from 'astro'
+import { siteConfig } from '@/config'
+
+interface Props {
+  headings: MarkdownHeading[]
+}
+
+const { headings } = Astro.props
+const items = headings.filter(heading => heading.depth >= 2 && heading.depth <= 3)
+---
+
+{
+  items.length >= 2 && (
+    <details class="toc" open={siteConfig.tocOpen}>
+      <summary>本页目录</summary>
+      <ol>
+        {items.map(heading => (
+          <li class={`toc-depth-${heading.depth}`}>
+            <a href={`#${heading.slug}`}>{heading.text}</a>
+          </li>
+        ))}
+      </ol>
+    </details>
+  )
+}

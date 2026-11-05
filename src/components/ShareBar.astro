@@ -1,0 +1,65 @@
+---
+interface Props {
+  title: string
+  url: string
+}
+
+const { title, url } = Astro.props
+const encodedTitle = encodeURIComponent(title)
+const encodedUrl = encodeURIComponent(url)
+const xHref = `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`
+const weiboHref = `https://service.weibo.com/share/share.php?title=${encodedTitle}&url=${encodedUrl}`
+---
+
+<div class="share-bar" aria-label="分享这篇文章">
+  <span class="share-bar__label">分享</span>
+  <button class="share-button" type="button" data-share-copy>复制链接</button>
+  <button class="share-button" type="button" data-share-native hidden>系统分享</button>
+  <a class="share-button" href={xHref} target="_blank" rel="noopener noreferrer">X</a>
+  <a class="share-button" href={weiboHref} target="_blank" rel="noopener noreferrer">微博</a>
+  <span class="share-status" data-share-status aria-live="polite"></span>
+</div>
+
+<script>
+  const nativeButton = document.querySelector<HTMLButtonElement>('[data-share-native]')
+  if (nativeButton && typeof navigator.share === 'function') {
+    nativeButton.hidden = false
+  }
+
+  async function copyCurrentUrl(status: HTMLElement | null) {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      if (status) {
+        status.textContent = '已复制'
+        window.setTimeout(() => { status.textContent = '' }, 1800)
+      }
+    }
+    catch {
+      if (status) {
+        status.textContent = '复制失败'
+        window.setTimeout(() => { status.textContent = '' }, 1800)
+      }
+    }
+  }
+
+  document.addEventListener('click', async (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+
+    const status = document.querySelector<HTMLElement>('[data-share-status]')
+
+    if (target.closest('[data-share-copy]')) {
+      await copyCurrentUrl(status)
+      return
+    }
+
+    if (target.closest('[data-share-native]')) {
+      try {
+        await navigator.share({ title: document.title, url: window.location.href })
+      }
+      catch {
+        await copyCurrentUrl(status)
+      }
+    }
+  })
+</script>

@@ -1,0 +1,41 @@
+---
+interface Props {
+  currentPage: number
+  totalPages: number
+}
+
+const { currentPage, totalPages } = Astro.props
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+
+function pageHref(page: number) {
+  return page === 1 ? `${base}/` : `${base}/page/${page}/`
+}
+
+const pages = Array.from({ length: totalPages }, (_, index) => index + 1)
+---
+
+{
+  totalPages > 1 && (
+    <nav class="pagination" aria-label="分页">
+      <span class="pagination__side">
+        {currentPage > 1
+          ? <a href={pageHref(currentPage - 1)}>← 上一页</a>
+          : <span class="pagination__disabled">← 上一页</span>}
+      </span>
+
+      <span class="pagination__pages">
+        {pages.map(page => (
+          page === currentPage
+            ? <span class="pagination__current" aria-current="page">{page}</span>
+            : <a href={pageHref(page)} aria-label={`第 ${page} 页`}>{page}</a>
+        ))}
+      </span>
+
+      <span class="pagination__side pagination__side--next">
+        {currentPage < totalPages
+          ? <a href={pageHref(currentPage + 1)}>下一页 →</a>
+          : <span class="pagination__disabled">下一页 →</span>}
+      </span>
+    </nav>
+  )
+}

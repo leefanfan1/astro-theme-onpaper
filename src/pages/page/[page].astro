@@ -1,0 +1,39 @@
+---
+import type { GetStaticPaths } from 'astro'
+import HomePage from '@/components/HomePage.astro'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import {
+  getAllPosts,
+  getRegularPosts,
+  getTotalPages,
+  paginate,
+} from '@/utils/posts'
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const regular = await getRegularPosts()
+  const totalPages = getTotalPages(regular.length)
+  return Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) => {
+    const page = index + 2
+    return { params: { page: String(page) }, props: { page } }
+  })
+}
+
+interface Props {
+  page: number
+}
+
+const { page } = Astro.props
+const allPosts = await getAllPosts()
+const regular = await getRegularPosts(allPosts)
+const totalPages = getTotalPages(regular.length)
+const posts = paginate(regular, page)
+---
+
+<BaseLayout title={`第 ${page} 页`}>
+  <HomePage
+    {posts}
+    {page}
+    {totalPages}
+    totalPosts={allPosts.length}
+  />
+</BaseLayout>

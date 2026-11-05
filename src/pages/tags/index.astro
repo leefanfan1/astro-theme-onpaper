@@ -1,0 +1,57 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import {
+  formatMonthDay,
+  getAllPosts,
+  getAllTags,
+  getPostHref,
+  getTagHref,
+  groupByYear,
+} from '@/utils/posts'
+
+const posts = await getAllPosts()
+const tags = getAllTags(posts)
+const years = groupByYear(posts)
+---
+
+<BaseLayout title="归档" description="按时间排列的全部文章，以及一个安静的标签索引。">
+  <h1 class="sr-only">归档</h1>
+  <div class="decorative-line" data-reveal></div>
+
+  <div class="archive-layout">
+    <div>
+      {years.map(([year, yearPosts]) => (
+        <section class="year-block" data-reveal>
+          <div class="year-heading">
+            <h2>{year}</h2>
+            <span>{yearPosts.length} 篇</span>
+          </div>
+          <ol class="timeline">
+            {yearPosts.map(post => (
+              <li class="timeline-item">
+                <time class="timeline-date" datetime={post.data.published.toISOString()}>
+                  {formatMonthDay(post.data.published)}
+                </time>
+                <a class="timeline-title" href={getPostHref(post)}>{post.data.title}</a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+    </div>
+
+    <aside class="archive-tags" aria-label="标签索引">
+      <h2>标签索引</h2>
+      <ul class="tag-list">
+        {tags.map(({ tag, count }) => (
+          <li>
+            <a class="tag-chip" href={getTagHref(tag)}>
+              <span>{tag}</span>
+              <span class="tag-chip__count">{count}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  </div>
+</BaseLayout>

@@ -1,0 +1,286 @@
+# 余白 / Yohaku
+
+一个为中文个人博客写的 Astro 主题。纸面排版、右侧窄栏、克制的动效，适合随笔、音乐评论和长期写作。
+
+视觉上借鉴了纸质编辑排版的安静感，以及 Anthropic / Claude 官网的暖色语言（奶油纸色、墨色、赤陶橙、橄榄绿）；组件、代码和素材都是为这个主题重新实现的，不是任何现有主题的换皮。
+
+- Astro 7，纯静态输出，适配 Cloudflare Pages
+- 无前端框架，零客户端 UI 运行时
+- 中文单语（README 末尾说明以后如何扩展）
+- 浅色 / 深色 / 跟随系统
+- 首页、文章、归档时间线、标签、关于、404、分页
+- 全文搜索（Ctrl / Cmd + K，或按 `/`）
+- 音乐卡片：Spotify / Apple Music / 网易云 / QQ 音乐自动识别、跨平台匹配、构建期缓存
+- Markdown 扩展：KaTeX、Mermaid、GitHub 卡片、媒体嵌入
+- 阅读进度、回到顶部、分享、可选阅读计数（Cloudflare KV）
+- RSS、sitemap、robots、Open Graph
+- 键盘焦点、跳转正文、减少动效、44px 触控热区
+
+## 快速开始
+
+需要 Node.js 22.12 或更高版本。
+
+```bash
+npm install
+npm run dev
+```
+
+打开 `http://127.0.0.1:4321/`。
+
+```bash
+npm run build      # 生成静态站点到 dist/
+npm run preview    # 预览构建结果
+npm run shots      # Playwright 截图检查（需要先运行 dev）
+npm run music      # 重新解析并缓存 ::music 指令里的链接
+```
+
+## 站点配置
+
+所有站点信息都在 `src/config.ts`：
+
+```ts
+export const siteConfig = {
+  title: '余白',
+  titleEn: 'Yohaku',
+  subtitle: '在字与字之间，留一点呼吸。',
+  description: '……',
+  author: '林间',
+  url: 'https://yohaku.example.com',
+  postsPerPage: 4,
+  nav: [
+    { label: '文章', href: '/' },
+    { label: '归档', href: '/tags/' },
+    { label: '关于', href: '/about/' },
+  ],
+  socials: [
+    { label: 'RSS', href: '/rss.xml', external: true },
+    { label: 'GitHub', href: 'https://github.com/', external: true },
+    { label: 'Email', href: 'mailto:hello@yohaku.example' },
+  ],
+  theme: {
+    defaultMode: 'auto', // auto | light | dark
+    light: { paper: '#FAF9F5', ink: '#141413', accent: '#D97757', /* ... */ },
+    dark: { paper: '#141413', ink: '#FAF9F5', accent: '#D97757', /* ... */ },
+  },
+  fonts: {
+    display: '"Newsreader", "Songti SC", ...',
+    body: '"PingFang SC", "Microsoft YaHei", ...',
+    mono: '"SFMono-Regular", Consolas, ...',
+  },
+  features: {
+    search: true,
+    views: true,
+    musicCards: true,
+    githubCards: true,
+    mediaEmbeds: true,
+    math: true,
+    mermaid: true,
+  },
+}
+```
+
+### 改配色
+
+只改 `theme.light` / `theme.dark` 里的颜色即可。主题会把它们注入成 CSS 变量：
+
+| 变量 | 用途 |
+| --- | --- |
+| `paper` | 页面背景 |
+| `paperRaised` | 卡片 / 代码块表面 |
+| `surface` | 浅一层的表面 |
+| `surfaceAlt` | 更深的表面 |
+| `ink` | 主文字 |
+| `inkSoft` | 正文 / 次要文字 |
+| `inkFaint` | 日期 / 说明文字 |
+| `line` | 分隔线 |
+| `accent` | 链接、当前导航、强调 |
+| `accentStrong` | 强调文字的深色版本 |
+| `accentSoft` | 强调的浅底 |
+| `peach` | 辅助暖色 |
+| `moss` | 辅助橄榄绿 |
+
+默认配色取的是 Claude / Anthropic 官网的暖色系：`#FAF9F5`、`#141413`、`#D97757`、`#788C5D`。
+
+### 改字体
+
+`siteConfig.fonts` 控制三套字体栈。默认用自托管的 **Newsreader**（SIL OFL，文件在 `public/fonts/`）作为拉丁标题字体，中文标题回退到系统宋体；正文用系统无衬线体，避免为中文加载几 MB 的字体。
+
+## 写文章
+
+在 `src/content/posts/` 新建 `.md` 文件：
+
+```md
+---
+title: 雨停之前，先别急着走
+description: 一句话摘要，会出现在列表和搜索里。
+published: 2026-10-28
+updated: 2026-10-30        # 可选
+tags:
+  - 随笔
+  - 城市
+pin: 1                     # 0 为不置顶，数字越大越靠前
+draft: false               # true 时只在 dev 可见
+---
+
+正文……
+```
+
+关于页在 `src/content/pages/about.md`。首页每页文章数由 `siteConfig.postsPerPage` 控制，置顶文章只出现在第一页。
+
+## Markdown 扩展
+
+### 音乐卡片
+
+自动解析（推荐）：
+
+```md
+::music{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy"}
+```
+
+构建时会：
+
+1. 读取 `src/data/music-cache.json` 的缓存；
+2. 没有缓存时，调用对应平台接口获取标题、艺人、封面和类型；
+3. 在 Apple Music / 网易云 / QQ 音乐中搜索同一张专辑或同一首歌；
+4. 生成带各平台链接的音乐卡片。
+
+为了不让每次构建都请求平台，新增或修改链接后运行：
+
+```bash
+npm run music
+```
+
+它会把解析结果写回 `src/data/music-cache.json`，建议一起提交。
+
+手动填写（需要自己准备封面）：
+
+```md
+::music-card{title="城市" artist="张悬" cover="https://.../cover.jpg" type="album" lyric="城市很大，耳机里的世界刚好够小。" spotify="https://open.spotify.com/album/..."}
+```
+
+音乐卡片、自动解析和跨平台匹配沿用作者原有博客的实现；卡片外观为本主题重新设计。
+
+### GitHub 卡片
+
+```md
+::github{repo="withastro/astro" description="The web framework for content-driven websites." stars="52k" forks="2.8k" language="TypeScript"}
+```
+
+卡片在浏览器里按需读取 GitHub 公开 API，并用 `sessionStorage` 缓存。没有网络时会保留下面的静态字段。
+
+### 媒体嵌入
+
+```md
+::embed{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy" title="张悬《城市》" caption="有时候，一张专辑就够陪一个晚上。"}
+```
+
+支持 YouTube、Bilibili、Spotify、Vimeo。默认显示点击播放的海报，用户点击后才创建 iframe，避免首屏加载第三方资源。
+
+### 数学与图表
+
+行内数学：`$T = \frac{C}{400}$`；块级数学：
+
+```md
+$$
+\text{余白} = \text{内容} - \text{噪音}
+$$
+```
+
+Mermaid：
+
+````md
+```mermaid
+flowchart LR
+  A[Markdown] --> B[Astro]
+  B --> C[静态 HTML]
+```
+````
+
+Mermaid 只在页面出现图表时才动态加载。KaTeX 的 CSS 也只在文章包含数学时引入。
+
+## Cloudflare Pages 部署
+
+站点是纯静态的；只有阅读计数通过一个 Pages Function 访问 KV。
+
+### 1. 构建
+
+在 Cloudflare Pages 里设置：
+
+- Build command: `npm run build`
+- Build output directory: `dist`
+- Node version: 22.12+
+
+或者本地构建后用 Wrangler 上传：
+
+```bash
+npm run build
+npx wrangler pages deploy dist
+```
+
+### 2. 绑定 KV（可选，用于阅读计数）
+
+在 Cloudflare 控制台：
+
+1. 进入 **Workers & Pages → KV**，创建一个命名空间，例如 `yohaku-views`。
+2. 进入 Pages 项目 → **Settings → Functions → KV namespace bindings**。
+3. 变量名填 **`VIEWS_KV`**，选择刚创建的命名空间。
+4. 重新部署。
+
+也可以使用 Wrangler：
+
+```bash
+npx wrangler kv namespace create VIEWS_KV
+```
+
+把返回的 id 填进 `wrangler.toml` 里被注释掉的 `[[kv_namespaces]]` 块并取消注释。`functions/api/views.js` 会被 Pages 自动识别为 `/api/views`。如果不使用 Wrangler 绑定，直接在 Pages 控制台绑定 `VIEWS_KV` 也可以。
+
+接口：
+
+- `GET /api/views?slug=post-id` → `{ "views": 12 }`
+- `POST /api/views?slug=post-id` → 计数 +1，返回新值
+- 只接受 `[A-Za-z0-9_-]`、最长 100 字符的 slug
+- KV 未绑定时返回 503，文章页会自动隐藏计数，不影响阅读
+
+`npm run dev` 使用内存里的同名接口做演示；重启开发服务器后计数会归零。
+
+## 目录
+
+```
+src/
+  config.ts                 站点、导航、配色、字体、功能开关
+  content.config.ts         内容集合 schema
+  content/
+    posts/                  文章
+    pages/about.md          关于页
+  components/               界面组件
+  layouts/BaseLayout.astro  页面外壳、主题脚本、全局样式
+  pages/                    首页、文章、归档、标签、关于、搜索索引、RSS
+  plugins/                  Markdown 指令、Mermaid、外链、开发期 views
+  styles/                   字体、布局、正文、扩展卡片
+  utils/                    文章查询、格式化、音乐解析
+functions/api/views.js      Cloudflare Pages Function
+scripts/                    音乐缓存、截图
+public/                     favicon、OG、字体、_headers
+```
+
+## 设计说明
+
+- 布局：桌面端正文列 + 右侧固定窄栏；移动端折叠为顶部导航。
+- 字体：Newsreader（拉丁标题）+ 系统宋体（中文标题）+ 系统无衬线（正文）。
+- 颜色：奶油纸色、墨色、赤陶橙、橄榄绿；没有渐变和装饰光效。
+- 动效：页面过渡、悬停下划线、滚动渐入、主题切换的圆形揭示；全部尊重 `prefers-reduced-motion`。
+- 图标：全部为内联 SVG 或 CSS 形状，不使用 emoji 当图标。
+- 可访问性：跳转正文、可见焦点、44px 触控热区、语义化标题和 `aria-current`。
+
+## 已知取舍
+
+- 只做中文单语。要加语言，可参考 Astro 的 i18n 路由，把 `src/content` 按语言分目录，并在 `siteConfig` 里加语言列表；当前没有内置语言切换。
+- 没有评论系统。评论需要后端与反垃圾策略，不适合作为静态主题的默认依赖。
+- 音乐解析依赖第三方平台接口，可能因平台改版失效；缓存能保证已有文章正常构建。封面来自平台元数据，版权归原平台 / 唱片公司所有。
+- Mermaid 和 GitHub 卡片是渐进增强：没有 JavaScript 时，Mermaid 会显示源码，GitHub 卡片仍可点击。
+
+## 许可
+
+MIT。字体 Newsreader 使用 SIL Open Font License 1.1，见 `public/fonts/OFL-Newsreader.txt`。
+
+音乐解析器与缓存流程改编自作者原有博客，已获得作者许可。

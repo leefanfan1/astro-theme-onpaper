@@ -1,0 +1,28 @@
+---
+import { siteConfig } from '@/config'
+
+interface Props {
+  class?: string
+}
+
+const { class: className } = Astro.props
+const year = new Date().getFullYear()
+const range = siteConfig.startYear === year ? String(year) : `${siteConfig.startYear}–${year}`
+---
+
+<footer class:list={['footer', className]}>
+  <div class="footer__socials">
+    {siteConfig.socials.map((link, index) => (
+      <>
+        <a
+          href={link.href}
+          target={link.external ? '_blank' : undefined}
+          rel={link.external ? 'noopener noreferrer' : undefined}
+        >{link.label}</a>
+        {index < siteConfig.socials.length - 1 && <span class="footer__sep" aria-hidden="true">/</span>}
+      </>
+    ))}
+  </div>
+  <p>© {range} {siteConfig.author}</p>
+  <p>Built with <a href="https://astro.build/" target="_blank" rel="noopener noreferrer">Astro</a> · Theme 余白</p>
+</footer>

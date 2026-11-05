@@ -1,0 +1,85 @@
+<button
+  class="theme-toggle"
+  type="button"
+  data-theme-toggle
+  aria-label="切换深浅色模式"
+  title="切换深浅色模式"
+>
+  <svg class="sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="4.1" stroke="currentColor" stroke-width="1.5"></circle>
+    <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.35 5.35l1.55 1.55M17.1 17.1l1.55 1.55M18.65 5.35L17.1 6.9M6.9 17.1l-1.55 1.55" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+  </svg>
+  <svg class="moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M20.2 14.1A8.4 8.4 0 0 1 9.9 3.8 8.4 8.4 0 1 0 20.2 14.1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+  </svg>
+</button>
+
+<script>
+  const STORAGE_KEY = 'yohaku-theme'
+
+  function applyTheme(isDark: boolean) {
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light'
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
+    requestAnimationFrame(() => {
+      const paper = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()
+      if (paper) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', paper)
+    })
+    localStorage.setItem(STORAGE_KEY, isDark ? 'dark' : 'light')
+    document.dispatchEvent(new Event('theme-changed'))
+  }
+
+  function initTheme() {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const isDark = stored === 'dark' || (!stored && systemDark)
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light'
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
+  }
+
+  initTheme()
+
+  document.addEventListener('click', (event) => {
+    const target = event.target
+    if (!(target instanceof Element) || !target.closest('[data-theme-toggle]'))
+      return
+
+    const button = target.closest('[data-theme-toggle]')
+    const isDark = document.documentElement.dataset.theme === 'dark'
+    const nextDark = !isDark
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (!document.startViewTransition || reduce) {
+      applyTheme(nextDark)
+      return
+    }
+
+    const rect = button?.getBoundingClientRect()
+    const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+    const y = rect ? rect.top + rect.height / 2 : 0
+    const radius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y),
+    )
+
+    document.documentElement.classList.add('theme-changing')
+    const transition = document.startViewTransition(() => applyTheme(nextDark))
+    transition.ready.then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${radius}px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration: 480,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          pseudoElement: '::view-transition-new(root)',
+        },
+      )
+    }).catch(() => {})
+    transition.finished.finally(() => {
+      document.documentElement.classList.remove('theme-changing')
+    })
+  })
+</script>

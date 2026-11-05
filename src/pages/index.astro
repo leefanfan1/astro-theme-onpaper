@@ -1,0 +1,26 @@
+---
+import HomePage from '@/components/HomePage.astro'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import {
+  getAllPosts,
+  getPinnedPosts,
+  getRegularPosts,
+  getTotalPages,
+  paginate,
+} from '@/utils/posts'
+
+const allPosts = await getAllPosts()
+const pinned = await getPinnedPosts(allPosts)
+const regular = await getRegularPosts(allPosts)
+const totalPages = getTotalPages(regular.length)
+const posts = [...pinned, ...paginate(regular, 1)]
+---
+
+<BaseLayout>
+  <HomePage
+    {posts}
+    page={1}
+    {totalPages}
+    totalPosts={allPosts.length}
+  />
+</BaseLayout>

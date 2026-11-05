@@ -1,0 +1,21 @@
+# Cloudflare Pages configuration for the optional view counter.
+#
+# 1. Create a KV namespace:
+#      npx wrangler kv namespace create VIEWS_KV
+# 2. Uncomment the KV block below and fill in the id (or bind VIEWS_KV in the Pages dashboard).
+# 3. Build and deploy:
+#      npm run build
+#      npx wrangler pages deploy dist
+#
+# The rest of the site is static; only /api/views uses this Function.
+
+name = "yohaku-demo"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-01-01"
+
+# Uncomment after creating the namespace, or bind VIEWS_KV in the Pages
+# dashboard instead (Settings → Functions → KV namespace bindings).
+#
+# [[kv_namespaces]]
+# binding = "VIEWS_KV"
+# id = "YOUR_KV_NAMESPACE_ID"

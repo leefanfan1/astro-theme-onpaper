@@ -1,0 +1,20 @@
+---
+import { getCollection, render } from 'astro:content'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+const pages = await getCollection('pages')
+const about = pages.find(page => page.id === 'about')
+const { Content } = about ? await render(about) : { Content: null }
+---
+
+<BaseLayout
+  title="关于"
+  description={about?.data.description ?? '关于余白，关于写字，关于一些没有答案的问题。'}
+>
+  <h1 class="sr-only">关于</h1>
+  <div class="decorative-line" data-reveal></div>
+
+  <div class="prose">
+    {Content && <Content />}
+  </div>
+</BaseLayout>

@@ -1,0 +1,55 @@
+---
+import ThemeToggle from '@/components/ThemeToggle.astro'
+import { siteConfig } from '@/config'
+
+const pathname = Astro.url.pathname
+const isTags = pathname.startsWith('/tags')
+const isAbout = pathname.startsWith('/about')
+const isHome = !isTags && !isAbout
+
+const nav = siteConfig.nav.map((item) => {
+  const active = item.href === '/'
+    ? isHome
+    : item.href === '/tags/'
+      ? isTags
+      : isAbout
+  return { ...item, active }
+})
+---
+
+<header class="mobile-bar" data-mobile-bar>
+  <div class="mobile-bar__inner">
+    <div class="mobile-bar__top">
+      <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} 首页`}>
+        <span class="rail-wordmark__cn">{siteConfig.title}</span>
+        <span class="rail-wordmark__en">{siteConfig.titleEn}</span>
+      </a>
+      <div class="mobile-bar__actions">
+        <button class="text-button text-button--icon" type="button" data-search-trigger aria-label="打开搜索">
+          <svg class="text-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.6"></circle>
+            <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          </svg>
+        </button>
+        <ThemeToggle />
+      </div>
+    </div>
+    <nav class="mobile-nav" aria-label="移动端导航">
+      {nav.map(item => (
+        <a href={item.href} aria-current={item.active ? 'page' : undefined}>{item.label}</a>
+      ))}
+    </nav>
+  </div>
+</header>
+
+<script>
+  function updateBar() {
+    const bar = document.querySelector('[data-mobile-bar]')
+    if (!bar) return
+    bar.classList.toggle('is-scrolled', window.scrollY > 8)
+  }
+
+  document.addEventListener('astro:page-load', updateBar)
+  window.addEventListener('scroll', updateBar, { passive: true })
+  updateBar()
+</script>

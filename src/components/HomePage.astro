@@ -1,0 +1,47 @@
+---
+import Pagination from '@/components/Pagination.astro'
+import PostList from '@/components/PostList.astro'
+import { siteConfig } from '@/config'
+import type { Post } from '@/utils/posts'
+
+interface Props {
+  posts: Post[]
+  page: number
+  totalPages: number
+  totalPosts: number
+}
+
+const {
+  posts,
+  page,
+  totalPages,
+  totalPosts,
+} = Astro.props
+
+const isFirst = page === 1
+---
+
+<h1 class="sr-only">{siteConfig.title} — {siteConfig.subtitle}</h1>
+
+{isFirst
+  ? <div class="decorative-line" data-reveal></div>
+  : (
+    <header class="page-header page-header--compact" data-reveal>
+      <div class="page-header__kicker">
+        <span>文章索引</span>
+        <span aria-hidden="true">/</span>
+        <span>第 {page} 页</span>
+      </div>
+      <h1>继续读。</h1>
+    </header>
+  )}
+
+<section class="home-list" aria-label={isFirst ? '文章列表' : `第 ${page} 页文章`}>
+  <PostList posts={posts} />
+</section>
+
+<div class="home-pager">
+  <Pagination currentPage={page} totalPages={totalPages} />
+</div>
+
+<span class="sr-only">共 {totalPosts} 篇文章</span>

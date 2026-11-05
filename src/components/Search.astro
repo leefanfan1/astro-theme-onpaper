@@ -1,0 +1,443 @@
+---
+const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
+---
+
+<dialog
+  class="search-dialog"
+  data-search-dialog
+  data-index-url={searchIndexUrl}
+  aria-label="搜索文章"
+>
+  <div class="search-dialog__bar">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.5"></circle>
+      <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+    </svg>
+    <input
+      type="search"
+      id="search-input"
+      placeholder="搜索标题、标签或正文…"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+      enterkeyhint="search"
+      aria-label="搜索关键词"
+    />
+    <button class="search-close" type="button" data-search-close aria-label="关闭搜索">
+      Esc
+    </button>
+  </div>
+  <div class="sr-only" data-search-status aria-live="polite"></div>
+  <div class="search-results" data-search-results>
+    <p class="search-hint">输入关键词，搜索标题、摘要、标签和正文。</p>
+  </div>
+</dialog>
+
+<style is:global>
+  .search-dialog {
+    width: min(42rem, calc(100vw - 2rem));
+    max-height: min(78vh, 44rem);
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 18px 50px rgb(0 0 0 / 0.16);
+  }
+
+  .search-dialog::backdrop {
+    background: color-mix(in oklab, var(--ink) 28%, transparent);
+    backdrop-filter: blur(4px);
+  }
+
+  .search-dialog[open] {
+    animation: search-in 0.2s ease-out;
+  }
+
+  @keyframes search-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.985);
+    }
+  }
+
+  .search-dialog__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .search-dialog__bar > svg {
+    flex: none;
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--ink-faint);
+  }
+
+  .search-dialog input {
+    flex: 1;
+    min-width: 0;
+    min-height: 2.5rem;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--ink);
+    font-size: 1.02rem;
+  }
+
+  .search-dialog input::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .search-dialog input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .search-close {
+    flex: none;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding-inline: 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--ink-faint);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+  }
+
+  .search-close:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .search-results {
+    max-height: calc(78vh - 4.6rem);
+    overflow-y: auto;
+    padding: 0.4rem;
+    scrollbar-width: thin;
+  }
+
+  .search-hint,
+  .search-empty {
+    padding: 2.6rem 1rem;
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+    line-height: 1.7;
+    text-align: center;
+  }
+
+  .search-result {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    padding: 0.72rem 0.8rem;
+    border-radius: 3px;
+    transition: background 0.15s ease;
+  }
+
+  .search-result:hover,
+  .search-result:focus-visible {
+    background: var(--surface);
+  }
+
+  .search-result__title {
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 1.04rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .search-result__meta {
+    color: var(--ink-faint);
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+  }
+
+  .search-result__excerpt {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--ink-soft);
+    font-size: 0.77rem;
+    line-height: 1.6;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .search-result mark {
+    padding: 0 0.1em;
+    background: color-mix(in oklab, var(--accent) 22%, transparent);
+    color: var(--accent);
+  }
+
+  body.search-open {
+    overflow: hidden;
+  }
+
+  @media (max-width: 520px) {
+    .search-dialog {
+      width: calc(100vw - 1rem);
+      max-height: 82vh;
+    }
+
+    .search-results {
+      max-height: calc(82vh - 4.6rem);
+    }
+  }
+</style>
+
+<script>
+  interface SearchItem {
+    title: string
+    description: string
+    tags: string[]
+    date: string
+    url: string
+    content: string
+  }
+
+  const dialog = document.querySelector<HTMLDialogElement>('[data-search-dialog]')
+  const input = document.querySelector<HTMLInputElement>('#search-input')
+  const resultsEl = document.querySelector<HTMLElement>('[data-search-results]')
+  const statusEl = document.querySelector<HTMLElement>('[data-search-status]')
+
+  let index: SearchItem[] | null = null
+  let loading: Promise<SearchItem[]> | null = null
+  let lastTrigger: HTMLElement | null = null
+  let renderTimer: number | undefined
+
+  function escapeRegExp(value: string) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+
+  function appendHighlighted(el: HTMLElement, text: string, tokens: string[]) {
+    if (!tokens.length) {
+      el.textContent = text
+      return
+    }
+    const regex = new RegExp(`(${tokens.map(escapeRegExp).join('|')})`, 'gi')
+    const parts = text.split(regex)
+    for (const part of parts) {
+      if (!part) continue
+      if (tokens.some(token => part.toLowerCase() === token.toLowerCase())) {
+        const mark = document.createElement('mark')
+        mark.textContent = part
+        el.append(mark)
+      }
+      else {
+        el.append(document.createTextNode(part))
+      }
+    }
+  }
+
+  function excerpt(item: SearchItem, tokens: string[]) {
+    const content = item.content || item.description
+    if (!content) return ''
+    const lower = content.toLowerCase()
+    const at = tokens
+      .map(token => lower.indexOf(token.toLowerCase()))
+      .filter(index => index >= 0)
+      .sort((a, b) => a - b)[0]
+    if (at === undefined) return content.slice(0, 140)
+    const start = Math.max(0, at - 46)
+    const end = Math.min(content.length, at + 110)
+    return `${start > 0 ? '…' : ''}${content.slice(start, end)}${end < content.length ? '…' : ''}`
+  }
+
+  function search(items: SearchItem[], rawQuery: string) {
+    const query = rawQuery.trim().toLowerCase()
+    const tokens = query.split(/\s+/).filter(Boolean)
+    if (!tokens.length) return []
+
+    return items
+      .map((item) => {
+        const title = item.title.toLowerCase()
+        const description = item.description.toLowerCase()
+        const tags = item.tags.join(' ').toLowerCase()
+        const content = item.content.toLowerCase()
+        const haystack = `${title} ${description} ${tags} ${content}`
+        if (!tokens.every(token => haystack.includes(token))) return null
+
+        let score = 0
+        if (title.includes(query)) score += 24
+        if (title.startsWith(query)) score += 12
+        for (const token of tokens) {
+          if (title.includes(token)) score += 8
+          if (tags.includes(token)) score += 5
+          if (description.includes(token)) score += 3
+          if (content.includes(token)) score += 1
+        }
+        return { item, score }
+      })
+      .filter((entry): entry is { item: SearchItem, score: number } => Boolean(entry))
+      .sort((a, b) => b.score - a.score || b.item.date.localeCompare(a.item.date))
+      .slice(0, 8)
+  }
+
+  async function loadIndex() {
+    if (index) return index
+    if (loading) return loading
+    const url = dialog?.dataset.indexUrl
+    if (!url) throw new Error('Missing search index URL')
+    loading = fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        return response.json() as Promise<SearchItem[]>
+      })
+      .then((data) => {
+        index = data
+        return data
+      })
+    return loading
+  }
+
+  function renderMessage(message: string) {
+    resultsEl!.replaceChildren()
+    const p = document.createElement('p')
+    p.className = 'search-hint'
+    p.textContent = message
+    resultsEl!.append(p)
+  }
+
+  async function render(rawQuery: string) {
+    if (!resultsEl || !statusEl) return
+    const query = rawQuery.trim()
+    if (!query) {
+      renderMessage('输入关键词，搜索标题、摘要、标签和正文。')
+      statusEl.textContent = ''
+      return
+    }
+
+    renderMessage('正在建立索引…')
+    let items: SearchItem[]
+    try {
+      items = await loadIndex()
+    }
+    catch {
+      renderMessage('搜索索引加载失败，请刷新页面重试。')
+      statusEl.textContent = '搜索索引加载失败'
+      return
+    }
+
+    const tokens = query.split(/\s+/).filter(Boolean)
+    const matches = search(items, query)
+    statusEl.textContent = `${matches.length} 条搜索结果`
+    if (!matches.length) {
+      renderMessage(`没有找到与“${query}”相关的文章。`)
+      return
+    }
+
+    resultsEl.replaceChildren()
+    for (const { item } of matches) {
+      const a = document.createElement('a')
+      a.className = 'search-result'
+      a.href = item.url
+
+      const title = document.createElement('span')
+      title.className = 'search-result__title'
+      appendHighlighted(title, item.title, tokens)
+
+      const meta = document.createElement('span')
+      meta.className = 'search-result__meta'
+      meta.textContent = [item.date, ...item.tags].filter(Boolean).join(' · ')
+
+      const text = document.createElement('span')
+      text.className = 'search-result__excerpt'
+      appendHighlighted(text, excerpt(item, tokens), tokens)
+
+      a.append(title, meta, text)
+      resultsEl.append(a)
+    }
+  }
+
+  function openSearch() {
+    if (!dialog || !input) return
+    lastTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    if (!dialog.open) dialog.showModal()
+    document.body.classList.add('search-open')
+    input.value = ''
+    render('')
+    requestAnimationFrame(() => input.focus())
+  }
+
+  function closeSearch() {
+    if (!dialog?.open) return
+    dialog.close()
+  }
+
+  document.addEventListener('click', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+    if (target.closest('[data-search-trigger]')) {
+      event.preventDefault()
+      openSearch()
+    }
+  })
+
+  dialog?.addEventListener('click', (event) => {
+    if (event.target === dialog) closeSearch()
+  })
+
+  dialog?.addEventListener('close', () => {
+    document.body.classList.remove('search-open')
+    lastTrigger?.focus()
+  })
+
+  document.querySelector('[data-search-close]')?.addEventListener('click', closeSearch)
+
+  input?.addEventListener('input', () => {
+    window.clearTimeout(renderTimer)
+    renderTimer = window.setTimeout(() => render(input.value), 90)
+  })
+
+  input?.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') {
+      const first = resultsEl?.querySelector<HTMLElement>('.search-result')
+      if (first) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    if (event.key === 'Enter') {
+      const first = resultsEl?.querySelector<HTMLAnchorElement>('.search-result')
+      if (first) {
+        event.preventDefault()
+        first.click()
+      }
+    }
+  })
+
+  dialog?.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented) return
+    const results = [...(resultsEl?.querySelectorAll<HTMLElement>('.search-result') ?? [])]
+    if (!results.length) return
+    const active = document.activeElement
+    const current = active instanceof HTMLElement ? results.indexOf(active) : -1
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      results[Math.min(current + 1, results.length - 1)]?.focus()
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      if (current <= 0) input?.focus()
+      else results[current - 1]?.focus()
+    }
+  })
+
+  document.addEventListener('keydown', (event) => {
+    const isInput = event.target instanceof HTMLElement
+      && (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable)
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault()
+      openSearch()
+    }
+    else if (event.key === '/' && !isInput && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      event.preventDefault()
+      openSearch()
+    }
+  })
+</script>

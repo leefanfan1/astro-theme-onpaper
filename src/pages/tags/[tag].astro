@@ -1,0 +1,64 @@
+---
+import PostList from '@/components/PostList.astro'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import {
+  getAllPosts,
+  getAllTags,
+  getPostsByTag,
+  getTagHref,
+} from '@/utils/posts'
+
+export async function getStaticPaths() {
+  const posts = await getAllPosts()
+  const tags = getAllTags(posts)
+  return tags.map(({ tag }) => ({
+    params: { tag },
+    props: { tag },
+  }))
+}
+
+interface Props {
+  tag: string
+}
+
+const { tag } = Astro.props
+const posts = await getAllPosts()
+const taggedPosts = getPostsByTag(posts, tag)
+const tags = getAllTags(posts)
+---
+
+<BaseLayout
+  title={`标签：${tag}`}
+  description={`标签「${tag}」下的全部文章。`}
+>
+  <a class="tag-back" href="/tags/">
+    <span aria-hidden="true">←</span>
+    全部标签
+  </a>
+
+  <header class="tag-header" data-reveal>
+    <h1>{tag}</h1>
+    <span>{taggedPosts.length} 篇文章</span>
+  </header>
+
+  <div style="margin-top: 1.6rem;">
+    <PostList posts={taggedPosts} />
+  </div>
+
+  <div style="margin-top: 2.4rem;">
+    <ul class="tag-list" aria-label="全部标签">
+      {tags.map(item => (
+        <li>
+          <a
+            class="tag-chip"
+            href={getTagHref(item.tag)}
+            aria-current={item.tag === tag ? 'page' : undefined}
+          >
+            {item.tag}
+            <span class="tag-chip__count">{item.count}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</BaseLayout>

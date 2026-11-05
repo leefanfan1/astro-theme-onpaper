@@ -1,0 +1,134 @@
+---
+import { render } from 'astro:content'
+import katexCss from 'katex/dist/katex.min.css?url'
+import ArticleEnhancements from '@/components/ArticleEnhancements.astro'
+import ReadingProgress from '@/components/ReadingProgress.astro'
+import ShareBar from '@/components/ShareBar.astro'
+import TableOfContents from '@/components/TableOfContents.astro'
+import ViewCount from '@/components/ViewCount.astro'
+import { siteConfig } from '@/config'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import type { Post } from '@/utils/posts'
+import {
+  formatDate,
+  formatDateLong,
+  getAllPosts,
+  getPostHref,
+  getTagHref,
+  readingTime,
+} from '@/utils/posts'
+
+export async function getStaticPaths() {
+  const posts = await getAllPosts()
+  return posts.map(post => ({
+    params: { slug: post.id },
+    props: { post },
+  }))
+}
+
+interface Props {
+  post: Post
+}
+
+const { post } = Astro.props
+const { Content, headings } = await render(post)
+const minutes = readingTime(post.body ?? '')
+const hasMath = /\$[^$\n]+\$|\$\$[\s\S]+?\$\$/.test(post.body ?? '')
+const allPosts = await getAllPosts()
+const index = allPosts.findIndex(item => item.id === post.id)
+const newer = index > 0 ? allPosts[index - 1] : null
+const older = index >= 0 && index < allPosts.length - 1 ? allPosts[index + 1] : null
+const canonical = new URL(Astro.url.pathname, siteConfig.url).href
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  'headline': post.data.title,
+  'description': post.data.description,
+  'datePublished': post.data.published.toISOString(),
+  'dateModified': (post.data.updated ?? post.data.published).toISOString(),
+  'author': {
+    '@type': 'Person',
+    'name': siteConfig.author,
+  },
+  'mainEntityOfPage': canonical,
+}
+---
+
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description || siteConfig.description}
+  article
+>
+  <Fragment slot="head">
+    {hasMath && <link rel="stylesheet" href={katexCss} />}
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <ReadingProgress />
+
+  <article class="article">
+    <header class="article-header" data-reveal>
+      <h1 class="article-title">{post.data.title}</h1>
+
+      <div class="article-meta">
+        <time datetime={post.data.published.toISOString()}>{formatDateLong(post.data.published)}</time>
+        <span class="article-meta__dot" aria-hidden="true"></span>
+        <span>{minutes} 分钟阅读</span>
+        {post.data.updated && (
+          <>
+            <span class="article-meta__dot" aria-hidden="true"></span>
+            <span>更新于 {formatDate(post.data.updated)}</span>
+          </>
+        )}
+        <ViewCount slug={post.id} />
+      </div>
+    </header>
+
+    <TableOfContents {headings} />
+
+    <div class="prose" id="article-content">
+      <Content />
+    </div>
+
+    <footer class="article-footer">
+      {post.data.tags.length > 0 && (
+        <ul class="tag-list article-tags" aria-label="文章标签">
+          {post.data.tags.map(tag => (
+            <li>
+              <a class="tag-chip" href={getTagHref(tag)}>{tag}</a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <ShareBar title={post.data.title} url={canonical} />
+
+      <nav class="post-nav" aria-label="相邻文章">
+        {newer
+          ? (
+            <a class="post-nav__item" href={getPostHref(newer)}>
+              <span class="post-nav__label">← 更新一篇</span>
+              <span class="post-nav__title">{newer.data.title}</span>
+            </a>
+          )
+          : <span />}
+        {older
+          ? (
+            <a class="post-nav__item post-nav__item--next" href={getPostHref(older)}>
+              <span class="post-nav__label">更早一篇 →</span>
+              <span class="post-nav__title">{older.data.title}</span>
+            </a>
+          )
+          : <span />}
+      </nav>
+
+      <a class="article-back" href="/">
+        <span aria-hidden="true">←</span>
+        回到文章列表
+      </a>
+    </footer>
+  </article>
+
+  <ArticleEnhancements />
+</BaseLayout>

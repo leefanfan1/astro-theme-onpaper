@@ -1,0 +1,344 @@
+/* =========================================================
+   Article prose
+   ========================================================= */
+
+.prose {
+  max-width: 42rem;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.95;
+  hanging-punctuation: allow-end;
+}
+
+.prose > *:first-child {
+  margin-top: 0;
+}
+
+.prose p {
+  margin: 0 0 1.35em;
+  text-wrap: wrap;
+}
+
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.28;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  scroll-margin-top: 6rem;
+  text-wrap: balance;
+}
+
+.prose h2 {
+  margin: 2.6em 0 0.8em;
+  font-size: 1.72rem;
+}
+
+.prose h3 {
+  margin: 2.1em 0 0.65em;
+  font-size: 1.32rem;
+}
+
+.prose h4 {
+  margin: 1.8em 0 0.55em;
+  font-size: 1.12rem;
+}
+
+.prose h5,
+.prose h6 {
+  margin: 1.6em 0 0.5em;
+  font-size: 1rem;
+}
+
+.prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.18em;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+
+.prose a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
+.prose strong,
+.prose b {
+  font-weight: 650;
+}
+
+.prose em {
+  font-style: italic;
+}
+
+.prose mark {
+  padding: 0.05em 0.18em;
+  background: var(--accent-soft);
+  color: inherit;
+}
+
+.prose u {
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.16em;
+}
+
+.prose blockquote {
+  margin: 1.8em 0;
+  padding: 0.2em 0 0.2em 1.2em;
+  border-left: 2px solid var(--accent);
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+  line-height: 1.8;
+}
+
+.prose blockquote p {
+  margin-bottom: 0.7em;
+}
+
+.prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0 0 1.35em;
+  padding-left: 1.4em;
+}
+
+.prose li {
+  margin: 0.22em 0;
+  padding-left: 0.1em;
+}
+
+.prose li::marker {
+  color: var(--accent);
+}
+
+.prose ul ul,
+.prose ol ol,
+.prose ul ol,
+.prose ol ul {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.prose hr {
+  margin: 2.8em auto;
+  width: fit-content;
+  border: 0;
+  color: var(--ink-faint);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.7em;
+  text-align: center;
+}
+
+.prose hr::before {
+  content: "· · ·";
+}
+
+.prose img {
+  width: 100%;
+  height: auto;
+  margin: 1.8em auto;
+  border-radius: 2px;
+}
+
+.prose figure {
+  margin: 1.8em 0;
+}
+
+.prose figcaption {
+  margin-top: 0.55em;
+  color: var(--ink-faint);
+  font-size: 0.76rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.prose code {
+  padding: 0.12em 0.32em;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--ink) 5%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  letter-spacing: 0;
+}
+
+.prose pre {
+  position: relative;
+  margin: 1.8em 0;
+  padding: 1.15rem 1.25rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface) !important;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.83rem;
+  line-height: 1.75;
+  scrollbar-width: thin;
+}
+
+.prose pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+html[data-theme="dark"] .prose pre span {
+  color: var(--shiki-dark) !important;
+}
+
+html[data-theme="dark"] .prose pre {
+  background: var(--surface) !important;
+}
+
+.prose .code-copy {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 2;
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--paper) 86%, transparent);
+  color: var(--ink-faint);
+  font-family: var(--font-body);
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  opacity: 0;
+  transition: opacity 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.prose pre:hover .code-copy,
+.prose .code-copy:focus-visible {
+  opacity: 1;
+}
+
+.prose .code-copy:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+@media (pointer: coarse) {
+  .prose .code-copy {
+    opacity: 1;
+  }
+}
+
+.prose table {
+  display: block;
+  width: 100%;
+  margin: 1.8em 0;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  line-height: 1.65;
+}
+
+.prose th,
+.prose td {
+  padding: 0.55em 0.8em;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.prose th {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.prose td {
+  color: var(--ink-soft);
+}
+
+.prose abbr[title] {
+  cursor: help;
+  border-bottom: 1px dotted var(--ink-faint);
+  text-decoration: none;
+}
+
+.prose kbd {
+  display: inline-block;
+  padding: 0.1em 0.4em;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: var(--paper-raised);
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  line-height: 1.5;
+}
+
+.prose .footnotes {
+  margin-top: 3em;
+  padding-top: 1.2em;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+
+.prose .footnotes ol {
+  padding-left: 1.2em;
+}
+
+.prose .data-footnote-backref {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.prose .katex-display {
+  margin: 1.8em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.2rem;
+}
+
+.prose .katex {
+  font-size: 1.02em;
+}
+
+.prose pre.mermaid {
+  display: flex;
+  justify-content: center;
+  min-height: 5rem;
+  padding: 1.4rem;
+  background: var(--paper-raised) !important;
+  color: var(--ink);
+  overflow-x: auto;
+}
+
+.prose pre.mermaid[data-processed] {
+  background: var(--paper-raised) !important;
+}
+
+.prose pre.mermaid svg {
+  width: 100%;
+  min-width: 34rem;
+  height: auto;
+}
+
+.prose .editorial-note {
+  padding: 0.8rem 1rem;
+  border-left: 2px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}

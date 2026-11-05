@@ -11,6 +11,7 @@ _analysis/
 screenshots/
 *.log
 pid.txt
+*-pid.txt
 
 # env
 .env

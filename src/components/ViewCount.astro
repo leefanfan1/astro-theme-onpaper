@@ -1,0 +1,65 @@
+---
+import { siteConfig } from '@/config'
+
+interface Props {
+  slug: string
+}
+
+const { slug } = Astro.props
+---
+
+{
+  siteConfig.features.views && (
+    <span class="view-count" data-view-count data-slug={slug} hidden aria-live="polite">
+      <span class="article-meta__dot" aria-hidden="true"></span>
+      阅读 <b data-view-value>—</b>
+    </span>
+  )
+}
+
+<script>
+  async function initViews() {
+    const el = document.querySelector<HTMLElement>('[data-view-count]')
+    if (!el) return
+    const slug = el.dataset.slug
+    if (!slug) return
+
+    const storageKey = `yohaku-viewed:${slug}`
+    let isNewVisit = false
+    try {
+      isNewVisit = !sessionStorage.getItem(storageKey)
+    }
+    catch {}
+
+    try {
+      const response = await fetch(`/api/views?slug=${encodeURIComponent(slug)}`, {
+        method: isNewVisit ? 'POST' : 'GET',
+      })
+      if (!response.ok) return
+      const data = await response.json() as { views?: number }
+      if (typeof data.views !== 'number') return
+      const value = el.querySelector<HTMLElement>('[data-view-value]')
+      if (!value) return
+      value.textContent = new Intl.NumberFormat('zh-CN').format(data.views)
+      el.hidden = false
+      if (isNewVisit) {
+        try {
+          sessionStorage.setItem(storageKey, '1')
+        }
+        catch {}
+      }
+    }
+    catch {
+      // Pages without the optional Function (for example a plain static
+      // preview) simply keep the counter hidden.
+    }
+  }
+
+  document.addEventListener('astro:page-load', initViews)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initViews, { once: true })
+  }
+  else {
+    initViews()
+  }
+</script>

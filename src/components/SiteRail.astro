@@ -1,0 +1,53 @@
+---
+import Footer from '@/components/Footer.astro'
+import ThemeToggle from '@/components/ThemeToggle.astro'
+import { siteConfig } from '@/config'
+
+const pathname = Astro.url.pathname
+const isTags = pathname.startsWith('/tags')
+const isAbout = pathname.startsWith('/about')
+const isHome = !isTags && !isAbout
+
+const nav = siteConfig.nav.map((item, index) => {
+  const active = item.href === '/'
+    ? isHome
+    : item.href === '/tags/'
+      ? isTags
+      : isAbout
+  return { ...item, active, num: String(index + 1).padStart(2, '0') }
+})
+---
+
+<aside class="site-rail" aria-label="站点信息与导航">
+  <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} 首页`}>
+    <span class="rail-wordmark__cn">{siteConfig.title}</span>
+    <span class="rail-wordmark__en">{siteConfig.titleEn}</span>
+  </a>
+  <p class="rail-subtitle">{siteConfig.subtitle}</p>
+
+  <nav aria-label="主导航">
+    <ul class="rail-nav">
+      {nav.map(item => (
+        <li>
+          <a href={item.href} aria-current={item.active ? 'page' : undefined}>
+            <span class="rail-nav__num" aria-hidden="true">{item.num}</span>
+            <span>{item.label}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <div class="rail-actions">
+    <button class="text-button" type="button" data-search-trigger>
+      <svg class="text-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.6"></circle>
+        <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+      </svg>
+      搜索
+    </button>
+    <ThemeToggle />
+  </div>
+
+  <Footer class="rail-footer" />
+</aside>

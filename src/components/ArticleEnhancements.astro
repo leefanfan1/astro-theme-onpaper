@@ -1,0 +1,148 @@
+<script>
+  type MermaidApi = {
+    initialize: (config: Record<string, unknown>) => void
+    run: (options: { nodes: HTMLElement[] }) => Promise<void>
+  }
+
+  let mermaidPromise: Promise<MermaidApi> | null = null
+  let mermaidRendering = false
+
+  function loadMermaid() {
+    mermaidPromise ??= import('mermaid').then(module => module.default as unknown as MermaidApi)
+    return mermaidPromise
+  }
+
+  function cssVar(name: string) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  }
+
+  async function renderMermaid(force = false) {
+    const blocks = [...document.querySelectorAll<HTMLElement>('.prose pre[data-language="mermaid"], .prose pre.mermaid')]
+    if (!blocks.length) return
+    if (mermaidRendering) return
+    if (!force && blocks.every(block => block.dataset.yohakuRendered === 'true')) return
+    mermaidRendering = true
+
+    try {
+      const mermaid = await loadMermaid()
+      for (const block of blocks) {
+        if (!block.dataset.source || block.dataset.source.endsWith('复制')) {
+          block.querySelectorAll('.code-copy').forEach(button => button.remove())
+          block.dataset.source = block.textContent?.trim() ?? ''
+        }
+        block.removeAttribute('data-processed')
+        block.removeAttribute('data-language')
+        block.removeAttribute('tabindex')
+        block.removeAttribute('style')
+        block.removeAttribute('data-copy-ready')
+        block.removeAttribute('data-processed')
+        block.removeAttribute('data-yohaku-rendered')
+        block.className = 'mermaid'
+        block.textContent = block.dataset.source
+      }
+
+      const isDark = document.documentElement.dataset.theme === 'dark'
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: 'strict',
+        theme: isDark ? 'dark' : 'neutral',
+        themeVariables: {
+          fontFamily: cssVar('--font-body'),
+          fontSize: '14px',
+        },
+      })
+
+      await mermaid.run({ nodes: blocks })
+      for (const block of blocks) block.dataset.yohakuRendered = 'true'
+    }
+    catch (error) {
+      console.warn('[Yohaku] Mermaid render failed:', error)
+    }
+    finally {
+      mermaidRendering = false
+    }
+  }
+
+  async function loadGithubCards() {
+    const cards = [...document.querySelectorAll<HTMLElement>('[data-github-card]')]
+    if (!cards.length) return
+    const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
+
+    for (const card of cards) {
+      if (card.dataset.loaded === 'true') continue
+      card.dataset.loaded = 'true'
+      const repo = card.dataset.repo
+      if (!repo) continue
+
+      const cacheKey = `yohaku-gh:${repo}`
+      let data: {
+        description?: string | null
+        stargazers_count?: number
+        forks_count?: number
+        language?: string | null
+      } | null = null
+
+      try {
+        const cached = sessionStorage.getItem(cacheKey)
+        if (cached) data = JSON.parse(cached)
+      }
+      catch {}
+
+      if (!data) {
+        try {
+          const response = await fetch(`https://api.github.com/repos/${repo}`, {
+            headers: { Accept: 'application/vnd.github+json' },
+          })
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          data = await response.json()
+          try { sessionStorage.setItem(cacheKey, JSON.stringify(data)) } catch {}
+        }
+        catch {
+          continue
+        }
+      }
+
+      const setText = (selector: string, value: string) => {
+        const el = card.querySelector<HTMLElement>(selector)
+        if (el) el.textContent = value
+      }
+      if (data.description) setText('[data-gh-desc]', data.description)
+      if (typeof data.stargazers_count === 'number') setText('[data-gh-stars]', compact.format(data.stargazers_count))
+      if (typeof data.forks_count === 'number') setText('[data-gh-forks]', compact.format(data.forks_count))
+      if (data.language) setText('[data-gh-language]', data.language)
+    }
+  }
+
+  document.addEventListener('click', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+    const button = target.closest<HTMLElement>('.embed-card__poster')
+    if (!button) return
+    const figure = button.closest<HTMLElement>('[data-embed]')
+    const src = figure?.dataset.src
+    if (!figure || !src) return
+
+    const iframe = document.createElement('iframe')
+    iframe.src = src
+    iframe.title = button.getAttribute('aria-label')?.replace(/^播放：/, '') || '媒体播放器'
+    iframe.loading = 'lazy'
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+    iframe.allowFullscreen = true
+    button.replaceWith(iframe)
+  })
+
+  function initArticle() {
+    void renderMermaid()
+    void loadGithubCards()
+  }
+
+  document.addEventListener('astro:page-load', initArticle)
+  document.addEventListener('theme-changed', () => { void renderMermaid(true) })
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initArticle, { once: true })
+  }
+  else {
+    initArticle()
+  }
+</script>
