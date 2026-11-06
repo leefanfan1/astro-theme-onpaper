@@ -7,7 +7,7 @@ tags:
   - 示例
   - 建站
   - 写作
-pin: 0
+pin: 1
 ---
 
 这是一份面向站点维护者的上手指南。格式写法见[Markdown 语法手册](/posts/markdown-guide/)，渲染效果见[格式示例](/posts/format-showcase/)。

@@ -1,7 +1,7 @@
 ---
 title: 戴上耳机，城市就退后一步
 description: 两张最近反复播放的专辑，和一些关于“听歌”的私人偏见。
-published: 2026-10-11
+published: 2026-5-11
 tags:
   - 音乐
   - 城市
