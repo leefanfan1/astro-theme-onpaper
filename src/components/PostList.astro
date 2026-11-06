@@ -26,7 +26,7 @@ const { posts } = Astro.props
       >
         <article class="post-row">
           <h2 class="post-title">
-            <a href={getPostHref(post)}>{post.data.title}</a>
+            <a href={getPostHref(post)} transition:name={`post-title-${post.id}`}>{post.data.title}</a>
             {post.data.pin > 0 && (
               <span class="pin-mark" role="img" aria-label="置顶" title="置顶">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">

@@ -42,10 +42,12 @@ export const siteConfig = {
   lang: 'zh-CN',
   locale: 'zh_CN',
   startYear: 2024,
+  // 右栏刊头显示的卷号
+  volume: '01',
   // 首页每页文章数（不含置顶）
   postsPerPage: 4,
   // 文章详情页是否默认展开目录
-  tocOpen: true,
+  tocOpen: false,
 
   nav: [
     { label: '文章', href: '/' },

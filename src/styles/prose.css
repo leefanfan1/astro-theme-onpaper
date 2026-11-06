@@ -6,8 +6,9 @@
   max-width: 42rem;
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 1.03rem;
-  line-height: 1.9;
+  font-size: 1.06rem;
+  line-height: 2;
+  letter-spacing: 0.005em;
   hanging-punctuation: allow-end;
 }
 
@@ -20,7 +21,7 @@
 }
 
 .prose p {
-  margin: 0 0 1.35em;
+  margin: 0 0 1.5em;
   text-wrap: wrap;
 }
 

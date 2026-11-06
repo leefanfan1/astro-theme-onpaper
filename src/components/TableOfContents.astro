@@ -13,7 +13,7 @@ const items = headings.filter(heading => heading.depth >= 2 && heading.depth <= 
 {
   items.length >= 2 && (
     <details class="toc" open={siteConfig.tocOpen}>
-      <summary>本页目录</summary>
+      <summary>目录</summary>
       <ol>
         {items.map(heading => (
           <li class={`toc-depth-${heading.depth}`}>

@@ -90,6 +90,11 @@ pre {
   animation-timing-function: ease-out;
 }
 
+::view-transition-group(*) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -176,6 +181,22 @@ pre {
   display: none;
 }
 
+.rail-masthead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.rail-issue {
+  margin-bottom: 0.55rem;
+  color: var(--ink-faint);
+  font-family: var(--font-body);
+  font-size: 0.54rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
 .rail-wordmark {
   display: inline-flex;
   flex-direction: column;
@@ -186,11 +207,11 @@ pre {
 .rail-wordmark__cn {
   display: block;
   font-family: var(--font-display);
-  font-size: 2.9rem;
+  font-size: 3.4rem;
   font-weight: 500;
   line-height: 1.08;
   padding-top: 0.06em;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.04em;
 }
 
 .rail-wordmark__en {
@@ -213,7 +234,7 @@ pre {
 }
 
 .rail-nav {
-  margin-top: 2.4rem;
+  margin-top: 2.7rem;
   display: flex;
   flex-direction: column;
   gap: 0.05rem;
@@ -561,7 +582,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .post-item {
   border-top: 1px solid var(--line);
-  padding: 1.55rem 0 1.65rem;
+  padding: 1.9rem 0 2rem;
 }
 
 .post-item:last-child {
@@ -574,10 +595,10 @@ html[data-theme="dark"] .theme-toggle .moon {
   align-items: baseline;
   gap: 0.55rem;
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 3.2vw, 1.7rem);
+  font-size: clamp(1.52rem, 3.4vw, 1.95rem);
   font-weight: 500;
-  line-height: 1.32;
-  letter-spacing: -0.018em;
+  line-height: 1.38;
+  letter-spacing: -0.022em;
 }
 
 .post-title a {
@@ -606,7 +627,7 @@ html[data-theme="dark"] .theme-toggle .moon {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem 0.7rem;
-  margin-top: 0.4rem;
+  margin-top: 0.5rem;
   color: var(--ink-faint);
   font-size: 0.68rem;
   letter-spacing: 0.04em;
@@ -615,7 +636,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 .post-meta time {
   color: var(--ink-faint);
   font-family: var(--font-display);
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   font-style: italic;
   letter-spacing: 0.02em;
 }
@@ -629,19 +650,19 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .post-desc {
   max-width: 38rem;
-  margin-top: 0.5rem;
+  margin-top: 0.6rem;
   color: var(--ink-soft);
-  font-size: 0.86rem;
-  line-height: 1.8;
+  font-size: 0.88rem;
+  line-height: 1.85;
 }
 
 @media (max-width: 600px) {
   .post-title {
-    font-size: 1.28rem;
+    font-size: 1.38rem;
   }
 
   .post-item {
-    padding-block: 1.3rem;
+    padding-block: 1.5rem;
   }
 }
 
@@ -1081,11 +1102,10 @@ html[data-theme="dark"] .theme-toggle .moon {
    --------------------------------------------------------- */
 
 .toc {
-  margin-top: 1.8rem;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
+  margin: 1.7rem 0 2rem;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: transparent;
 }
 
 .toc summary {
@@ -1093,11 +1113,12 @@ html[data-theme="dark"] .theme-toggle .moon {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  min-height: 2.9rem;
-  padding: 0.55rem 1rem;
+  min-height: 2.7rem;
+  padding: 0.55rem 0;
   color: var(--ink-soft);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  font-family: var(--font-display);
+  font-size: 0.84rem;
+  letter-spacing: 0.05em;
   cursor: pointer;
   list-style: none;
 }
@@ -1120,29 +1141,47 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .toc ol {
   margin: 0;
-  padding: 0 1rem 0.8rem;
+  padding: 0.15rem 0 0.9rem;
   list-style: none;
+  counter-reset: toc;
 }
 
 .toc li {
-  border-top: 1px solid var(--line);
+  counter-increment: toc;
 }
 
 .toc a {
+  position: relative;
   display: block;
-  padding: 0.38rem 0;
+  padding: 0.4rem 0 0.4rem 2rem;
   color: var(--ink-soft);
   font-size: 0.78rem;
-  line-height: 1.5;
+  line-height: 1.55;
   transition: color 0.2s ease;
+}
+
+.toc a::before {
+  content: counter(toc, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.48rem;
+  color: var(--ink-faint);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-style: italic;
+  letter-spacing: 0.02em;
 }
 
 .toc a:hover {
   color: var(--accent);
 }
 
-.toc .toc-depth-3 {
-  padding-left: 1rem;
+.toc .toc-depth-3 a {
+  padding-left: 3.1rem;
+}
+
+.toc .toc-depth-3 a::before {
+  left: 1.1rem;
 }
 
 /* ---------------------------------------------------------
