@@ -4,6 +4,8 @@
 
 视觉上参考 Claude / Anthropic 的暖色语言（奶油纸色、墨色、赤陶橙、橄榄绿），组件、代码和素材都是为这个主题重新实现的，不是任何现有主题的换皮。
 
+版式上受 [astro-theme-retypeset](https://github.com/radishzzz/astro-theme-retypeset) 和 [astro-theme-typography](https://github.com/moeyua/astro-theme-typography) 启发，只借鉴布局思路，详见文末「灵感与致谢」。
+
 - Astro 7，纯静态输出，适配 Cloudflare Pages
 - 无前端框架，零客户端 UI 运行时
 - 中文单语（README 末尾说明以后如何扩展）
@@ -336,6 +338,15 @@ public/                     favicon、OG、字体、示例图片、_headers
 - Markdown 中的原始 HTML 按“可信作者内容”处理：不要直接合并不受信任的投稿，否则需要先加 sanitizer 或禁用 raw HTML。
 - 浏览量接口只做 slug 格式校验，不是应用层限流；建议在 Cloudflare WAF 给 `/api/views` 的 POST 加限流。KV 读改写非原子，适合展示型计数，精确统计请换 Durable Object 或 D1。
 - 第三方资源：音乐封面来自网易云，GitHub 卡片会请求 `api.github.com`，视频使用 lazy iframe。启用 GA4 前请自行评估 consent。
+
+## 灵感与致谢
+
+这个主题的版式灵感来自两个优秀的 Astro 博客主题：
+
+- [astro-theme-retypeset](https://github.com/radishzzz/astro-theme-retypeset) — 排版节奏、正文留白和阅读优先的思路
+- [astro-theme-typography](https://github.com/moeyua/astro-theme-typography) — 中文博客的目录组织、标签与归档结构
+
+只借鉴了整体布局思路，组件、样式和代码都是重新实现的，没有复制这两个项目的源文件。如果你喜欢这种排版，建议也去看看原项目。
 
 ## 许可
 
