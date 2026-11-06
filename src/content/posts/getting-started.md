@@ -28,12 +28,30 @@ npm run dev
 | 命令 | 用途 |
 | --- | --- |
 | `npm run dev` | 启动开发服务器 |
+| `npm run new -- "标题"` | 新建一篇带 frontmatter 的文章 |
 | `npm run build` | 生成静态站点到 `dist/` |
 | `npm run build:clean` | 清理 Astro 内容缓存后构建 |
+| `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
 | `npm run preview` | 预览生产构建 |
 | `npm run shots` | Playwright 截图检查（需要先启动 dev） |
 | `npm run og` | 从 `public/og.svg` 重新生成分享图 |
 | `npm run music` | 解析并缓存 `::music` 链接 |
+
+### 新建文章
+
+```bash
+npm run new -- "在一条不认识的街上走一会儿" --slug a-walk-without-a-map
+npm run new -- "标题" --tags 随笔,城市 --pin 1 --draft
+```
+
+| 参数 | 说明 |
+| --- | --- |
+| `--slug` | 文件名 / URL。中文标题转不出英文时用时间戳，建议手动指定 |
+| `--tags` | 逗号分隔的标签 |
+| `--pin` | 置顶权重，默认 `0` |
+| `--draft` | 写入 `draft: true`，只在开发环境可见 |
+
+生成的文件在 `src/content/posts/<slug>.md`。
 
 ### 什么时候用 build:clean
 
@@ -43,7 +61,7 @@ npm run dev
 npm run build:clean
 ```
 
-它会清掉 Astro 的内容缓存再构建，避免旧渲染结果被复用。
+它会清掉 Astro 的内容缓存再构建，避免旧渲染结果被复用。开发服务器同理：改插件后先停掉 dev，运行 `npm run clean`，再重新 `npm run dev`。
 
 ## 目录
 
@@ -64,7 +82,13 @@ public/                     字体、分享图、示例图片、_headers
 
 ## 写一篇新文章
 
-在 `src/content/posts/` 新建 `.md` 文件，文件名就是 URL slug：
+推荐用脚手架生成，frontmatter 和日期会自动填好：
+
+```bash
+npm run new -- "文章标题" --slug my-post --tags 随笔,城市
+```
+
+也可以直接在 `src/content/posts/` 新建 `.md`，文件名就是 URL slug：
 
 ```yaml
 ---

@@ -12,6 +12,7 @@
     "build": "astro build",
     "build:clean": "npm run clean && astro build",
     "clean": "node scripts/clean.mjs",
+    "new": "node scripts/new-post.mjs",
     "preview": "astro preview",
     "shots": "node scripts/screenshots.mjs",
     "og": "node scripts/generate-og.mjs",

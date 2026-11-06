@@ -18,15 +18,16 @@
 
 ## 预览
 
-| 首页 | 深色模式 |
-| :---: | :---: |
-| ![首页](docs/home-light.png) | ![深色模式](docs/home-dark.png) |
-
-| 文章 | 归档 |
-| :---: | :---: |
-| ![文章](docs/article.png) | ![归档](docs/archive.png) |
-
-<img src="docs/home-mobile.png" width="300" alt="移动端首页" />
+<p align="center">
+  <img src="docs/home-light.png" alt="首页（浅色）" width="49%" />
+  <img src="docs/home-dark.png" alt="首页（深色）" width="49%" />
+  <br />
+  <img src="docs/article.png" alt="文章页" width="49%" />
+  <img src="docs/archive.png" alt="归档页" width="49%" />
+  <br />
+  <img src="docs/home-mobile.png" alt="移动端首页" width="32%" />
+  <img src="docs/mobile-article.png" alt="移动端文章页" width="32%" />
+</p>
 
 ---
 
@@ -57,12 +58,33 @@ npm run dev
 | 命令 | 说明 |
 | --- | --- |
 | `npm run dev` | 启动开发服务器 |
+| `npm run new -- "标题"` | 新建一篇带 frontmatter 的文章 |
 | `npm run build` | 生成静态站点到 `dist/` |
-| `npm run build:clean` | 清理 Astro 内容缓存后再构建（改过 remark / rehype 插件时用） |
+| `npm run build:clean` | 清理 Astro 内容缓存后再构建 |
+| `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
 | `npm run preview` | 预览生产构建 |
 | `npm run shots` | Playwright 截图检查（需要先运行 dev） |
 | `npm run og` | 从 `public/og.svg` 重新生成 `public/og.png` |
 | `npm run music` | 解析并缓存 `::music` 指令里的链接 |
+
+### 新建文章
+
+`npm run new` 会按当前日期生成 frontmatter，文件名就是 URL slug：
+
+```bash
+npm run new -- "在一条不认识的街上走一会儿" --slug a-walk-without-a-map
+
+npm run new -- "标题" --tags 随笔,城市 --pin 1 --draft
+```
+
+| 参数 | 说明 |
+| --- | --- |
+| `--slug` | 文件名 / URL。中文标题无法转换成英文时使用时间戳，建议手动指定 |
+| `--tags` | 逗号分隔的标签，例如 `随笔,城市` |
+| `--pin` | 置顶权重，数字越大越靠前，默认 `0` |
+| `--draft` | 写入 `draft: true`，只在开发环境可见 |
+
+生成的文件在 `src/content/posts/<slug>.md`，之后直接编辑正文即可。
 
 ---
 
@@ -206,7 +228,13 @@ npm run og
 
 ## 写文章
 
-在 `src/content/posts/` 新建 `.md` 文件，文件名即 URL slug：
+推荐用脚手架生成，frontmatter 和日期会自动填好：
+
+```bash
+npm run new -- "雨停之前，先别急着走" --slug rain-before-it-stops --tags 随笔,城市
+```
+
+也可以直接在 `src/content/posts/` 新建 `.md`，文件名即 URL slug：
 
 ```md
 ---
