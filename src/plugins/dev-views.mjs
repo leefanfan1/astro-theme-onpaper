@@ -21,7 +21,7 @@ function handleViews(req, res, counts) {
   }
 
   const slug = url.searchParams.get('slug') ?? ''
-  if (!/^[\w-]{1,96}$/.test(slug)) {
+  if (slug.length > 96 || !/^[a-z0-9][a-z0-9-]*$/.test(slug)) {
     res.statusCode = 400
     res.setHeader('Content-Type', 'application/json')
     res.end(JSON.stringify({ error: 'Invalid slug parameter' }))

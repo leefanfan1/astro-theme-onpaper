@@ -285,6 +285,14 @@ public/                     favicon、OG、字体、_headers
 - 音乐解析依赖第三方平台接口，可能因平台改版失效；缓存能保证已有文章正常构建。封面来自平台元数据，版权归原平台 / 唱片公司所有。
 - Mermaid 和 GitHub 卡片是渐进增强：没有 JavaScript 时，Mermaid 会显示源码，GitHub 卡片仍可点击。
 
+## 安全
+
+- 完整审计、威胁模型和残余风险见 **`SECURITY.md`**。
+- `npm audit` 当前为 0；KaTeX 通过 `overrides` 统一到 0.19.1。
+- 生产响应头与 CSP 在 `public/_headers`；Cloudflare Function 在 `functions/api/views.js`。
+- CSP 仍保留 `'unsafe-inline'`（Astro 内联脚本/样式所需），但加了 `script-src-attr 'none'`；要更严格可改用 nonce/hash。
+- 建议在 Cloudflare WAF 给 `/api/views` 的 POST 加限流；Markdown 按“可信作者内容”处理，不要直接合并不受信任的投稿。
+
 ## 许可
 
 MIT。字体 Newsreader 与 Noto Serif SC 使用 SIL Open Font License 1.1，见 `public/fonts/OFL-Newsreader.txt` 和 `public/fonts/OFL-NotoSerifSC.txt`。

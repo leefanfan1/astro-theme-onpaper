@@ -51,6 +51,10 @@ const jsonLd = {
   },
   'mainEntityOfPage': canonical,
 }
+
+// Prevent a frontmatter value containing "</script>" from breaking out of
+// the JSON-LD element. Escaping "<" is enough for an HTML script context.
+const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
 ---
 
 <BaseLayout
@@ -60,7 +64,7 @@ const jsonLd = {
 >
   <Fragment slot="head">
     {hasMath && <link rel="stylesheet" href={katexCss} />}
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script type="application/ld+json" set:html={jsonLdHtml} />
   </Fragment>
 
   <ReadingProgress />
