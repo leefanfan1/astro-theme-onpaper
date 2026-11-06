@@ -167,6 +167,7 @@ pre {
   flex-direction: column;
   min-height: calc(100dvh - 7rem);
   max-height: calc(100dvh - 7rem);
+  padding-top: 0.25rem;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -183,10 +184,12 @@ pre {
 }
 
 .rail-wordmark__cn {
+  display: block;
   font-family: var(--font-display);
   font-size: 2.9rem;
   font-weight: 500;
-  line-height: 0.95;
+  line-height: 1.08;
+  padding-top: 0.06em;
   letter-spacing: -0.035em;
 }
 
@@ -202,9 +205,10 @@ pre {
 
 .rail-subtitle {
   margin-top: 1.1rem;
-  max-width: 11rem;
+  max-width: 100%;
   color: var(--ink-soft);
-  font-size: 0.78rem;
+  font-family: var(--font-display);
+  font-size: 0.84rem;
   line-height: 1.7;
 }
 
@@ -224,29 +228,33 @@ pre {
   min-height: 2.35rem;
   padding-block: 0.4rem;
   color: var(--ink-soft);
-  font-size: 0.9rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
   transition: color 0.2s ease;
 }
 
-.rail-nav a::after {
-  content: "";
-  position: absolute;
-  left: 1.55rem;
-  bottom: 0.1rem;
-  width: 0;
-  height: 1px;
-  background: var(--accent);
-  transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+.rail-nav a > span:last-child {
+  padding: 0.04rem 0.3rem;
+  margin-left: -0.3rem;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.2s ease;
 }
 
-.rail-nav a:hover,
-.rail-nav a[aria-current="page"] {
+.rail-nav a:hover {
   color: var(--ink);
 }
 
-.rail-nav a:hover::after,
-.rail-nav a[aria-current="page"]::after {
-  width: calc(100% - 1.55rem);
+.rail-nav a:hover > span:last-child {
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+
+.rail-nav a[aria-current="page"] {
+  color: var(--accent-strong);
+}
+
+.rail-nav a[aria-current="page"] > span:last-child {
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
 }
 
 .rail-nav__num {
@@ -383,6 +391,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
   .mobile-bar .rail-wordmark__cn {
     font-size: 1.55rem;
+    line-height: 1.1;
   }
 
   .mobile-bar .rail-wordmark__en {
@@ -409,24 +418,17 @@ html[data-theme="dark"] .theme-toggle .moon {
 
   .mobile-nav a {
     position: relative;
-    padding-block: 0.35rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 2px;
     color: var(--ink-soft);
-    font-size: 0.82rem;
+    font-family: var(--font-display);
+    font-size: 0.88rem;
     white-space: nowrap;
   }
 
   .mobile-nav a[aria-current="page"] {
-    color: var(--accent);
-  }
-
-  .mobile-nav a[aria-current="page"]::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: var(--accent);
+    color: var(--accent-strong);
+    background: color-mix(in oklab, var(--accent) 18%, transparent);
   }
 }
 
@@ -586,6 +588,19 @@ html[data-theme="dark"] .theme-toggle .moon {
   color: var(--accent);
 }
 
+.pin-mark {
+  display: inline-flex;
+  width: 0.82rem;
+  height: 0.82rem;
+  color: var(--accent);
+  transform: translateY(0.08em);
+}
+
+.pin-mark svg {
+  width: 100%;
+  height: 100%;
+}
+
 .post-meta {
   display: flex;
   flex-wrap: wrap;
@@ -595,6 +610,14 @@ html[data-theme="dark"] .theme-toggle .moon {
   color: var(--ink-faint);
   font-size: 0.68rem;
   letter-spacing: 0.04em;
+}
+
+.post-meta time {
+  color: var(--ink-faint);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-style: italic;
+  letter-spacing: 0.02em;
 }
 
 .post-meta__dot {
@@ -610,25 +633,6 @@ html[data-theme="dark"] .theme-toggle .moon {
   color: var(--ink-soft);
   font-size: 0.86rem;
   line-height: 1.8;
-}
-
-.pin-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.32rem;
-  color: var(--accent-strong);
-  font-family: var(--font-body);
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-}
-
-.pin-badge::before {
-  content: "";
-  width: 0.3rem;
-  height: 0.3rem;
-  border-radius: 50%;
-  background: var(--accent);
 }
 
 @media (max-width: 600px) {
@@ -849,9 +853,11 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .timeline-date {
   color: var(--ink-faint);
-  font-size: 0.68rem;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-style: italic;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .timeline-title {
@@ -963,6 +969,13 @@ html[data-theme="dark"] .theme-toggle .moon {
   color: var(--ink-faint);
   font-size: 0.68rem;
   letter-spacing: 0.06em;
+}
+
+.article-meta time {
+  color: var(--ink-faint);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
 }
 
 .article-meta__dot {

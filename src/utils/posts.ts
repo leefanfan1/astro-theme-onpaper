@@ -71,13 +71,6 @@ export function getTagHref(tag: string): string {
   return `/tags/${encodeURIComponent(tag)}/`
 }
 
-export function readingTime(markdown: string): number {
-  const text = stripMarkdown(markdown)
-  const cjk = (text.match(/[㐀-鿿]/g) ?? []).length
-  const words = (text.replace(/[㐀-鿿]/g, ' ').match(/[A-Za-z0-9]+/g) ?? []).length
-  return Math.max(1, Math.round(cjk / 400 + words / 200))
-}
-
 export function stripMarkdown(markdown: string): string {
   return markdown
     .replace(/```[\s\S]*?```/g, ' ')

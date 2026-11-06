@@ -39,9 +39,9 @@ for (const item of cases) {
   await page.waitForTimeout(900)
   // Scroll through the page once so lazy images and Mermaid finish rendering.
   await page.evaluate(async () => {
-    for (let y = 0; y < document.body.scrollHeight; y += 600) {
+    for (let y = 0; y < document.body.scrollHeight; y += 400) {
       window.scrollTo(0, y)
-      await new Promise(resolve => setTimeout(resolve, 55))
+      await new Promise(resolve => setTimeout(resolve, 120))
     }
     window.scrollTo(0, 0)
   })

@@ -6,9 +6,13 @@
   max-width: 42rem;
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 1.05rem;
-  line-height: 1.95;
+  font-size: 1.03rem;
+  line-height: 1.9;
   hanging-punctuation: allow-end;
+}
+
+.prose-card .prose {
+  max-width: 48rem;
 }
 
 .prose > *:first-child {
@@ -26,7 +30,7 @@
 .prose h5,
 .prose h6 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.28;
   letter-spacing: -0.015em;
   color: var(--ink);
@@ -91,12 +95,14 @@
 
 .prose blockquote {
   margin: 1.8em 0;
-  padding: 0.2em 0 0.2em 1.2em;
+  padding: 1rem 1.2rem;
   border-left: 2px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: var(--surface);
   color: var(--ink-soft);
   font-family: var(--font-display);
-  font-size: 1.18rem;
-  line-height: 1.8;
+  font-size: 1.15rem;
+  line-height: 1.75;
 }
 
 .prose blockquote p {
@@ -149,7 +155,7 @@
   width: 100%;
   height: auto;
   margin: 1.8em auto;
-  border-radius: 2px;
+  border-radius: 8px;
 }
 
 .prose figure {
@@ -167,8 +173,8 @@
 .prose code {
   padding: 0.12em 0.32em;
   border: 1px solid var(--line);
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--ink) 5%, transparent);
+  border-radius: 4px;
+  background: var(--surface);
   font-family: var(--font-mono);
   font-size: 0.85em;
   letter-spacing: 0;
@@ -180,7 +186,7 @@
   padding: 1.15rem 1.25rem;
   overflow-x: auto;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 8px;
   background: var(--surface) !important;
   color: var(--ink);
   font-family: var(--font-mono);

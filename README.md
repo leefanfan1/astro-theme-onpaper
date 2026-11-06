@@ -1,8 +1,8 @@
 # 余白 / Yohaku
 
-一个为中文个人博客写的 Astro 主题。纸面排版、右侧窄栏、克制的动效，适合随笔、音乐评论和长期写作。
+一个为中文个人博客写的 Astro 主题。借鉴 Claude / Anthropic 官网的配色与字体气质，页面布局则回到传统博客：正文列 + 右侧窄栏、文章列表、时间线归档、文章直接铺在纸面上。
 
-视觉上借鉴了纸质编辑排版的安静感，以及 Anthropic / Claude 官网的暖色语言（奶油纸色、墨色、赤陶橙、橄榄绿）；组件、代码和素材都是为这个主题重新实现的，不是任何现有主题的换皮。
+视觉上参考 Claude / Anthropic 的暖色语言（奶油纸色、墨色、赤陶橙、橄榄绿），组件、代码和素材都是为这个主题重新实现的，不是任何现有主题的换皮。
 
 - Astro 7，纯静态输出，适配 Cloudflare Pages
 - 无前端框架，零客户端 UI 运行时
@@ -63,7 +63,7 @@ export const siteConfig = {
     dark: { paper: '#141413', ink: '#FAF9F5', accent: '#D97757', /* ... */ },
   },
   fonts: {
-    display: '"Newsreader", "Songti SC", ...',
+    display: '"Newsreader", "Noto Serif SC Variable", "Songti SC", ...',
     body: '"PingFang SC", "Microsoft YaHei", ...',
     mono: '"SFMono-Regular", Consolas, ...',
   },
@@ -103,7 +103,7 @@ export const siteConfig = {
 
 ### 改字体
 
-`siteConfig.fonts` 控制三套字体栈。默认用自托管的 **Newsreader**（SIL OFL，文件在 `public/fonts/`）作为拉丁标题字体，中文标题回退到系统宋体；正文用系统无衬线体，避免为中文加载几 MB 的字体。
+`siteConfig.fonts` 控制三套字体栈。默认用自托管的 **Newsreader**（SIL OFL）作为拉丁标题字体，中文标题使用自托管的 **Noto Serif SC Variable**（按 `unicode-range` 分片，浏览器只加载页面实际用到的字形）；正文用系统无衬线体，避免正文也加载大字体。
 
 ## 写文章
 
@@ -125,7 +125,7 @@ draft: false               # true 时只在 dev 可见
 正文……
 ```
 
-关于页在 `src/content/pages/about.md`。首页每页文章数由 `siteConfig.postsPerPage` 控制，置顶文章只出现在第一页。
+关于页在 `src/content/pages/about.md`。首页每页文章数由 `siteConfig.postsPerPage` 控制，置顶文章只出现在第一页，列表里用一个小别针图标标记，不显示“置顶”文字。
 
 ## Markdown 扩展
 
@@ -265,12 +265,15 @@ public/                     favicon、OG、字体、_headers
 
 ## 设计说明
 
-- 布局：桌面端正文列 + 右侧固定窄栏；移动端折叠为顶部导航。
-- 字体：Newsreader（拉丁标题）+ 系统宋体（中文标题）+ 系统无衬线（正文）。
-- 颜色：奶油纸色、墨色、赤陶橙、橄榄绿；没有渐变和装饰光效。
-- 动效：页面过渡、悬停下划线、滚动渐入、主题切换的圆形揭示；全部尊重 `prefers-reduced-motion`。
+- 布局：正文列 + 右侧固定窄栏（站点标题、导航、搜索、主题、页脚）；移动端折叠为顶部导航和单列文章列表。
+- 首页：短装饰线 + 文章列表 + 分页，不做营销式 hero 或卡片网格。
+- 文章页：标题、日期、目录、正文、标签、分享、上下篇；正文在纸面上，目录和音乐等组件使用圆角表面。
+- 归档：按年份分组的纵向时间线 + 标签索引；关于页直接使用正文排版。
+- 字体：Newsreader（拉丁标题）+ Noto Serif SC Variable（中文标题）+ 系统无衬线（正文）。
+- 颜色：奶油纸色、墨色、赤陶橙、橄榄绿；平涂背景，没有渐变和装饰光效。
+- 动效：页面过渡、悬停颜色/下划线、滚动渐入、主题切换的圆形揭示；全部尊重 `prefers-reduced-motion`。
 - 图标：全部为内联 SVG 或 CSS 形状，不使用 emoji 当图标。
-- 可访问性：跳转正文、可见焦点、44px 触控热区、语义化标题和 `aria-current`。
+- 可访问性：跳转正文、可见焦点、44px 触控热区、语义化标题、`aria-current`、可键盘操作的搜索弹窗。
 
 ## 已知取舍
 
@@ -281,6 +284,6 @@ public/                     favicon、OG、字体、_headers
 
 ## 许可
 
-MIT。字体 Newsreader 使用 SIL Open Font License 1.1，见 `public/fonts/OFL-Newsreader.txt`。
+MIT。字体 Newsreader 与 Noto Serif SC 使用 SIL Open Font License 1.1，见 `public/fonts/OFL-Newsreader.txt` 和 `public/fonts/OFL-NotoSerifSC.txt`。
 
 音乐解析器与缓存流程改编自作者原有博客，已获得作者许可。

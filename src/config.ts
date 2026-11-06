@@ -96,8 +96,8 @@ export const siteConfig = {
   },
 
   fonts: {
-    // 拉丁标题使用自托管的 Newsreader；中文回退到系统宋体。
-    display: '"Newsreader", "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", "Source Han Serif SC", serif',
+    // 拉丁标题使用自托管的 Newsreader；中文标题使用自托管的 Noto Serif SC Variable。
+    display: '"Newsreader", "Noto Serif SC Variable", "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", serif',
     body: '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", system-ui, sans-serif',
     mono: '"SFMono-Regular", "Cascadia Code", Consolas, "Liberation Mono", monospace',
   },

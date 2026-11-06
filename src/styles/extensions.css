@@ -13,8 +13,8 @@
   margin: 1.8em 0;
   padding: 1rem;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--paper-raised);
+  border-radius: 14px;
+  background: var(--surface);
 }
 
 .music-card__cover {
@@ -22,8 +22,8 @@
   place-items: center;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 6px;
-  background: var(--surface);
+  border-radius: 8px;
+  background: var(--surface-alt);
 }
 
 .music-card__cover img {
@@ -143,8 +143,8 @@
   margin: 1.8em 0;
   padding: 1rem 1.1rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--paper-raised);
+  border-radius: 14px;
+  background: var(--surface);
   transition: border-color 0.2s ease;
 }
 
@@ -212,7 +212,7 @@
   padding: 1.2rem;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--surface);
   text-align: left;
   transition: border-color 0.2s ease;
@@ -272,7 +272,7 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   border: 0;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--surface);
 }
 
@@ -289,8 +289,8 @@
   gap: 0.3rem;
   padding: 1rem 1.1rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--paper-raised);
+  border-radius: 14px;
+  background: var(--surface);
   transition: border-color 0.2s ease;
 }
 

@@ -3,7 +3,6 @@ import type { Post } from '@/utils/posts'
 import {
   formatDate,
   getPostHref,
-  readingTime,
   stripMarkdown,
 } from '@/utils/posts'
 
@@ -16,26 +15,30 @@ const { posts } = Astro.props
 
 <ol class="post-list">
   {posts.map((post, index) => {
-    const minutes = readingTime(post.body ?? '')
     const excerpt = post.data.description
       || `${stripMarkdown(post.body ?? '').slice(0, 88)}…`
 
     return (
       <li
-        class:list={['post-item', post.data.pin > 0 && 'post-item--pinned']}
+        class="post-item"
         data-reveal
         style={`--reveal-delay:${Math.min(index, 5) * 55}ms`}
       >
         <article class="post-row">
           <h2 class="post-title">
             <a href={getPostHref(post)}>{post.data.title}</a>
-            {post.data.pin > 0 && <span class="pin-badge">置顶</span>}
+            {post.data.pin > 0 && (
+              <span class="pin-mark" role="img" aria-label="置顶" title="置顶">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9.2 4.2h5.6l-.9 4.7 2.8 2.8v1.1H7.3v-1.1l2.8-2.8-.9-4.7Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path>
+                  <path d="M12 12.8v7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+                </svg>
+              </span>
+            )}
           </h2>
 
           <div class="post-meta">
             <time datetime={post.data.published.toISOString()}>{formatDate(post.data.published)}</time>
-            <span class="post-meta__dot" aria-hidden="true"></span>
-            <span>{minutes} 分钟</span>
           </div>
 
           {excerpt && <p class="post-desc">{excerpt}</p>}

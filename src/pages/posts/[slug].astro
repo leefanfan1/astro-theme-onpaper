@@ -15,7 +15,6 @@ import {
   getAllPosts,
   getPostHref,
   getTagHref,
-  readingTime,
 } from '@/utils/posts'
 
 export async function getStaticPaths() {
@@ -32,7 +31,6 @@ interface Props {
 
 const { post } = Astro.props
 const { Content, headings } = await render(post)
-const minutes = readingTime(post.body ?? '')
 const hasMath = /\$[^$\n]+\$|\$\$[\s\S]+?\$\$/.test(post.body ?? '')
 const allPosts = await getAllPosts()
 const index = allPosts.findIndex(item => item.id === post.id)
@@ -73,8 +71,6 @@ const jsonLd = {
 
       <div class="article-meta">
         <time datetime={post.data.published.toISOString()}>{formatDateLong(post.data.published)}</time>
-        <span class="article-meta__dot" aria-hidden="true"></span>
-        <span>{minutes} 分钟阅读</span>
         {post.data.updated && (
           <>
             <span class="article-meta__dot" aria-hidden="true"></span>
