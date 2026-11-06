@@ -288,7 +288,7 @@ html[data-astro-transition]::view-transition-new(root) {
 }
 
 .rail-nav a[aria-current="page"] > span:last-child {
-  background: color-mix(in oklab, var(--accent) 18%, transparent);
+  background: color-mix(in oklab, var(--accent) 14%, transparent);
 }
 
 /* CJK glyphs sit a hair high in the line box; nudge the ink to the optical centre. */
@@ -433,6 +433,10 @@ html[data-theme="dark"] .theme-toggle .moon {
     padding-top: 1.25rem;
   }
 
+  .site-main {
+    scroll-margin-top: var(--mobile-bar-height, 9rem);
+  }
+
   .page-header {
     padding-bottom: 1.5rem;
   }
@@ -461,7 +465,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
   .mobile-bar-spacer {
     display: block;
-    height: var(--mobile-bar-height, 8rem);
+    height: var(--mobile-bar-height, 9rem);
   }
 
   .mobile-bar__top {
@@ -540,7 +544,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
   .mobile-nav a[aria-current="page"] {
     color: var(--accent-strong);
-    background: color-mix(in oklab, var(--accent) 18%, transparent);
+    background: color-mix(in oklab, var(--accent) 14%, transparent);
   }
 
   /* Article pages compress the bar once the reader scrolls past the intro. */
@@ -598,6 +602,11 @@ html[data-theme="dark"] .theme-toggle .moon {
 .footer a {
   color: var(--ink-soft);
   transition: color 0.2s ease;
+}
+
+.footer p a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .footer a:hover {
@@ -835,7 +844,6 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .pagination__disabled {
   color: var(--ink-faint);
-  opacity: 0.4;
 }
 
 @media (max-width: 520px) {

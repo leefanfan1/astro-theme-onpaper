@@ -6,9 +6,15 @@
 
   let mermaidPromise: Promise<MermaidApi> | null = null
   let mermaidRendering = false
+  let mermaidObserver: IntersectionObserver | null = null
+  let githubObserver: IntersectionObserver | null = null
 
   function loadMermaid() {
-    mermaidPromise ??= import('mermaid').then(module => module.default as unknown as MermaidApi)
+    // Mermaid's tooltip handler calls selection.transition(), but its bundle
+    // does not import d3-transition. Import it first so the selection prototype
+    // is patched before the diagram is rendered.
+    mermaidPromise ??= Promise.all([import('mermaid'), import('d3-transition')])
+      .then(([module]) => module.default as unknown as MermaidApi)
     return mermaidPromise
   }
 
@@ -124,20 +130,66 @@
 
     const iframe = document.createElement('iframe')
     iframe.src = src
-    iframe.title = button.getAttribute('aria-label')?.replace(/^播放：/, '') || '媒体播放器'
+    iframe.title = button.getAttribute('data-embed-title') || '媒体播放器'
     iframe.loading = 'lazy'
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
     iframe.allowFullscreen = true
     button.replaceWith(iframe)
   })
 
+  function initMermaid() {
+    mermaidObserver?.disconnect()
+    mermaidObserver = null
+
+    const blocks = [...document.querySelectorAll<HTMLElement>('.prose pre[data-language="mermaid"], .prose pre.mermaid')]
+    if (!blocks.length) return
+    if (blocks.every(block => block.dataset.yohakuRendered === 'true')) return
+    if (!('IntersectionObserver' in window)) {
+      void renderMermaid()
+      return
+    }
+
+    // Mermaid's diagram engine is several megabytes; don't fetch it until a
+    // diagram is close to the viewport.
+    mermaidObserver = new IntersectionObserver((entries) => {
+      if (!entries.some(entry => entry.isIntersecting)) return
+      mermaidObserver?.disconnect()
+      mermaidObserver = null
+      void renderMermaid()
+    }, { rootMargin: '400px 0px' })
+    blocks.forEach(block => mermaidObserver?.observe(block))
+  }
+
+  function initGithubCards() {
+    githubObserver?.disconnect()
+    githubObserver = null
+
+    const cards = [...document.querySelectorAll<HTMLElement>('[data-github-card]')]
+    if (!cards.length) return
+    if (cards.every(card => card.dataset.loaded === 'true')) return
+    if (!('IntersectionObserver' in window)) {
+      void loadGithubCards()
+      return
+    }
+
+    githubObserver = new IntersectionObserver((entries) => {
+      if (!entries.some(entry => entry.isIntersecting)) return
+      githubObserver?.disconnect()
+      githubObserver = null
+      void loadGithubCards()
+    }, { rootMargin: '300px 0px' })
+    cards.forEach(card => githubObserver?.observe(card))
+  }
+
   function initArticle() {
-    void renderMermaid()
-    void loadGithubCards()
+    initMermaid()
+    initGithubCards()
   }
 
   document.addEventListener('astro:page-load', initArticle)
-  document.addEventListener('theme-changed', () => { void renderMermaid(true) })
+  document.addEventListener('theme-changed', () => {
+    if (!mermaidObserver) void renderMermaid(true)
+  })
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initArticle, { once: true })

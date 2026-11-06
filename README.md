@@ -19,7 +19,7 @@
 - 文章页移动端顶栏随滚动压缩，给正文让出阅读空间
 - 全站中文统一为 Noto Serif SC，英文统一为 Newsreader；代码、数学和图表保留专用字体
 - 浅色目录面板（列表图标 + 折叠开关），展开后随滚动标记当前章节；正文图片点击放大，支持滚轮 / 双指缩放和拖动
-- 8 篇中文示例文章，含长标题、长正文、两张本地示例图和跨年份归档
+- 9 篇中文示例文章，含长标题、长正文、两张本地示例图和跨年份归档
 - Markdown 扩展：KaTeX、Mermaid、GitHub 卡片、媒体嵌入
 - 阅读进度、回到顶部、分享（原版 SVG 图标）、可选阅读计数（Cloudflare KV）
 - RSS、sitemap、robots、Open Graph
@@ -34,10 +34,11 @@ npm install
 npm run dev
 ```
 
-打开 `http://127.0.0.1:4321/`。
+打开 `http://127.0.0.1:4321/`。上线前审计、性能与安全结论见 **`AUDIT.md`**。
 
 ```bash
 npm run build      # 生成静态站点到 dist/
+npm run build:clean # 清理 Astro 内容缓存后再构建（改过 remark/rehype 插件时用）
 npm run preview    # 预览构建结果
 npm run shots      # Playwright 截图检查（需要先运行 dev）
 npm run og         # 重新生成 public/og.png 分享图

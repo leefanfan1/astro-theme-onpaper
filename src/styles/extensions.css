@@ -34,11 +34,14 @@
   border: 1px solid var(--line);
   border-radius: 10px;
   overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   background-color: color-mix(in oklab, var(--ink) 4%, transparent);
   box-shadow: 0 1px 2px color-mix(in oklab, var(--ink) 6%, transparent);
+}
+
+.mc-cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 html[data-theme="dark"] .mc-cover-wrap {
@@ -292,7 +295,7 @@ html[data-theme="dark"] .mc-cover-wrap {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-size: 0.6rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -318,7 +321,7 @@ html[data-theme="dark"] .mc-cover-wrap {
   flex-wrap: wrap;
   gap: 0.35rem 1rem;
   margin-top: 0.8rem;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-size: 0.64rem;
   letter-spacing: 0.03em;
 }
@@ -359,7 +362,7 @@ html[data-theme="dark"] .mc-cover-wrap {
 }
 
 .embed-card__eyebrow {
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-size: 0.6rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;

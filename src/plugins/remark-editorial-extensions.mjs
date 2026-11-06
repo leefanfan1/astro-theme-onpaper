@@ -34,15 +34,49 @@ function isHttpUrl(value) {
   return /^https?:\/\//i.test(String(value ?? ''))
 }
 
+// The cover is emitted as an escaped <img src>. Keep it https-only and reject
+// obvious URL/attribute breakers as defense in depth.
+function safeCoverUrl(value) {
+  try {
+    const url = new URL(String(value ?? ''))
+    if (url.protocol !== 'https:') return ''
+    if (/["'()\\\s<>]/.test(url.href)) return ''
+    return url.href
+  }
+  catch {
+    return ''
+  }
+}
+
+function sizedCoverUrl(value) {
+  const safe = safeCoverUrl(value)
+  if (!safe) return ''
+  try {
+    const url = new URL(safe)
+    // NetEase serves a small resized cover for this query parameter. The card
+    // is at most ~140px wide, so a 600px source still covers 3x screens.
+    if (/^p\d+\.music\.126\.net$/.test(url.hostname)) {
+      url.searchParams.set('param', '600y600')
+    }
+    return url.href
+  }
+  catch {
+    return ''
+  }
+}
+
 function html(value) {
   return { type: 'html', value }
 }
 
 function musicCardHtml({ title, artist, type, cover, lyric, links }) {
   const typeLabel = MUSIC_TYPES[type] || (type === 'album' ? '专辑' : '单曲')
-  const hasCover = isHttpUrl(cover)
+  const coverUrl = sizedCoverUrl(cover)
+  const hasCover = Boolean(coverUrl)
   const coverClass = hasCover ? 'mc-cover-wrap' : 'mc-cover-wrap mc-cover-missing'
-  const coverStyle = hasCover ? ` style="background-image:url(&quot;${esc(cover)}&quot;)"` : ''
+  const coverHtml = hasCover
+    ? `<img src="${esc(coverUrl)}" alt="" width="600" height="600" loading="lazy" decoding="async">`
+    : ''
 
   const linkHtml = Object.entries(MUSIC_PLATFORM_META)
     .map(([key, meta]) => {
@@ -55,7 +89,7 @@ function musicCardHtml({ title, artist, type, cover, lyric, links }) {
 
   return `
 <div class="mc-card"><div class="mc-inner">
-  <div class="${coverClass}"${coverStyle}></div>
+  <div class="${coverClass}">${coverHtml}</div>
   <div class="mc-info">
     <span class="mc-type-badge">${typeLabel}</span>
     <p class="mc-title">${esc(title || '未命名')}</p>
@@ -152,17 +186,18 @@ function detectEmbed(rawUrl) {
   }
   const host = url.hostname.replace(/^www\./, '')
   const path = url.pathname
+  const isHost = domain => host === domain || host.endsWith(`.${domain}`)
 
   if (host === 'youtu.be') {
     const id = path.split('/').filter(Boolean)[0]
     if (id) return { provider: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1` }
   }
-  if (host.endsWith('youtube.com')) {
+  if (isHost('youtube.com')) {
     const id = url.searchParams.get('v')
       || path.match(/\/(?:embed|shorts)\/([\w-]+)/)?.[1]
     if (id) return { provider: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1` }
   }
-  if (host.endsWith('bilibili.com')) {
+  if (isHost('bilibili.com')) {
     const match = path.match(/\/video\/(BV[\w]+|av\d+)/)
     if (match) {
       const id = match[1]
@@ -205,7 +240,7 @@ function renderEmbed(attrs) {
 
   return html(`
 <figure class="embed-card" data-embed data-src="${esc(detected.src)}">
-  <button class="embed-card__poster" type="button" aria-label="播放：${esc(title)}">
+  <button class="embed-card__poster" type="button" aria-label="${esc(detected.provider)} · 点击播放 ${esc(title)}" data-embed-title="${esc(title)}">
     <span class="embed-card__eyebrow">${esc(detected.provider)} · 点击播放</span>
     <span class="embed-card__title">${esc(title)}</span>
     <span class="embed-card__play" aria-hidden="true"></span>

@@ -13,11 +13,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-const PLATFORM_PATTERNS = {
-  spotify: /open\.spotify\.com\/(?:[^/]+\/)?(track|album)\/[a-zA-Z0-9]+/i,
-  apple: /music\.apple\.com\/([^/]+)\/(album|song|playlist)\//i,
-  netease: /music\.163\.com/i,
-  qqmusic: /(?:y\.qq\.com|i\.y\.qq\.com)\/.+\/(?:songDetail|albumDetail|playsong)\//i,
+// Hostnames are matched exactly after parsing, never with a substring test:
+// this keeps a URL like http://169.254.169.254/music.163.com/ from becoming
+// a build-time fetch target.
+const PLATFORM_HOSTS = {
+  spotify: 'open.spotify.com',
+  apple: 'music.apple.com',
+  netease: 'music.163.com',
 }
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -44,9 +46,30 @@ function createConcurrencyLimit(max = 4) {
 
 const concurrencyLimit = createConcurrencyLimit()
 
-export function detectPlatform(url) {
-  for (const [name, pattern] of Object.entries(PLATFORM_PATTERNS)) {
-    if (pattern.test(url)) return name
+export function detectPlatform(rawUrl) {
+  let url
+  try {
+    url = new URL(String(rawUrl ?? ''))
+  }
+  catch {
+    return null
+  }
+  if (url.protocol !== 'https:') return null
+
+  const host = url.hostname.toLowerCase().replace(/^www\./, '')
+  const path = url.pathname
+
+  if (host === PLATFORM_HOSTS.spotify && /^\/(?:[^/]+\/)?(track|album)\/[a-zA-Z0-9]+/.test(path)) {
+    return 'spotify'
+  }
+  if (host === PLATFORM_HOSTS.apple && /(?:^|\/)(album|song|playlist)\//.test(path)) {
+    return 'apple'
+  }
+  if (host === PLATFORM_HOSTS.netease) {
+    if (/\/(song|album)\//.test(path) || /#\/(song|album)/.test(url.hash)) return 'netease'
+  }
+  if ((host === 'y.qq.com' || host === 'i.y.qq.com') && /\/.+\/(songDetail|albumDetail|playsong)\//.test(path)) {
+    return 'qqmusic'
   }
   return null
 }

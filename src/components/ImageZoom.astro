@@ -1,5 +1,5 @@
 <dialog class="image-zoom" data-image-zoom aria-label="查看大图">
-  <button class="image-zoom__close" type="button" data-image-zoom-close aria-label="关闭大图">×</button>
+  <button class="image-zoom__close" type="button" data-image-zoom-close aria-label="关闭大图（×）">×</button>
 
   <div class="image-zoom__stage" data-image-zoom-stage title="滚轮缩放，拖动平移，双击切换">
     <img data-image-zoom-img alt="" draggable="false" />
@@ -8,10 +8,10 @@
   <p class="image-zoom__caption" data-image-zoom-caption></p>
 
   <div class="image-zoom__tools" role="group" aria-label="图片缩放">
-    <button type="button" data-image-zoom-out aria-label="缩小">−</button>
+    <button type="button" data-image-zoom-out aria-label="缩小（−）">−</button>
     <output class="image-zoom__level" data-image-zoom-level>100%</output>
-    <button type="button" data-image-zoom-in aria-label="放大">+</button>
-    <button class="image-zoom__reset" type="button" data-image-zoom-reset aria-label="还原到原始大小">1:1</button>
+    <button type="button" data-image-zoom-in aria-label="放大（+）">+</button>
+    <button class="image-zoom__reset" type="button" data-image-zoom-reset aria-label="还原到原始大小（1:1）">1:1</button>
   </div>
 </dialog>
 
@@ -52,6 +52,7 @@
   .image-zoom::backdrop {
     background: rgb(20 20 19 / 0.9);
     backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .image-zoom__stage {

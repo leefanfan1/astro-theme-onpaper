@@ -16,28 +16,61 @@
 
 <script>
   const STORAGE_KEY = 'yohaku-theme'
+  const media = window.matchMedia('(prefers-color-scheme: dark)')
 
-  function applyTheme(isDark: boolean) {
+  function readStored() {
+    try {
+      const value = localStorage.getItem(STORAGE_KEY)
+      return value === 'light' || value === 'dark' ? value : null
+    }
+    catch {
+      return null
+    }
+  }
+
+  function defaultMode() {
+    return document.documentElement.dataset.defaultMode || 'auto'
+  }
+
+  function resolveIsDark() {
+    const stored = readStored()
+    if (stored) return stored === 'dark'
+    const mode = defaultMode()
+    if (mode === 'light' || mode === 'dark') return mode === 'dark'
+    return media.matches
+  }
+
+  function setTheme(isDark: boolean) {
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light'
     document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
     requestAnimationFrame(() => {
       const paper = getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()
       if (paper) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', paper)
     })
-    localStorage.setItem(STORAGE_KEY, isDark ? 'dark' : 'light')
+  }
+
+  function applyTheme(isDark: boolean, persist = true) {
+    setTheme(isDark)
+    if (persist) {
+      try { localStorage.setItem(STORAGE_KEY, isDark ? 'dark' : 'light') } catch {}
+    }
     document.dispatchEvent(new Event('theme-changed'))
   }
 
   function initTheme() {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const isDark = stored === 'dark' || (!stored && systemDark)
-    document.documentElement.dataset.theme = isDark ? 'dark' : 'light'
-    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
+    setTheme(resolveIsDark())
+  }
+
+  function onSystemThemeChange() {
+    if (readStored() || defaultMode() !== 'auto') return
+    setTheme(media.matches)
+    document.dispatchEvent(new Event('theme-changed'))
   }
 
   initTheme()
   document.addEventListener('astro:page-load', initTheme)
+  if (typeof media.addEventListener === 'function') media.addEventListener('change', onSystemThemeChange)
+  else media.addListener(onSystemThemeChange)
 
   document.addEventListener('click', (event) => {
     const target = event.target
