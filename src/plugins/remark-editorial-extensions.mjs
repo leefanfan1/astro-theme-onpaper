@@ -49,7 +49,7 @@ function musicCardHtml({ title, artist, type, cover, lyric, links }) {
       const url = links?.[key]
       if (!isHttpUrl(url)) return ''
       const cls = key === 'qqmusic' ? 'qq' : key
-      return `<a href="${esc(url)}" class="mc-link mc-${cls} no-heti" target="_blank" rel="noopener noreferrer">${meta.icon}<span>${esc(meta.label)}</span></a>`
+      return `<a href="${esc(url)}" class="mc-link mc-${cls} no-heti" target="_blank" rel="noopener noreferrer"><span class="mc-link__inner">${meta.icon}<span>${esc(meta.label)}</span></span></a>`
     })
     .join('')
 
