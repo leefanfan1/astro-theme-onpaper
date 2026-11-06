@@ -33,6 +33,11 @@ export function rehypeExternalLinks() {
           if (isDangerous(properties.src)) delete properties.src
         }
 
+        if (node.tagName === 'img') {
+          properties.loading = 'lazy'
+          properties.decoding = 'async'
+        }
+
         if (node.tagName === 'object' && isDangerous(properties.data)) {
           delete properties.data
         }

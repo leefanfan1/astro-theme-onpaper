@@ -61,7 +61,7 @@
 }
 
 .prose a {
-  color: var(--accent);
+  color: var(--accent-strong);
   text-decoration: underline;
   text-decoration-thickness: 0.06em;
   text-underline-offset: 0.18em;

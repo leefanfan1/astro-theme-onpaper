@@ -16,16 +16,12 @@ const nav = siteConfig.nav.map((item, index) => {
       : isAbout
   return { ...item, active, num: String(index + 1).padStart(2, '0') }
 })
-
-const year = new Date().getFullYear()
 ---
 
 <aside class="site-rail" aria-label="站点信息与导航">
   <div class="rail-masthead">
-    <span class="rail-issue">VOL. {siteConfig.volume} / {year}</span>
     <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} 首页`}>
       <span class="rail-wordmark__cn">{siteConfig.title}</span>
-      <span class="rail-wordmark__en">{siteConfig.titleEn}</span>
     </a>
     <p class="rail-subtitle">{siteConfig.subtitle}</p>
   </div>

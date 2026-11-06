@@ -32,7 +32,6 @@ export interface SocialLink {
 
 export const siteConfig = {
   title: '余白',
-  titleEn: 'Yohaku',
   subtitle: '在字与字之间，留一点呼吸。',
   description: '一个关于随笔、音乐与城市夜色的个人博客。把说不清楚的事写下来，给日子留一点余白。',
   author: '林间',
@@ -42,8 +41,6 @@ export const siteConfig = {
   lang: 'zh-CN',
   locale: 'zh_CN',
   startYear: 2024,
-  // 右栏刊头显示的卷号
-  volume: '01',
   // 首页每页文章数（不含置顶）
   postsPerPage: 4,
   // 文章详情页是否默认展开目录
@@ -70,10 +67,10 @@ export const siteConfig = {
       surfaceAlt: '#E8E6DC',
       ink: '#141413',
       inkSoft: '#5E5D59',
-      inkFaint: '#87867F',
+      inkFaint: '#6F6D65',
       line: '#E5E3DA',
       accent: '#D97757',
-      accentStrong: '#C46849',
+      accentStrong: '#A94E33',
       accentSoft: '#F7E8E2',
       peach: '#EBC9B7',
       moss: '#788C5D',

@@ -182,16 +182,6 @@ pre {
   align-items: flex-start;
 }
 
-.rail-issue {
-  margin-bottom: 0.55rem;
-  color: var(--ink-faint);
-  font-family: var(--font-body);
-  font-size: 0.54rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
 .rail-wordmark {
   display: inline-flex;
   flex-direction: column;
@@ -207,16 +197,6 @@ pre {
   line-height: 1.08;
   padding-top: 0.06em;
   letter-spacing: -0.04em;
-}
-
-.rail-wordmark__en {
-  margin-top: 0.45rem;
-  color: var(--ink-faint);
-  font-family: var(--font-body);
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
 }
 
 .rail-subtitle {
@@ -283,7 +263,7 @@ pre {
 }
 
 .rail-nav a[aria-current="page"] .rail-nav__num {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .rail-actions {
@@ -305,7 +285,7 @@ pre {
 }
 
 .text-button:hover {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .text-button--icon {
@@ -328,7 +308,7 @@ pre {
 }
 
 .theme-toggle:hover {
-  color: var(--accent);
+  color: var(--accent-strong);
   background: var(--surface);
 }
 
@@ -410,10 +390,6 @@ html[data-theme="dark"] .theme-toggle .moon {
     line-height: 1.1;
   }
 
-  .mobile-bar .rail-wordmark__en {
-    display: none;
-  }
-
   .mobile-bar__actions {
     display: flex;
     align-items: center;
@@ -478,7 +454,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .footer a:hover {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .footer__socials {
@@ -601,14 +577,14 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .post-title a:hover {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .pin-mark {
   display: inline-flex;
   width: 0.82rem;
   height: 0.82rem;
-  color: var(--accent);
+  color: var(--accent-strong);
   transform: translateY(0.08em);
 }
 
@@ -693,7 +669,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .pagination a:hover {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .pagination__pages {
@@ -818,7 +794,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .year-heading h2 {
-  color: var(--accent);
+  color: var(--accent-strong);
   font-family: var(--font-display);
   font-size: 2.3rem;
   font-weight: 500;
@@ -864,7 +840,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .timeline-item:hover::before {
   background: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--accent-strong);
 }
 
 .timeline-date {
@@ -884,7 +860,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .timeline-item:hover .timeline-title {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 @media (max-width: 800px) {
@@ -950,7 +926,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .tag-back:hover {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 /* ---------------------------------------------------------
@@ -1041,7 +1017,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .article-back:hover {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .post-nav {
@@ -1079,7 +1055,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .post-nav__item:hover .post-nav__title {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 @media (max-width: 600px) {
@@ -1126,7 +1102,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .toc summary::after {
   content: "+";
-  color: var(--accent);
+  color: var(--accent-strong);
   font-family: var(--font-display);
   font-size: 1rem;
   line-height: 1;
@@ -1170,7 +1146,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .toc a:hover {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .toc .toc-depth-3 a {
@@ -1232,8 +1208,8 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .back-to-top:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
 .back-to-top svg {
@@ -1276,7 +1252,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .share-button:hover {
   color: var(--accent-strong);
-  text-decoration-color: var(--accent);
+  text-decoration-color: var(--accent-strong);
 }
 
 .share-status {
