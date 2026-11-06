@@ -940,6 +940,44 @@ html[data-theme="dark"] .theme-toggle .moon {
   max-width: 44rem;
 }
 
+.article-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  margin-bottom: 0.35rem;
+  color: var(--ink-faint);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  transition: color 0.2s ease;
+}
+
+.article-home svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.article-home:hover {
+  color: var(--accent-strong);
+}
+
+@media (min-width: 1200px) {
+  .article-home {
+    position: fixed;
+    left: max(1.25rem, calc(50vw - 36rem));
+    top: 30vh;
+    z-index: 60;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin: 0;
+  }
+
+  .article-home span {
+    writing-mode: vertical-rl;
+    letter-spacing: 0.14em;
+  }
+}
+
 .article-header {
   padding-bottom: 2rem;
   border-bottom: 1px solid var(--line);

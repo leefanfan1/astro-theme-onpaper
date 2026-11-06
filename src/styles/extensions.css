@@ -190,38 +190,57 @@ html[data-theme="dark"] .mc-cover-wrap {
   }
 
   .mc-inner {
-    grid-template-columns: 82px minmax(0, 1fr);
-    gap: 12px;
-    padding: 14px;
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 18px 16px;
+    text-align: center;
   }
 
   .mc-cover-wrap {
-    width: 82px;
-    height: 82px;
+    width: 140px;
+    height: 140px;
+    margin-bottom: 14px;
+  }
+
+  .mc-info {
+    width: 100%;
+    align-items: center;
   }
 
   .mc-type-badge {
+    justify-content: center;
     margin-bottom: 0.35rem;
   }
 
   .mc-title {
-    font-size: 1.08rem;
+    font-size: 1.35rem;
+    text-align: center;
+  }
+
+  .mc-artist {
+    font-size: 0.84rem;
+    text-align: center;
   }
 
   .mc-links {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.4rem 0.5rem;
-    margin-top: 0.65rem;
+    gap: 0.45rem 0.5rem;
     width: 100%;
+    margin-top: 0.9rem;
   }
 
   .mc-link {
     width: 100%;
     min-width: 0;
-    gap: 0.25rem;
-    font-size: 0.66rem;
+    justify-content: center;
+    gap: 0.28rem;
+    padding: 0.38rem 0.35rem;
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--paper) 45%, transparent);
+    font-size: 0.68rem;
   }
 
   .mc-link span {
