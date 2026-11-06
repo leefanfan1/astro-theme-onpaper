@@ -942,12 +942,11 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .article-home {
-  display: inline-flex;
+  display: none;
   align-items: center;
   gap: 0.4rem;
   width: fit-content;
   min-height: 2.6rem;
-  margin-bottom: 0.4rem;
   padding: 0;
   border: 0;
   background: transparent;
@@ -967,11 +966,12 @@ html[data-theme="dark"] .theme-toggle .moon {
   color: var(--accent-strong);
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1100px) {
   .article-home {
-    position: absolute;
-    left: -4.8rem;
-    top: 0.1rem;
+    display: flex;
+    position: fixed;
+    left: max(1rem, calc(50vw - 37rem));
+    top: 4.5rem;
     z-index: 60;
     flex-direction: column;
     gap: 0.55rem;
@@ -1227,6 +1227,81 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .toc .toc-depth-3 a::before {
   left: 1.1rem;
+}
+
+/* Wide desktop: fixed hierarchical TOC in the left margin. */
+.toc-desktop {
+  display: none;
+}
+
+@media (min-width: 1440px) {
+  .toc {
+    display: none;
+  }
+
+  .toc-desktop {
+    display: block;
+    position: fixed;
+    left: max(1rem, calc(50vw - 44.5rem));
+    top: 12rem;
+    z-index: 50;
+    width: 9rem;
+    max-height: calc(100vh - 15rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  .toc-desktop__title {
+    margin-bottom: 0.7rem;
+    color: var(--ink-faint);
+    font-family: var(--font-body);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .toc-desktop ol {
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--line);
+    list-style: none;
+  }
+
+  .toc-desktop a {
+    position: relative;
+    display: block;
+    padding: 0.3rem 0 0.3rem 0.8rem;
+    color: var(--ink-faint);
+    font-size: 0.74rem;
+    line-height: 1.55;
+    transition: color 0.2s ease;
+  }
+
+  .toc-desktop a:hover,
+  .toc-desktop a[aria-current="location"] {
+    color: var(--accent-strong);
+  }
+
+  .toc-desktop a[aria-current="location"] {
+    font-weight: 500;
+  }
+
+  .toc-desktop a[aria-current="location"]::before {
+    content: "";
+    position: absolute;
+    left: -2.5px;
+    top: 0.78em;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .toc-desktop .toc-depth-3 a {
+    padding-left: 1.7rem;
+    font-size: 0.7rem;
+  }
 }
 
 /* ---------------------------------------------------------
