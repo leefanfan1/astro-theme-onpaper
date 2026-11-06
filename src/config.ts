@@ -34,7 +34,7 @@ export const siteConfig = {
   title: '纸上留白',
   subtitle: '在字与字之间，留一点呼吸。',
   description: '一个关于随笔、音乐与城市夜色的个人博客。把说不清楚的事写下来，给日子留一点空白。',
-  author: '林间',
+  author: '李凡凡',
   email: 'hello@onpaper.example',
   // 部署后改成你的域名。sitemap、canonical、RSS 都会使用它。
   url: 'https://onpaper.example.com',
