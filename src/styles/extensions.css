@@ -288,14 +288,14 @@ html[data-theme="dark"] .mc-cover-wrap {
   gap: 0.95rem;
   margin: 1.8em 0;
   padding: 1.05rem 1.15rem;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 14px;
   background: color-mix(in oklab, var(--surface) 62%, var(--paper));
-  transition: border-color 0.2s ease, background 0.2s ease;
+  box-shadow: none;
+  transition: background 0.2s ease;
 }
 
 .github-card:hover {
-  border-color: color-mix(in oklab, var(--accent) 38%, var(--line));
   background: color-mix(in oklab, var(--surface) 82%, var(--paper));
 }
 
