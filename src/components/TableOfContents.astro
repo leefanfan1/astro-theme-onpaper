@@ -13,10 +13,7 @@ const items = headings.filter(heading => heading.depth >= 2 && heading.depth <= 
 {
   items.length >= 2 && (
     <details class="toc" open={siteConfig.tocOpen} data-toc>
-      <summary>
-        <span class="toc__label">目录</span>
-        <span class="toc__current" data-toc-current></span>
-      </summary>
+      <summary>目录</summary>
       <ol>
         {items.map(heading => (
           <li class={`toc-depth-${heading.depth}`}>
@@ -36,8 +33,7 @@ const items = headings.filter(heading => heading.depth >= 2 && heading.depth <= 
     cleanupToc = null
 
     const toc = document.querySelector<HTMLElement>('[data-toc]')
-    const currentLabel = toc?.querySelector<HTMLElement>('[data-toc-current]')
-    if (!toc || !currentLabel) return
+    if (!toc) return
 
     const links = [...toc.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')]
     const headings = links
@@ -56,9 +52,6 @@ const items = headings.filter(heading => heading.depth >= 2 && heading.depth <= 
         if (link.dataset.tocLink === id) link.setAttribute('aria-current', 'location')
         else link.removeAttribute('aria-current')
       }
-
-      const heading = headings.find(item => item.id === id)
-      currentLabel.textContent = heading?.textContent?.trim() ?? ''
     }
 
     const update = () => {

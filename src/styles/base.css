@@ -1068,9 +1068,7 @@ html[data-theme="dark"] .theme-toggle .moon {
    --------------------------------------------------------- */
 
 .toc {
-  margin: 1.7rem 0 2rem;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  margin: 1.4rem 0 1.8rem;
   background: transparent;
 }
 
@@ -1091,29 +1089,6 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .toc summary::-webkit-details-marker {
   display: none;
-}
-
-.toc__label {
-  flex: none;
-}
-
-.toc__current {
-  flex: 1;
-  min-width: 0;
-  padding-left: 1rem;
-  overflow: hidden;
-  color: var(--ink-faint);
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  letter-spacing: 0;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.toc__current:not(:empty)::before {
-  content: "·";
-  margin-right: 0.4em;
 }
 
 .toc summary::after {
