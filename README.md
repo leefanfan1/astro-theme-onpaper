@@ -210,7 +210,7 @@ npm run music
 ::embed{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy" title="张悬《城市》" caption="有时候，一张专辑就够陪一个晚上。"}
 ```
 
-支持 YouTube、Bilibili、Spotify、Vimeo。默认显示点击播放的海报，用户点击后才创建 iframe，避免首屏加载第三方资源。
+支持 YouTube、Bilibili、Spotify、Vimeo。使用带 `loading="lazy"` 的 iframe，进入视口后自动加载；不自动播放，仍由播放器自己的播放按钮控制。
 
 ### 数学与图表
 

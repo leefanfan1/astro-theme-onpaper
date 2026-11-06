@@ -45,7 +45,7 @@ pin: 0
 | 独立公式 | `$$ ... $$` | 居中显示，可滚动 |
 | 图表 | Mermaid 代码块 | 深浅色主题自动重绘 |
 | 音乐 | `::music{...}` | 自动识别平台 |
-| 视频 | `::embed{...}` | 点击后才加载播放器 |
+| 视频 | `::embed{...}` | lazy iframe，进入视口自动加载 |
 
 ## 代码
 
@@ -111,25 +111,25 @@ flowchart LR
 
 ## GitHub 卡片
 
-`::github` 会在卡片接近视口时读取一次 GitHub 公开 API；没有网络时保留静态字段。
+`::github` 会在文章加载时读取一次 GitHub 公开 API；没有网络时保留静态字段。
 
 ::github{repo="withastro/astro" description="The web framework for content-driven websites." stars="52k" forks="2.8k" language="TypeScript"}
 
 ## 视频与媒体嵌入
 
-视频默认只显示一张海报，不会在页面加载时请求第三方播放器。点击后才创建 iframe。
+视频直接输出 iframe；浏览器会在卡片进入视口时自动加载，不需要再点一次海报。播放器不会自动播放。
 
 ### B 站
 
-::embed{url="https://www.bilibili.com/video/BV1xx411c7mD" title="B 站视频示例" caption="点击封面后才会加载 B 站播放器。"}
+::embed{url="https://www.bilibili.com/video/BV1xx411c7mD" title="B 站视频示例" caption="B 站播放器进入视口后自动加载，不自动播放。"}
 
 ### YouTube
 
-::embed{url="https://www.youtube.com/watch?v=aqz-KE-bpKQ" title="YouTube 视频示例" caption="YouTube 使用 youtube-nocookie.com，点击后才创建 iframe。"}
+::embed{url="https://www.youtube.com/watch?v=aqz-KE-bpKQ" title="YouTube 视频示例" caption="YouTube 使用 youtube-nocookie.com，进入视口后自动加载。"}
 
 ### Spotify
 
-::embed{url="https://open.spotify.com/album/6fbvyqPZVxVPk5DBm4krJf" title="Spotify 专辑示例" caption="同样的点击后加载策略。"}
+::embed{url="https://open.spotify.com/album/6fbvyqPZVxVPk5DBm4krJf" title="Spotify 专辑示例" caption="Spotify 播放器进入视口后自动加载。"}
 
 ## 小结
 

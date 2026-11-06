@@ -7,7 +7,6 @@
   let mermaidPromise: Promise<MermaidApi> | null = null
   let mermaidRendering = false
   let mermaidObserver: IntersectionObserver | null = null
-  let githubObserver: IntersectionObserver | null = null
 
   function loadMermaid() {
     // Mermaid's tooltip handler calls selection.transition(), but its bundle
@@ -119,24 +118,6 @@
     }
   }
 
-  document.addEventListener('click', (event) => {
-    const target = event.target
-    if (!(target instanceof Element)) return
-    const button = target.closest<HTMLElement>('.embed-card__poster')
-    if (!button) return
-    const figure = button.closest<HTMLElement>('[data-embed]')
-    const src = figure?.dataset.src
-    if (!figure || !src) return
-
-    const iframe = document.createElement('iframe')
-    iframe.src = src
-    iframe.title = button.getAttribute('data-embed-title') || '媒体播放器'
-    iframe.loading = 'lazy'
-    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
-    iframe.allowFullscreen = true
-    button.replaceWith(iframe)
-  })
-
   function initMermaid() {
     mermaidObserver?.disconnect()
     mermaidObserver = null
@@ -160,30 +141,9 @@
     blocks.forEach(block => mermaidObserver?.observe(block))
   }
 
-  function initGithubCards() {
-    githubObserver?.disconnect()
-    githubObserver = null
-
-    const cards = [...document.querySelectorAll<HTMLElement>('[data-github-card]')]
-    if (!cards.length) return
-    if (cards.every(card => card.dataset.loaded === 'true')) return
-    if (!('IntersectionObserver' in window)) {
-      void loadGithubCards()
-      return
-    }
-
-    githubObserver = new IntersectionObserver((entries) => {
-      if (!entries.some(entry => entry.isIntersecting)) return
-      githubObserver?.disconnect()
-      githubObserver = null
-      void loadGithubCards()
-    }, { rootMargin: '300px 0px' })
-    cards.forEach(card => githubObserver?.observe(card))
-  }
-
   function initArticle() {
     initMermaid()
-    initGithubCards()
+    void loadGithubCards()
   }
 
   document.addEventListener('astro:page-load', initArticle)

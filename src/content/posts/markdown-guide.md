@@ -169,7 +169,7 @@ npm run music
 ::github{repo="withastro/astro" description="The web framework for content-driven websites." stars="52k" forks="2.8k" language="TypeScript"}
 ```
 
-卡片接近视口时才请求 GitHub 公开 API；没有网络时保留静态字段。
+卡片在文章加载时请求 GitHub 公开 API；没有网络时保留静态字段。
 
 ### 视频与媒体
 
@@ -180,7 +180,7 @@ npm run music
 ::embed{url="https://vimeo.com/..." title="Vimeo 视频"}
 ```
 
-支持 YouTube、B 站、Spotify、Vimeo。默认显示海报，点击后才加载 iframe，避免首屏请求第三方播放器。
+支持 YouTube、B 站、Spotify、Vimeo。输出 `loading="lazy"` 的 iframe，进入视口后自动加载，不自动播放。
 
 ## 原始 HTML
 

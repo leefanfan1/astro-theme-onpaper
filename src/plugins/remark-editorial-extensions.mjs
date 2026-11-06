@@ -190,19 +190,19 @@ function detectEmbed(rawUrl) {
 
   if (host === 'youtu.be') {
     const id = path.split('/').filter(Boolean)[0]
-    if (id) return { provider: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1` }
+    if (id) return { provider: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${id}` }
   }
   if (isHost('youtube.com')) {
     const id = url.searchParams.get('v')
       || path.match(/\/(?:embed|shorts)\/([\w-]+)/)?.[1]
-    if (id) return { provider: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1` }
+    if (id) return { provider: 'YouTube', src: `https://www.youtube-nocookie.com/embed/${id}` }
   }
   if (isHost('bilibili.com')) {
     const match = path.match(/\/video\/(BV[\w]+|av\d+)/)
     if (match) {
       const id = match[1]
       const query = id.startsWith('BV') ? `bvid=${id}` : `aid=${id.slice(2)}`
-      return { provider: 'Bilibili', src: `https://player.bilibili.com/player.html?${query}&autoplay=1&high_quality=1` }
+      return { provider: 'Bilibili', src: `https://player.bilibili.com/player.html?${query}&high_quality=1` }
     }
   }
   if (host === 'open.spotify.com') {
@@ -213,7 +213,7 @@ function detectEmbed(rawUrl) {
   }
   if (host === 'vimeo.com') {
     const id = path.split('/').filter(Boolean)[0]
-    if (/^\d+$/.test(id ?? '')) return { provider: 'Vimeo', src: `https://player.vimeo.com/video/${id}?autoplay=1` }
+    if (/^\d+$/.test(id ?? '')) return { provider: 'Vimeo', src: `https://player.vimeo.com/video/${id}` }
   }
   return null
 }
@@ -239,12 +239,15 @@ function renderEmbed(attrs) {
   }
 
   return html(`
-<figure class="embed-card" data-embed data-src="${esc(detected.src)}">
-  <button class="embed-card__poster" type="button" aria-label="${esc(detected.provider)} · 点击播放 ${esc(title)}" data-embed-title="${esc(title)}">
-    <span class="embed-card__eyebrow">${esc(detected.provider)} · 点击播放</span>
-    <span class="embed-card__title">${esc(title)}</span>
-    <span class="embed-card__play" aria-hidden="true"></span>
-  </button>
+<figure class="embed-card">
+  <iframe
+    src="${esc(detected.src)}"
+    title="${esc(`${detected.provider}：${title}`)}"
+    loading="lazy"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen
+    referrerpolicy="strict-origin-when-cross-origin"
+  ></iframe>
   ${caption}
 </figure>`)
 }
