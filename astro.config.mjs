@@ -9,6 +9,7 @@ import { siteConfig } from './src/config.ts'
 import { devViewsIntegration } from './src/plugins/dev-views.mjs'
 import { rehypeExternalLinks } from './src/plugins/rehype-external-links.mjs'
 import { rehypeMermaid } from './src/plugins/rehype-mermaid.mjs'
+import { rehypeStripEntities } from './src/plugins/rehype-strip-entities.mjs'
 import { remarkEditorialExtensions } from './src/plugins/remark-editorial-extensions.mjs'
 
 export default defineConfig({
@@ -38,6 +39,7 @@ export default defineConfig({
         rehypeKatex,
         rehypeMermaid,
         rehypeExternalLinks,
+        rehypeStripEntities,
       ],
     }),
     shikiConfig: {

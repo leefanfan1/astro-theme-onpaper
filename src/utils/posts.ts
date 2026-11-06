@@ -1,6 +1,7 @@
 import type { CollectionEntry } from 'astro:content'
 import { getCollection } from 'astro:content'
 import { siteConfig } from '@/config'
+import { decodeHtmlEntities } from '@/utils/html-entities'
 
 export type Post = CollectionEntry<'posts'>
 
@@ -72,16 +73,54 @@ export function getTagHref(tag: string): string {
 }
 
 export function stripMarkdown(markdown: string): string {
-  return markdown
+  const cleaned = markdown
+    // Code blocks and inline code.
     .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/~~~[\s\S]*?~~~/g, ' ')
     .replace(/`[^`]*`/g, ' ')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    // HTML comments and blocks whose text should never become excerpt text.
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<(script|style|template|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
+    .replace(/<![^>]*>/g, ' ')
+    // Images (inline and reference style).
+    .replace(/!\[[^\]]*\]\((?:[^()]|\([^()]*\))*\)/g, ' ')
+    .replace(/!\[[^\]]*\]\[[^\]]*\]/g, ' ')
+    // Links (inline and reference style), keeping the visible label.
+    .replace(/\[([^\]]+)\]\((?:[^()]|\([^()]*\))*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1')
+    // Footnotes and remark directives.
+    .replace(/\[\^[^\]]+\]/g, ' ')
     .replace(/:::[a-z-]+\{[^}]*\}/g, ' ')
-    .replace(/<[^>]+>/g, ' ')
+    // Remaining HTML tags. Quoted attribute values may contain ">".
+    .replace(/<\/?[a-z][a-z0-9:-]*(?:\s(?:[^>"']|"[^"]*"|'[^']*')*)?\s*\/?>/gi, ' ')
+
+  // Decode entities before Markdown's `#` / `*` markers are stripped.
+  return decodeHtmlEntities(cleaned)
+    // Markdown block markers: task lists, lists, blockquotes, rules, table separators.
+    .replace(/^[ \t]{0,3}[-+*]\s+\[[ xX]\]\s+/gm, ' ')
+    .replace(/^[ \t]{0,3}(?:[-+*]|\d+[.)])\s+/gm, ' ')
+    .replace(/^[ \t]{0,3}>[ \t]?/gm, ' ')
+    .replace(/^[ \t]{0,3}(?:[-*_][ \t]*){3,}$/gm, ' ')
+    .replace(/^[ \t]{0,3}=+[ \t]*$/gm, ' ')
+    .replace(/^[ \t]*\|?[ \t]*:?-{3,}:?[ \t]*(?:\|[ \t]*:?-{3,}:?[ \t]*)+\|?[ \t]*$/gm, ' ')
+    // Remaining emphasis / table / heading markers.
     .replace(/[#>*_~|]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+/**
+ * Description for meta tags, JSON-LD, RSS and search.
+ * Uses the author-provided description, otherwise an excerpt of the body.
+ */
+export function getPostDescription(post: Post, maxLength = 160): string {
+  const normalize = (text: string) => text.replace(/\s+/g, ' ').trim()
+  const explicit = normalize(decodeHtmlEntities(post.data.description))
+  if (explicit) return explicit
+
+  const body = normalize(stripMarkdown(post.body ?? ''))
+  if (!body) return ''
+  return body.length > maxLength ? `${body.slice(0, maxLength).trim()}…` : body
 }
 
 export function formatDate(date: Date): string {
