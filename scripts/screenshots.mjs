@@ -80,4 +80,15 @@ for (const item of cases) {
   await context.close()
 }
 
+// Mobile music card
+{
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'light' })
+  const page = await context.newPage()
+  await page.goto(`${base}/posts/headphones-on/`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+  await page.waitForTimeout(800)
+  await page.locator('.mc-card').first().screenshot({ path: `${outDir}/music-card-mobile.png` })
+  console.log(`saved ${outDir}/music-card-mobile.png`)
+  await context.close()
+}
+
 await browser.close()
