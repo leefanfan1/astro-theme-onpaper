@@ -2,7 +2,7 @@
 title: 纸上留白上手指南：命令、配置与发布
 description: 从 npm run dev 到 Cloudflare Pages 部署，整理纸上留白的命令、目录、配置和上线前检查。
 published: 2026-06-16
-updated: 2026-11-06
+updated: 2026-11-07
 tags:
   - 示例
   - 建站
@@ -28,7 +28,7 @@ npm run dev
 | 命令 | 用途 |
 | --- | --- |
 | `npm run dev` | 启动开发服务器 |
-| `npm run new -- 网址` | 新建文章（会依次询问标题、标签等） |
+| `npm run new 网址` | 新建文章（可带 `title` / `tags` / `pin` / `draft` 参数） |
 | `npm run build` | 生成静态站点到 `dist/` |
 | `npm run build:clean` | 清理 Astro 内容缓存后构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
@@ -39,50 +39,46 @@ npm run dev
 
 ### 新建文章
 
-`npm run new` 后面跟的是**文章的网址**，也就是文件名。脚本会先按这个名字生成一个标题，再依次问你标题、标签、置顶和草稿——每一项都可以直接回车跳过：
+`npm run new` 后面跟的是**文章的网址**，也就是文件名。标题默认由网址生成，日期自动填今天：
 
 ```bash
-npm run new -- rain-before-it-stops
+npm run new rain-before-it-stops
 ```
 
-```text
-新建文章  /posts/rain-before-it-stops/
-──────────────────────────────────────
-
-标题（回车使用「Rain Before It Stops」）: 雨停之前，先别急着走
-标签（逗号分隔，可留空）: 随笔,城市
-置顶权重（0 = 不置顶）（回车使用「0」）:
-存为草稿？只有开发环境可见 (y/N)（回车使用「n」）:
-```
-
-回车到底，就得到一个可以直接开始写的空文章：
+命令不会提问，跑完就结束。生成 `src/content/posts/rain-before-it-stops.md`：
 
 ```md
 ---
-title: 雨停之前，先别急着走
+title: Rain Before It Stops
 description: ''
 published: 2026-11-07
 tags:
-  - 随笔
-  - 城市
+  - _未分类
 pin: 0
 ---
 
 在这里开始写正文。
 ```
 
-标签用列表写法，和仓库里已有文章一致；没填标签时写 `tags: []`。
+想一次把标题、标签、置顶和草稿都定好，就用 `key=value` 写在网址后面（不需要 `--`）：
+
+```bash
+npm run new rain-before-it-stops title=雨停之前，先别急着走 tags=随笔,城市 pin=1 draft=1
+```
+
+| 参数 | 说明 |
+| --- | --- |
+| `title` | 标题，默认把网址变成可读标题 |
+| `tags` | 标签，逗号分隔，中英文逗号都行 |
+| `pin` | 置顶权重，默认 0 |
+| `draft` | 写 `draft=1` 存为草稿，只在开发环境可见 |
 
 几个要点：
 
-- 网址只用小写英文和连字符，例如 `rain-before-it-stops`
-- 不写标题时，脚本会把网址变成可读标题（`rain-before-it-stops` → `Rain Before It Stops`）
-- 网址已经是中文或含空格时，会退回时间戳文件名
-- 想跳过所有提问、一条命令写到底，也可以直接带参数：
-
-```bash
-npm run new -- rain-before-it-stops --title "雨停之前，先别急着走" --tags "随笔,城市"
-```
+- 网址只用小写英文、数字和连字符，例如 `rain-before-it-stops`
+- 中文标题写成 `title=...`，不要把中文直接放在网址位置
+- 不写 `tags` 时会填占位标签 `_未分类`。它只用来保持 frontmatter 的列表格式，不会出现在文章页、标签页、搜索或 RSS 里
+- 同名文件已存在时会拒绝覆盖，换一个网址再试
 
 不习惯命令行的话，直接在 `src/content/posts/` 新建 `.md` 并手写 frontmatter，效果完全一样：
 

@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro'
 import { siteConfig } from '@/config'
-import { escapeXml, getAllPosts, getPostDescription, getPostHref } from '@/utils/posts'
+import { escapeXml, getAllPosts, getPostDescription, getPostHref, visibleTags } from '@/utils/posts'
 
 export const GET: APIRoute = async () => {
   const posts = await getAllPosts()
@@ -15,7 +15,7 @@ export const GET: APIRoute = async () => {
       <guid isPermaLink="true">${escapeXml(url)}</guid>
       <description>${escapeXml(getPostDescription(post, 200))}</description>
       <pubDate>${post.data.published.toUTCString()}</pubDate>
-      ${post.data.tags.map(tag => `<category>${escapeXml(tag)}</category>`).join('')}
+      ${visibleTags(post.data.tags).map(tag => `<category>${escapeXml(tag)}</category>`).join('')}
     </item>`
   }).join('')
 

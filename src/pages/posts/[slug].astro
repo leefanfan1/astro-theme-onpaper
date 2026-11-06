@@ -15,6 +15,7 @@ import {
   getAllPosts,
   getPostDescription,
   getTagHref,
+  visibleTags,
 } from '@/utils/posts'
 
 export async function getStaticPaths() {
@@ -53,7 +54,7 @@ const jsonLd = {
     'name': siteConfig.author,
   },
   'image': ogImage,
-  'keywords': post.data.tags.join(', '),
+  'keywords': visibleTags(post.data.tags).join(', '),
   'mainEntityOfPage': canonical,
 }
 
@@ -104,9 +105,9 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
     </div>
 
     <footer class="article-footer">
-      {post.data.tags.length > 0 && (
+      {visibleTags(post.data.tags).length > 0 && (
         <ul class="tag-list article-tags" aria-label="文章标签">
-          {post.data.tags.map(tag => (
+          {visibleTags(post.data.tags).map(tag => (
             <li>
               <a class="tag-chip" href={getTagHref(tag)}>{tag}</a>
             </li>

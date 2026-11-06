@@ -7,6 +7,19 @@ export type Post = CollectionEntry<'posts'>
 
 const zhCollator = new Intl.Collator('zh-CN')
 
+/**
+ * 以一个下划线开头的标签是占位标签（例如 _未分类），只用于让 frontmatter 保持
+ * 列表格式，不应该出现在页面、RSS、搜索或标签页里。
+ */
+export function isPlaceholderTag(tag: string): boolean {
+  return tag.startsWith('_')
+}
+
+/** 过滤掉占位标签后的标签列表。 */
+export function visibleTags(tags: string[]): string[] {
+  return tags.filter(tag => !isPlaceholderTag(tag))
+}
+
 function byDateDesc(a: Post, b: Post) {
   return b.data.published.getTime() - a.data.published.getTime()
 }
@@ -51,7 +64,7 @@ export function groupByYear(posts: Post[]): Array<[number, Post[]]> {
 export function getAllTags(posts: Post[]): Array<{ tag: string, count: number }> {
   const counts = new Map<string, number>()
   for (const post of posts) {
-    for (const tag of post.data.tags) {
+    for (const tag of visibleTags(post.data.tags)) {
       counts.set(tag, (counts.get(tag) ?? 0) + 1)
     }
   }
@@ -61,7 +74,7 @@ export function getAllTags(posts: Post[]): Array<{ tag: string, count: number }>
 }
 
 export function getPostsByTag(posts: Post[], tag: string): Post[] {
-  return posts.filter(post => post.data.tags.includes(tag)).sort(byDateDesc)
+  return posts.filter(post => visibleTags(post.data.tags).includes(tag)).sort(byDateDesc)
 }
 
 export function getPostHref(post: Post): string {

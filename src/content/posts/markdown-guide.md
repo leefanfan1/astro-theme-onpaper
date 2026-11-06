@@ -2,7 +2,7 @@
 title: Markdown 语法手册
 description: 纸上留白支持的标题、列表、表格、代码、LaTeX、Mermaid，以及音乐 / GitHub / 视频卡片和嵌入指令的完整速查。
 published: 2026-06-18
-updated: 2026-11-06
+updated: 2026-11-07
 tags:
   - 示例
   - 写作
@@ -262,7 +262,7 @@ Markdown 里可以直接写 HTML，用于图注、表格等 Markdown 不方便�
 
 ## 发布检查
 
-- 用 `npm run new -- "标题" --slug my-post` 新建，避免手写 frontmatter；
+- 用 `npm run new my-post title=标题 tags=随笔,城市` 新建，避免手写 frontmatter；
 - 标题、摘要、日期、标签是否完整；
 - 是否误用了未来日期或 `draft: true`；
 - 图片是否有 alt 和尺寸；

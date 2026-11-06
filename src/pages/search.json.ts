@@ -5,6 +5,7 @@ import {
   getPostDescription,
   getPostHref,
   stripMarkdown,
+  visibleTags,
 } from '@/utils/posts'
 
 export const GET: APIRoute = async () => {
@@ -16,7 +17,7 @@ export const GET: APIRoute = async () => {
     return {
       title: post.data.title,
       description: getPostDescription(post, 160),
-      tags: post.data.tags,
+      tags: visibleTags(post.data.tags),
       date: formatDate(post.data.published),
       url: `${base}${getPostHref(post)}`,
       // Keep the index small enough to fetch lazily in one request.
