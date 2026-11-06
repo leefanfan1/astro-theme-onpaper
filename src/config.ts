@@ -49,8 +49,8 @@ export const siteConfig = {
   nav: [
     { label: '文章', href: '/' },
     { label: '归档', href: '/tags/' },
-    { label: '友链', href: '/friends/' },
     { label: '关于', href: '/about/' },
+    { label: '友链', href: '/friends/' },
   ],
 
   socials: [
@@ -135,9 +135,10 @@ export const siteConfig = {
   },
 
   fonts: {
-    // 拉丁标题使用自托管的 Newsreader；中文标题使用自托管的 Noto Serif SC Variable。
+    // 中文统一使用自托管的 Noto Serif SC Variable；英文使用 Newsreader。
+    // 代码、数学和图表保留各自专用字体。
     display: '"Newsreader", "Noto Serif SC Variable", "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", serif',
-    body: '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", system-ui, sans-serif',
+    body: '"Newsreader", "Noto Serif SC Variable", "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", serif',
     mono: '"SFMono-Regular", "Cascadia Code", Consolas, "Liberation Mono", monospace',
   },
 

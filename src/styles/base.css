@@ -12,6 +12,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--ink-faint) transparent;
 }
@@ -90,6 +91,27 @@ pre {
   animation-timing-function: ease-out;
 }
 
+/* Page transitions (ClientRouter). The theme toggle opts out below. */
+html[data-astro-transition]::view-transition-old(root) {
+  animation: page-out 170ms ease both;
+}
+
+html[data-astro-transition]::view-transition-new(root) {
+  animation: page-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -101,6 +123,11 @@ pre {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  html[data-astro-transition]::view-transition-old(root),
+  html[data-astro-transition]::view-transition-new(root) {
+    animation: none;
   }
 }
 
@@ -1395,14 +1422,12 @@ html[data-theme="dark"] .theme-toggle .moon {
   backdrop-filter: blur(10px);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(0.45rem);
-  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s, color 0.2s ease, border-color 0.2s ease;
+  transition: opacity 0.22s ease, visibility 0.22s, color 0.2s ease, border-color 0.2s ease;
 }
 
 .back-to-top.is-visible {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
 }
 
 .back-to-top:hover {
@@ -1433,21 +1458,59 @@ html[data-theme="dark"] .theme-toggle .moon {
   color: var(--ink-faint);
 }
 
-.js [data-reveal] {
+.js [data-reveal].is-reveal-pending {
   opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.45s ease;
   transition-delay: var(--reveal-delay, 0ms);
 }
 
-.js [data-reveal].is-visible {
+.js [data-reveal].is-reveal-pending.is-visible {
   opacity: 1;
-  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .js [data-reveal] {
+  .js [data-reveal].is-reveal-pending {
     opacity: 1;
-    transform: none;
+    transition: none;
   }
+}
+/* ---------------------------------------------------------
+   Interaction motion
+   --------------------------------------------------------- */
+
+.text-button,
+.theme-toggle,
+.search-close,
+.search-result,
+.tag-chip,
+.post-nav__item,
+.friend-link,
+.pagination a,
+.pagination__side a,
+.article-home,
+.code-copy,
+.rail-nav a,
+.mobile-nav a {
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.14s ease;
+}
+
+.text-button:active,
+.theme-toggle:active,
+.search-close:active,
+.search-result:active,
+.tag-chip:active,
+.post-nav__item:active,
+.friend-link:active,
+.pagination a:active,
+.pagination__side a:active,
+.back-to-top:active,
+.article-home:active,
+.code-copy:active,
+.rail-nav a:active,
+.mobile-nav a:active {
+  opacity: 0.7;
 }

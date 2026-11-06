@@ -75,11 +75,11 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
   <ReadingProgress />
 
   <article class="article">
-    <a class="article-home" href="/" aria-label="返回首页">
+    <a class="article-home" href="/" data-article-back aria-label="返回上一页">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg>
-      <span>首页</span>
+      <span>返回</span>
     </a>
 
     <header class="article-header">
@@ -140,3 +140,54 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
 
   <ArticleEnhancements />
 </BaseLayout>
+
+<script>
+  const LIST_KEY = 'yohaku:list-context'
+  const PREVIOUS_KEY = 'yohaku:immediate-previous'
+  const RESTORE_KEY = 'yohaku:restore-scroll'
+  const MAX_AGE = 1000 * 60 * 60 * 2
+
+  function readSession(key: string) {
+    try {
+      return JSON.parse(sessionStorage.getItem(key) || 'null')
+    }
+    catch {
+      return null
+    }
+  }
+
+  function initArticleBack() {
+    const button = document.querySelector<HTMLAnchorElement>('[data-article-back]')
+    if (!button || button.dataset.bound === 'true') return
+    button.dataset.bound = 'true'
+
+    button.addEventListener('click', (event) => {
+      const previous = readSession(PREVIOUS_KEY)
+      const list = readSession(LIST_KEY)
+      const current = location.pathname + location.search
+      const fresh = previous?.at && Date.now() - previous.at < MAX_AGE
+      const cameFromList = fresh && previous.url && !previous.url.startsWith('/posts/')
+
+      if (cameFromList && history.length > 1) {
+        event.preventDefault()
+        if (list?.url) sessionStorage.setItem(RESTORE_KEY, JSON.stringify(list))
+        history.back()
+        return
+      }
+
+      if (list?.url && list.url !== current) {
+        event.preventDefault()
+        sessionStorage.setItem(RESTORE_KEY, JSON.stringify(list))
+        location.href = list.url
+      }
+    })
+  }
+
+  document.addEventListener('astro:page-load', initArticleBack)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initArticleBack, { once: true })
+  }
+  else {
+    initArticleBack()
+  }
+</script>

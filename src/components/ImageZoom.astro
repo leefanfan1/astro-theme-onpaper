@@ -67,6 +67,16 @@
     user-select: none;
   }
 
+  .image-zoom[open] .image-zoom__stage {
+    animation: image-zoom-in 0.2s ease-out;
+  }
+
+  @keyframes image-zoom-in {
+    from {
+      opacity: 0;
+    }
+  }
+
   .image-zoom__stage.is-zoomed {
     cursor: grab;
   }
@@ -187,6 +197,12 @@
 
     .image-zoom__tools {
       gap: 0.1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .image-zoom[open] .image-zoom__stage {
+      animation: none;
     }
   }
 </style>

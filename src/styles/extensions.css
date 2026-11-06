@@ -13,11 +13,10 @@
   border-radius: 14px;
   background: color-mix(in oklab, var(--surface) 62%, transparent);
   box-shadow: 0 4px 16px color-mix(in oklab, var(--ink) 5%, transparent);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease;
 }
 
 .mc-card:hover {
-  border-color: color-mix(in oklab, var(--accent) 32%, var(--line));
   box-shadow: 0 8px 28px color-mix(in oklab, var(--ink) 8%, transparent);
 }
 

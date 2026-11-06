@@ -63,7 +63,6 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   @keyframes search-in {
     from {
       opacity: 0;
-      transform: translateY(-6px) scale(0.985);
     }
   }
 
@@ -204,10 +203,19 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
     content: string
   }
 
-  const dialog = document.querySelector<HTMLDialogElement>('[data-search-dialog]')
-  const input = document.querySelector<HTMLInputElement>('#search-input')
-  const resultsEl = document.querySelector<HTMLElement>('[data-search-results]')
-  const statusEl = document.querySelector<HTMLElement>('[data-search-status]')
+  let dialog: HTMLDialogElement | null = null
+  let input: HTMLInputElement | null = null
+  let resultsEl: HTMLElement | null = null
+  let statusEl: HTMLElement | null = null
+
+  function refreshElements() {
+    dialog = document.querySelector<HTMLDialogElement>('[data-search-dialog]')
+    input = document.querySelector<HTMLInputElement>('#search-input')
+    resultsEl = document.querySelector<HTMLElement>('[data-search-results]')
+    statusEl = document.querySelector<HTMLElement>('[data-search-status]')
+  }
+
+  refreshElements()
 
   let index: SearchItem[] | null = null
   let loading: Promise<SearchItem[]> | null = null
@@ -285,6 +293,7 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   async function loadIndex() {
     if (index) return index
     if (loading) return loading
+    refreshElements()
     const url = dialog?.dataset.indexUrl
     if (!url) throw new Error('Missing search index URL')
     loading = fetch(url)
@@ -308,6 +317,7 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   }
 
   async function render(rawQuery: string) {
+    refreshElements()
     if (!resultsEl || !statusEl) return
     const query = rawQuery.trim()
     if (!query) {
@@ -369,10 +379,12 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   function finishClose() {
     document.body.classList.remove('search-open')
     setTriggerState(false)
-    lastTrigger?.focus()
+    if (lastTrigger?.isConnected) lastTrigger.focus()
   }
 
   function openSearch() {
+    refreshElements()
+    bindSearchDialog()
     if (!dialog || !input) return
     lastTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
 
@@ -389,6 +401,7 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   }
 
   function closeSearch() {
+    refreshElements()
     if (!dialog?.open) return
     if (typeof dialog.close === 'function') {
       dialog.close()
@@ -399,7 +412,73 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
     }
   }
 
+  function bindSearchDialog() {
+    refreshElements()
+    const currentDialog = dialog
+    const currentInput = input
+    if (!currentDialog || currentDialog.dataset.searchDialogBound === 'true') return
+    currentDialog.dataset.searchDialogBound = 'true'
+
+    currentDialog.addEventListener('click', (event) => {
+      if (event.target === currentDialog) closeSearch()
+    })
+
+    currentDialog.addEventListener('close', finishClose)
+    currentDialog.addEventListener('cancel', (event) => {
+      event.preventDefault()
+      closeSearch()
+    })
+
+    currentDialog.querySelector('[data-search-close]')?.addEventListener('click', closeSearch)
+
+    currentInput?.addEventListener('input', () => {
+      window.clearTimeout(renderTimer)
+      renderTimer = window.setTimeout(() => render(currentInput.value), 90)
+    })
+
+    currentInput?.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown') {
+        const first = resultsEl?.querySelector<HTMLElement>('.search-result')
+        if (first) {
+          event.preventDefault()
+          first.focus()
+        }
+      }
+      if (event.key === 'Enter') {
+        const first = resultsEl?.querySelector<HTMLAnchorElement>('.search-result')
+        if (first) {
+          event.preventDefault()
+          first.click()
+        }
+      }
+    })
+
+    currentDialog.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        closeSearch()
+        return
+      }
+      if (event.defaultPrevented) return
+      const results = [...(resultsEl?.querySelectorAll<HTMLElement>('.search-result') ?? [])]
+      if (!results.length) return
+      const active = document.activeElement
+      const current = active instanceof HTMLElement ? results.indexOf(active) : -1
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        results[Math.min(current + 1, results.length - 1)]?.focus()
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        if (current <= 0) currentInput?.focus()
+        else results[current - 1]?.focus()
+      }
+    })
+  }
+
   function bindSearchTriggers() {
+    refreshElements()
+    bindSearchDialog()
     document.querySelectorAll<HTMLElement>('[data-search-trigger]').forEach((trigger) => {
       if (trigger.dataset.searchBound === 'true') return
       trigger.dataset.searchBound = 'true'
@@ -413,53 +492,6 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
 
   bindSearchTriggers()
   document.addEventListener('astro:page-load', bindSearchTriggers)
-
-  dialog?.addEventListener('click', (event) => {
-    if (event.target === dialog) closeSearch()
-  })
-
-  dialog?.addEventListener('close', finishClose)
-
-  document.querySelector('[data-search-close]')?.addEventListener('click', closeSearch)
-
-  input?.addEventListener('input', () => {
-    window.clearTimeout(renderTimer)
-    renderTimer = window.setTimeout(() => render(input.value), 90)
-  })
-
-  input?.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowDown') {
-      const first = resultsEl?.querySelector<HTMLElement>('.search-result')
-      if (first) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-    if (event.key === 'Enter') {
-      const first = resultsEl?.querySelector<HTMLAnchorElement>('.search-result')
-      if (first) {
-        event.preventDefault()
-        first.click()
-      }
-    }
-  })
-
-  dialog?.addEventListener('keydown', (event) => {
-    if (event.defaultPrevented) return
-    const results = [...(resultsEl?.querySelectorAll<HTMLElement>('.search-result') ?? [])]
-    if (!results.length) return
-    const active = document.activeElement
-    const current = active instanceof HTMLElement ? results.indexOf(active) : -1
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      results[Math.min(current + 1, results.length - 1)]?.focus()
-    }
-    if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      if (current <= 0) input?.focus()
-      else results[current - 1]?.focus()
-    }
-  })
 
   document.addEventListener('keydown', (event) => {
     const isInput = event.target instanceof HTMLElement

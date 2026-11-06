@@ -37,6 +37,7 @@
   }
 
   initTheme()
+  document.addEventListener('astro:page-load', initTheme)
 
   document.addEventListener('click', (event) => {
     const target = event.target

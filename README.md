@@ -14,6 +14,9 @@
 - 友链页、随机读一篇
 - 可选 Google Analytics 4（含 Astro 客户端路由的 page_view 处理）
 - 1200×630 分享卡片（Open Graph），可用 `npm run og` 重新生成
+- 页面淡入转场、按钮按压的柔和透明度反馈、卡片 hover 色温变化和滚动渐入，尊重 `prefers-reduced-motion`
+- 文章“返回”会回到来源列表页并恢复滚动位置（首页分页、标签页等）；直接打开文章时回首页
+- 全站中文统一为 Noto Serif SC，英文统一为 Newsreader；代码、数学和图表保留专用字体
 - 浅色目录面板（列表图标 + 折叠开关），展开后随滚动标记当前章节；正文图片点击放大，支持滚轮 / 双指缩放和拖动
 - 8 篇中文示例文章，含长标题、长正文、两张本地示例图和跨年份归档
 - Markdown 扩展：KaTeX、Mermaid、GitHub 卡片、媒体嵌入
@@ -56,8 +59,8 @@ export const siteConfig = {
   nav: [
     { label: '文章', href: '/' },
     { label: '归档', href: '/tags/' },
-    { label: '友链', href: '/friends/' },
     { label: '关于', href: '/about/' },
+    { label: '友链', href: '/friends/' },
   ],
   friends: [
     { name: '山茶书房', url: 'https://shanchafang.example/', description: '……' },
@@ -77,7 +80,7 @@ export const siteConfig = {
   },
   fonts: {
     display: '"Newsreader", "Noto Serif SC Variable", "Songti SC", ...',
-    body: '"PingFang SC", "Microsoft YaHei", ...',
+    body: '"Newsreader", "Noto Serif SC Variable", "Songti SC", ...',
     mono: '"SFMono-Regular", Consolas, ...',
   },
   features: {
@@ -116,7 +119,9 @@ export const siteConfig = {
 
 ### 改字体
 
-`siteConfig.fonts` 控制三套字体栈。默认用自托管的 **Newsreader**（SIL OFL）作为拉丁标题字体，中文标题使用自托管的 **Noto Serif SC Variable**（按 `unicode-range` 分片，浏览器只加载页面实际用到的字形）；正文用系统无衬线体，避免正文也加载大字体。
+`siteConfig.fonts` 控制三套字体栈。全站中文统一使用自托管的 **Noto Serif SC Variable**（按 `unicode-range` 分片，浏览器只加载页面实际用到的字形），英文使用自托管的 **Newsreader**（SIL OFL）；代码块使用等宽字体，数学和 Mermaid 使用各自的专用字体。
+
+Noto Serif SC 使用 `font-display: optional`：首次冷加载如果字体子集还没到齐，会先用系统宋体显示，字体缓存后统一为 Noto，避免字体切换时文字跳动。中文子集首次加载约 1.1–1.4MB，之后走浏览器缓存。
 
 ### 友链
 
