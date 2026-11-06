@@ -21,18 +21,9 @@ const {
 const isFirst = page === 1
 ---
 
-<h1 class="sr-only">{siteConfig.title} — {siteConfig.subtitle}</h1>
-
-{!isFirst && (
-  <header class="page-header page-header--compact" data-reveal>
-    <div class="page-header__kicker">
-      <span>文章索引</span>
-      <span aria-hidden="true">/</span>
-      <span>第 {page} 页</span>
-    </div>
-    <h1>继续读。</h1>
-  </header>
-)}
+{isFirst
+  ? <h1 class="sr-only">{siteConfig.title} — {siteConfig.subtitle}</h1>
+  : <h1 class="sr-only">第 {page} 页 · 文章</h1>}
 
 <section class="home-list" aria-label={isFirst ? '文章列表' : `第 ${page} 页文章`}>
   <PostList posts={posts} />
