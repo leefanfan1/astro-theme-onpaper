@@ -182,6 +182,10 @@ html[data-astro-transition]::view-transition-new(root) {
   display: none;
 }
 
+.mobile-bar-spacer {
+  display: none;
+}
+
 /* ---------------------------------------------------------
    Right rail
    --------------------------------------------------------- */
@@ -390,8 +394,10 @@ html[data-theme="dark"] .theme-toggle .moon {
 
   .mobile-bar {
     display: block;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 60;
     background: color-mix(in oklab, var(--paper) 88%, transparent);
     border-bottom: 1px solid transparent;
@@ -410,12 +416,21 @@ html[data-theme="dark"] .theme-toggle .moon {
     margin-inline: auto;
   }
 
+  .mobile-bar-spacer {
+    display: block;
+    height: var(--mobile-bar-height, 8rem);
+  }
+
   .mobile-bar__top {
     display: flex;
     align-items: center;
     justify-content: space-between;
     min-height: 4.3rem;
     gap: 1rem;
+    padding-block: 1.45rem;
+    transition:
+      min-height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      padding 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .mobile-bar .rail-wordmark {
@@ -425,8 +440,9 @@ html[data-theme="dark"] .theme-toggle .moon {
   }
 
   .mobile-bar .rail-wordmark__cn {
-    font-size: 2.1rem;
+    font-size: 3rem;
     line-height: 1.05;
+    transition: font-size 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .mobile-bar__actions {
@@ -456,6 +472,7 @@ html[data-theme="dark"] .theme-toggle .moon {
     overflow-x: auto;
     padding-bottom: 0.85rem;
     scrollbar-width: none;
+    transition: padding-bottom 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .mobile-nav::-webkit-scrollbar {
@@ -470,11 +487,39 @@ html[data-theme="dark"] .theme-toggle .moon {
     font-family: var(--font-display);
     font-size: 0.88rem;
     white-space: nowrap;
+    transition: font-size 0.28s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s ease;
   }
 
   .mobile-nav a[aria-current="page"] {
     color: var(--accent-strong);
     background: color-mix(in oklab, var(--accent) 18%, transparent);
+  }
+
+  /* Article pages compress the bar once the reader scrolls past the intro. */
+  .mobile-bar--article.is-compact .mobile-bar__top {
+    min-height: 3.25rem;
+    padding-block: 0.55rem;
+  }
+
+  .mobile-bar--article.is-compact .rail-wordmark__cn {
+    font-size: 2rem;
+  }
+
+  .mobile-bar--article.is-compact .mobile-nav {
+    padding-bottom: 0.55rem;
+  }
+
+  .mobile-bar--article.is-compact .mobile-nav a {
+    font-size: 0.8rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-bar__top,
+    .mobile-bar .rail-wordmark__cn,
+    .mobile-nav,
+    .mobile-nav a {
+      transition: none;
+    }
   }
 }
 

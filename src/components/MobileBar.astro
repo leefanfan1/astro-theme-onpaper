@@ -4,6 +4,7 @@ import ThemeToggle from '@/components/ThemeToggle.astro'
 import { siteConfig } from '@/config'
 
 const pathname = Astro.url.pathname
+const isArticle = pathname.startsWith('/posts')
 const isTags = pathname.startsWith('/tags')
 const isFriends = pathname.startsWith('/friends')
 const isAbout = pathname.startsWith('/about')
@@ -21,7 +22,11 @@ const nav = siteConfig.nav.map((item) => {
 })
 ---
 
-<header class="mobile-bar" data-mobile-bar>
+<header
+  class:list={['mobile-bar', isArticle && 'mobile-bar--article']}
+  data-mobile-bar
+  data-article-bar={isArticle ? 'true' : undefined}
+>
   <div class="mobile-bar__inner">
     <div class="mobile-bar__top">
       <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} 首页`}>
@@ -46,14 +51,54 @@ const nav = siteConfig.nav.map((item) => {
   </div>
 </header>
 
+<script is:inline>
+  (function () {
+    var bar = document.querySelector('[data-mobile-bar]')
+    if (bar) document.documentElement.style.setProperty('--mobile-bar-height', bar.offsetHeight + 'px')
+  })()
+</script>
+
+<div class="mobile-bar-spacer" aria-hidden="true"></div>
+
 <script>
-  function updateBar() {
-    const bar = document.querySelector('[data-mobile-bar]')
+  function measureBarHeight() {
+    const bar = document.querySelector<HTMLElement>('[data-mobile-bar]')
     if (!bar) return
-    bar.classList.toggle('is-scrolled', window.scrollY > 8)
+    const compact = bar.classList.contains('is-compact')
+    if (compact) bar.classList.remove('is-compact')
+    const height = bar.offsetHeight
+    document.documentElement.style.setProperty('--mobile-bar-height', `${height}px`)
+    if (compact) bar.classList.add('is-compact')
   }
 
-  document.addEventListener('astro:page-load', updateBar)
+  function updateBar() {
+    const bar = document.querySelector<HTMLElement>('[data-mobile-bar]')
+    if (!bar) return
+    const y = window.scrollY
+    bar.classList.toggle('is-scrolled', y > 8)
+
+    if (bar.dataset.articleBar === 'true') {
+      if (y <= 24) bar.classList.remove('is-compact')
+      else if (y > 120) bar.classList.add('is-compact')
+    }
+    else {
+      bar.classList.remove('is-compact')
+    }
+  }
+
+  function refreshBar() {
+    measureBarHeight()
+    updateBar()
+  }
+
+  document.addEventListener('astro:page-load', refreshBar)
   window.addEventListener('scroll', updateBar, { passive: true })
-  updateBar()
+  window.addEventListener('resize', refreshBar)
+  document.fonts?.ready.then(refreshBar)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', refreshBar, { once: true })
+  }
+  else {
+    refreshBar()
+  }
 </script>
