@@ -15,32 +15,15 @@ tags:
 
 ## 页面是怎么长出来的
 
-```mermaid
-flowchart LR
-  A[Markdown 内容] --> B[Astro 构建]
-  B --> C[静态 HTML]
-  C --> D[Cloudflare Pages]
-  C --> E[Pages Function + KV]
-  E --> F[阅读计数]
-```
-
 整个站点是纯静态的。Cloudflare Pages 负责托管 `dist/`，只有阅读计数走一个轻量的 Pages Function。没有数据库，没有常驻服务器，也没有为了一个数字引入一整套后端。
 
 ## 留白的公式
 
-$$
-\text{余白} = \text{内容} - \text{噪音}
-$$
-
-这个公式当然不严谨，但它很接近我对“好读”的理解。余白不是空，而是让内容有地方站直。
-
-::github{repo="withastro/astro" description="The web framework for content-driven websites." stars="52k" forks="2.8k" language="TypeScript"}
+这个说法当然不严谨，但它很接近我对“好读”的理解：余白 = 内容 - 噪音。余白不是空，而是让内容有地方站直。
 
 ## 一点技术上的私心
 
 我喜欢静态站点，因为它足够诚实。你写下的东西，最后会变成一个个 HTML 文件，放在那里，不依赖某个服务今天心情好不好。
-
-::embed{url="https://open.spotify.com/album/6fbvyqPZVxVPk5DBm4krJf" title="陈粒《十年自选》" caption="写主题的时候，循环最多的专辑之一。"}
 
 当然，静态也有静态的麻烦。搜索索引要在构建时生成，阅读计数要借助边缘函数，更新文章要重新部署。但这些麻烦是可见的、可理解的，不像某些黑盒一样，出了问题只能等。
 

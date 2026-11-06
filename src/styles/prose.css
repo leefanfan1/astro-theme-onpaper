@@ -206,7 +206,7 @@
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface) !important;
+  background: var(--paper-raised) !important;
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.83rem;

@@ -31,7 +31,12 @@ interface Props {
 
 const { post } = Astro.props
 const { Content, headings } = await render(post)
-const hasMath = /\$[^$\n]+\$|\$\$[\s\S]+?\$\$/.test(post.body ?? '')
+// Ignore math-looking text inside fenced/inline code examples.
+const mathSource = (post.body ?? '')
+  .replace(/```[\s\S]*?```/g, ' ')
+  .replace(/~~~[\s\S]*?~~~/g, ' ')
+  .replace(/`[^`]*`/g, ' ')
+const hasMath = /\$[^$\n]+\$|\$\$[\s\S]+?\$\$/.test(mathSource)
 const canonical = new URL(Astro.url.pathname, siteConfig.url).href
 const description = getPostDescription(post, 160) || siteConfig.description
 const ogImage = new URL('/og.png', siteConfig.url).href

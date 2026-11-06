@@ -10,6 +10,7 @@ import { devViewsIntegration } from './src/plugins/dev-views.mjs'
 import { rehypeExternalLinks } from './src/plugins/rehype-external-links.mjs'
 import { rehypeMermaid } from './src/plugins/rehype-mermaid.mjs'
 import { rehypeStripEntities } from './src/plugins/rehype-strip-entities.mjs'
+import { rehypeTaskListLabels } from './src/plugins/rehype-task-list-labels.mjs'
 import { remarkEditorialExtensions } from './src/plugins/remark-editorial-extensions.mjs'
 
 export default defineConfig({
@@ -40,12 +41,13 @@ export default defineConfig({
         rehypeMermaid,
         rehypeExternalLinks,
         rehypeStripEntities,
+        rehypeTaskListLabels,
       ],
     }),
     shikiConfig: {
       themes: {
-        light: 'github-light',
-        dark: 'github-dark',
+        light: 'github-light-high-contrast',
+        dark: 'github-dark-high-contrast',
       },
       wrap: true,
     },
