@@ -104,6 +104,8 @@ draft: false
 ::music{url="https://open.spotify.com/album/..."}
 ```
 
+**推荐从 Spotify 链接开始。** 构建期会 `fetch` Spotify 元数据，解析专辑/歌曲、艺人和类型，再到 Apple Music、网易云、QQ 音乐搜索，按标题、艺人和类型打分，取每个平台的最高分结果合并成卡片；Spotify 作为起点时准确率最高。
+
 新增链接后运行：
 
 ```bash

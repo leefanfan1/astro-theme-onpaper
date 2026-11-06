@@ -278,41 +278,112 @@ html[data-theme="dark"] .mc-cover-wrap {
    GitHub card
    --------------------------------------------------------- */
 
+.prose .github-card {
+  text-decoration: none;
+}
+
 .github-card {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.95rem;
   margin: 1.8em 0;
-  padding: 1rem 1.1rem;
+  padding: 1.05rem 1.15rem;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: var(--surface);
-  transition: border-color 0.2s ease;
+  background: color-mix(in oklab, var(--surface) 62%, var(--paper));
+  box-shadow: 0 2px 12px color-mix(in oklab, var(--ink) 4%, transparent);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .github-card:hover {
   border-color: color-mix(in oklab, var(--accent) 38%, var(--line));
+  box-shadow: 0 7px 24px color-mix(in oklab, var(--ink) 7%, transparent);
 }
 
-.github-card__eyebrow {
+.github-card__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.github-card:hover .github-card__icon {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.github-card__icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.github-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.github-card__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.github-card__eyebrow {
   color: var(--ink-soft);
   font-size: 0.6rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.github-card__repo {
-  margin-top: 0.45rem;
+.github-card__open {
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.github-card:hover .github-card__open {
   color: var(--accent-strong);
+}
+
+.github-card__repo {
+  margin-top: 0.3rem;
+  color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.github-card__owner {
+  color: var(--ink-faint);
+}
+
+.github-card__slash {
+  margin-inline: 0.08em;
+  color: var(--ink-faint);
+}
+
+.github-card__name {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.github-card:hover .github-card__name {
+  color: var(--accent-strong);
 }
 
 .github-card__desc {
-  margin-top: 0.45rem;
+  margin-top: 0.35rem;
   color: var(--ink-soft);
   font-size: 0.84rem;
   line-height: 1.7;
@@ -321,17 +392,37 @@ html[data-theme="dark"] .mc-cover-wrap {
 .github-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem 1rem;
-  margin-top: 0.8rem;
+  gap: 0.4rem 0.95rem;
+  margin-top: 0.7rem;
   color: var(--ink-soft);
-  font-size: 0.64rem;
-  letter-spacing: 0.03em;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+}
+
+.github-card__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.github-card__stat svg {
+  width: 0.82rem;
+  height: 0.82rem;
+  color: var(--ink-faint);
 }
 
 .github-card__meta b {
   color: var(--ink-soft);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.github-card__language i {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 /* ---------------------------------------------------------

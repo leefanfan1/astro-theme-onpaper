@@ -149,7 +149,9 @@ flowchart LR
 ::music{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy"}
 ```
 
-支持 Spotify、Apple Music、网易云、QQ 音乐。新增链接后运行：
+支持 Spotify、Apple Music、网易云、QQ 音乐。**推荐从 Spotify 链接开始**：构建期会读取 Spotify 元数据，解析专辑/歌曲、艺人和类型，再到其他平台搜索并按标题、艺人、类型打分，合并最高分结果。
+
+新增链接后运行：
 
 ```bash
 npm run music

@@ -107,6 +107,15 @@ flowchart LR
 
 `::music` 会读取构建期缓存，识别 Spotify、Apple Music、网易云和 QQ 音乐，并自动匹配其他平台的链接。
 
+它的解析原理大致是：
+
+1. 先查 `src/data/music-cache.json`；没有缓存时，在构建期用 `fetch` 读取 Spotify 的页面 / oEmbed 元数据。
+2. 从元数据里解析出专辑或单曲名称、艺人、类型和封面。
+3. 用「标题 + 艺人」到 Apple Music、网易云、QQ 音乐搜索，并对结果按标题、艺人和类型进行打分。
+4. 每个平台取分数最高且达到阈值的结果，最后合并成一张包含多个平台链接的卡片。
+
+因此，**从 Spotify 链接开始识别准确率最高**。想给文章加音乐时，推荐先在 Spotify 上找到专辑或歌曲，再复制链接写成 `::music`。个别冷门版本如果匹配不准，可以用手动 `::music-card` 固定字段，或运行 `npm run music` 后检查缓存。
+
 ::music{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy"}
 
 ## GitHub 卡片
@@ -121,11 +130,11 @@ flowchart LR
 
 ### B 站
 
-::embed{url="https://www.bilibili.com/video/BV1xx411c7mD" title="B 站视频示例" caption="B 站播放器进入视口后自动加载，不自动播放。"}
+::embed{url="https://www.bilibili.com/video/BV1JJ411j7qx" title="B 站视频示例" caption="B站播放器进入视口后自动加载，不自动播放。"}
 
 ### YouTube
 
-::embed{url="https://www.youtube.com/watch?v=aqz-KE-bpKQ" title="YouTube 视频示例" caption="YouTube 使用 youtube-nocookie.com，进入视口后自动加载。"}
+::embed{url="https://www.youtube.com/watch?v=J28oOfvNVD8&list=RDJ28oOfvNVD8&start_radio=1" title="YouTube 视频示例" caption="YouTube 使用 youtube-nocookie.com，进入视口后自动加载。"}
 
 ### Spotify
 

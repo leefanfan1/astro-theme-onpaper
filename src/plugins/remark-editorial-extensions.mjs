@@ -162,16 +162,27 @@ function renderGithub(attrs) {
   const stars = attrs.stars || '—'
   const forks = attrs.forks || '—'
   const language = attrs.language || '—'
+  const [owner, name] = repo.split('/')
+
+  const githubIcon = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3C5.4.3.1 5.6.1 12.2c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C23.9 5.6 18.6.3 12 .3Z"/></svg>`
+  const starIcon = `<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/></svg>`
+  const forkIcon = `<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5 5.372v.878c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-.878a2.25 2.25 0 1 1 1.5 0v.878a2.25 2.25 0 0 1-2.25 2.25h-1.5v2.128a2.251 2.251 0 1 1-1.5 0V10.5h-1.5A2.25 2.25 0 0 1 3.5 8.25v-.878a2.25 2.25 0 1 1 1.5 0ZM5 3.25a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm6.75.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm0 8.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>`
 
   return html(`
 <a class="github-card" href="https://github.com/${esc(repo)}" target="_blank" rel="noopener noreferrer" data-github-card data-repo="${esc(repo)}">
-  <span class="github-card__eyebrow">GitHub <span aria-hidden="true">↗</span></span>
-  <span class="github-card__repo">${esc(repo)}</span>
-  <span class="github-card__desc" data-gh-desc>${esc(description)}</span>
-  <span class="github-card__meta">
-    <span>Stars <b data-gh-stars>${esc(stars)}</b></span>
-    <span>Forks <b data-gh-forks>${esc(forks)}</b></span>
-    <span>Language <b data-gh-language>${esc(language)}</b></span>
+  <span class="github-card__icon" aria-hidden="true">${githubIcon}</span>
+  <span class="github-card__body">
+    <span class="github-card__head">
+      <span class="github-card__eyebrow">GitHub</span>
+      <span class="github-card__open" aria-hidden="true">↗</span>
+    </span>
+    <span class="github-card__repo"><span class="github-card__owner">${esc(owner)}</span><span class="github-card__slash">/</span><span class="github-card__name">${esc(name)}</span></span>
+    <span class="github-card__desc" data-gh-desc>${esc(description)}</span>
+    <span class="github-card__meta">
+      <span class="github-card__stat">${starIcon}<span class="sr-only">Stars</span><b data-gh-stars>${esc(stars)}</b></span>
+      <span class="github-card__stat">${forkIcon}<span class="sr-only">Forks</span><b data-gh-forks>${esc(forks)}</b></span>
+      <span class="github-card__stat github-card__language"><i aria-hidden="true"></i><span class="sr-only">Language</span><b data-gh-language>${esc(language)}</b></span>
+    </span>
   </span>
 </a>`)
 }
@@ -202,7 +213,7 @@ function detectEmbed(rawUrl) {
     if (match) {
       const id = match[1]
       const query = id.startsWith('BV') ? `bvid=${id}` : `aid=${id.slice(2)}`
-      return { provider: 'Bilibili', src: `https://player.bilibili.com/player.html?${query}&high_quality=1` }
+      return { provider: 'Bilibili', src: `https://player.bilibili.com/player.html?${query}&autoplay=0&high_quality=1` }
     }
   }
   if (host === 'open.spotify.com') {
@@ -244,7 +255,7 @@ function renderEmbed(attrs) {
     src="${esc(detected.src)}"
     title="${esc(`${detected.provider}：${title}`)}"
     loading="lazy"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
     allowfullscreen
     referrerpolicy="strict-origin-when-cross-origin"
   ></iframe>
