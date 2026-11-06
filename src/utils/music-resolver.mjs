@@ -4,9 +4,9 @@
  * Supports: Spotify, Apple Music, Netease, QQ Music.
  * After resolving primary metadata, searches other platforms for the same song/album.
  *
- * Adapted, with permission, from the author's existing blog implementation
- * (liff-s-Blog). Kept close to the original on purpose: the cross-platform
- * matching, retries and git-committed cache are the parts that make it useful.
+ * Adapted from the author's earlier private blog implementation. Kept close
+ * to the original on purpose: the cross-platform matching, retries and
+ * git-committed cache are the parts that make it useful.
  */
 
 import fs from 'node:fs'

@@ -34,15 +34,15 @@ npm install
 npm run dev
 ```
 
-打开 `http://127.0.0.1:4321/`。上线前审计、性能与安全结论见 **`AUDIT.md`**。
+打开 `http://127.0.0.1:4321/`。
 
 ```bash
-npm run build      # 生成静态站点到 dist/
+npm run build       # 生成静态站点到 dist/
 npm run build:clean # 清理 Astro 内容缓存后再构建（改过 remark/rehype 插件时用）
-npm run preview    # 预览构建结果
-npm run shots      # Playwright 截图检查（需要先运行 dev）
-npm run og         # 重新生成 public/og.png 分享图
-npm run music      # 重新解析并缓存 ::music 指令里的链接
+npm run preview     # 预览构建结果
+npm run shots       # Playwright 截图检查（需要先运行 dev）
+npm run og          # 重新生成 public/og.png 分享图
+npm run music       # 重新解析并缓存 ::music 指令里的链接
 ```
 
 ## 站点配置
@@ -330,14 +330,15 @@ public/                     favicon、OG、字体、_headers
 
 ## 安全
 
-- 完整审计、威胁模型和残余风险见 **`SECURITY.md`**。
 - `npm audit` 当前为 0；KaTeX 通过 `overrides` 统一到 0.19.1。
 - 生产响应头与 CSP 在 `public/_headers`；Cloudflare Function 在 `functions/api/views.js`。
 - CSP 仍保留 `'unsafe-inline'`（Astro 内联脚本/样式所需），但加了 `script-src-attr 'none'`；要更严格可改用 nonce/hash。
-- 建议在 Cloudflare WAF 给 `/api/views` 的 POST 加限流；Markdown 按“可信作者内容”处理，不要直接合并不受信任的投稿。
+- Markdown 中的原始 HTML 按“可信作者内容”处理：不要直接合并不受信任的投稿，否则需要先加 sanitizer 或禁用 raw HTML。
+- 浏览量接口只做 slug 格式校验，不是应用层限流；建议在 Cloudflare WAF 给 `/api/views` 的 POST 加限流。KV 读改写非原子，适合展示型计数，精确统计请换 Durable Object 或 D1。
+- 第三方资源：音乐封面来自网易云，GitHub 卡片会请求 `api.github.com`，视频使用 lazy iframe。启用 GA4 前请自行评估 consent。
 
 ## 许可
 
 MIT。字体 Newsreader 与 Noto Serif SC 使用 SIL Open Font License 1.1，见 `public/fonts/OFL-Newsreader.txt` 和 `public/fonts/OFL-NotoSerifSC.txt`。
 
-音乐解析器与缓存流程改编自作者原有博客，已获得作者许可。
+音乐解析器与缓存流程改编自作者此前的私有博客实现。

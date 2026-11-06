@@ -5,10 +5,12 @@ node_modules/
 dist/
 .astro/
 
-# local tooling
-_preflight/
+# local tooling and audit artifacts
 _analysis/
+_preflight/
 screenshots/
+scratch/
+tmp/
 *.log
 *.err
 pid.txt
@@ -17,7 +19,13 @@ pid.txt
 # env
 .env
 .env.*
+!.env.example
 
-# OS
+# editor / OS
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+
+# misc
+*.local
