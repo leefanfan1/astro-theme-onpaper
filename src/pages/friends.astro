@@ -1,0 +1,45 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { siteConfig } from '@/config'
+
+function displayDomain(url: string) {
+  try {
+    return new URL(url).hostname
+  }
+  catch {
+    return url
+  }
+}
+---
+
+<BaseLayout
+  title="友链"
+  description="一些常去串门的个人博客，和他们的近况。"
+>
+  <header class="page-header" data-reveal>
+    <div class="page-header__kicker">
+      <span>FRIENDS</span>
+      <span aria-hidden="true">/</span>
+      <span>常去串门的地方</span>
+    </div>
+    <h1 class="display-title">友链</h1>
+    <p class="page-lead">一些常去串门的个人博客。排名不分先后，愿大家都能慢慢写下去。</p>
+  </header>
+
+  <ul class="friend-grid">
+    {siteConfig.friends.map((friend, index) => (
+      <li data-reveal style={`--reveal-delay:${Math.min(index, 5) * 45}ms`}>
+        <a
+          class="friend-link"
+          href={friend.url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="friend-link__name">{friend.name}</span>
+          <span class="friend-link__desc">{friend.description}</span>
+          <span class="friend-link__domain">{displayDomain(friend.url)}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>

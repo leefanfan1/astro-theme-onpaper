@@ -33,6 +33,7 @@ const pageTitle = title ? `${title} · ${siteConfig.title}` : `${siteConfig.titl
 const canonical = new URL(Astro.url.pathname, siteConfig.url).href
 const ogImage = new URL(image, siteConfig.url).href
 const { light, dark } = siteConfig.theme
+const gaId = siteConfig.analytics.googleAnalyticsId.trim()
 
 const tokenNames: Record<keyof typeof light, string> = {
   paper: '--paper',
@@ -112,6 +113,40 @@ html.theme-changing *{transition:none!important}
     </script>
 
     <style is:inline set:html={themeCSS}></style>
+
+    {gaId && import.meta.env.PROD && (
+      <>
+        <script
+          is:inline
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`}
+        ></script>
+        <script is:inline define:vars={{ gaId }}>
+          (function () {
+            window.dataLayer = window.dataLayer || []
+            function gtag() { window.dataLayer.push(arguments) }
+            window.gtag = gtag
+            gtag('js', new Date())
+            // Astro's ClientRouter changes the URL without a full reload, so
+            // send page_view explicitly on every astro:page-load instead of
+            // relying on gtag's initial automatic page view.
+            gtag('config', gaId, { send_page_view: false })
+            var lastUrl = ''
+            function trackPageView() {
+              if (location.href === lastUrl) return
+              lastUrl = location.href
+              gtag('event', 'page_view', {
+                page_location: location.href,
+                page_title: document.title,
+              })
+            }
+            document.addEventListener('astro:page-load', trackPageView)
+            trackPageView()
+          })()
+        </script>
+      </>
+    )}
+
     <ClientRouter />
   </head>
 

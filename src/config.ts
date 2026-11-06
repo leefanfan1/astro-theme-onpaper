@@ -49,6 +49,7 @@ export const siteConfig = {
   nav: [
     { label: '文章', href: '/' },
     { label: '归档', href: '/tags/' },
+    { label: '友链', href: '/friends/' },
     { label: '关于', href: '/about/' },
   ],
 
@@ -57,6 +58,45 @@ export const siteConfig = {
     { label: 'GitHub', href: 'https://github.com/', external: true },
     { label: 'Email', href: 'mailto:hello@yohaku.example' },
   ] satisfies SocialLink[],
+
+  // 友链示例。开源前替换成你自己的朋友。
+  friends: [
+    {
+      name: '山茶书房',
+      url: 'https://shanchafang.example/',
+      description: '读书、电影，和一些不着急的日常。',
+    },
+    {
+      name: '夜航日志',
+      url: 'https://nightlog.example/',
+      description: '在夜里写字的人，记录城市和耳机。',
+    },
+    {
+      name: '缓慢更新',
+      url: 'https://slowletter.example/',
+      description: '不追热点，只写自己真正想读的东西。',
+    },
+    {
+      name: '纸间',
+      url: 'https://paperbetween.example/',
+      description: '排版、纸张、字体，以及一点点旧书气。',
+    },
+    {
+      name: '苔庭',
+      url: 'https://mossgarden.example/',
+      description: '植物、散步和慢慢长出来的生活。',
+    },
+    {
+      name: '余白手记',
+      url: 'https://yohaku.example/',
+      description: '留白不是空，是让内容有地方站直。',
+    },
+  ],
+
+  // Google Analytics 4，可选。填入 G-XXXXXXXXXX 后才会在构建产物中启用。
+  analytics: {
+    googleAnalyticsId: '',
+  },
 
   theme: {
     defaultMode: 'auto' as ThemeMode,

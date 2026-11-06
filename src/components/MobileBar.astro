@@ -1,18 +1,22 @@
 ---
+import RandomPostButton from '@/components/RandomPostButton.astro'
 import ThemeToggle from '@/components/ThemeToggle.astro'
 import { siteConfig } from '@/config'
 
 const pathname = Astro.url.pathname
 const isTags = pathname.startsWith('/tags')
+const isFriends = pathname.startsWith('/friends')
 const isAbout = pathname.startsWith('/about')
-const isHome = !isTags && !isAbout
+const isHome = !isTags && !isFriends && !isAbout
 
 const nav = siteConfig.nav.map((item) => {
   const active = item.href === '/'
     ? isHome
     : item.href === '/tags/'
       ? isTags
-      : isAbout
+      : item.href === '/friends/'
+        ? isFriends
+        : isAbout
   return { ...item, active }
 })
 ---
@@ -30,6 +34,7 @@ const nav = siteConfig.nav.map((item) => {
             <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
           </svg>
         </button>
+        <RandomPostButton compact />
         <ThemeToggle />
       </div>
     </div>

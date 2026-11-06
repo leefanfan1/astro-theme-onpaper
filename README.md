@@ -11,6 +11,8 @@
 - 首页、文章、归档时间线、标签、关于、404、分页
 - 全文搜索（Ctrl / Cmd + K，或按 `/`）
 - 音乐卡片：Spotify / Apple Music / 网易云 / QQ 音乐自动识别、跨平台匹配、构建期缓存，沿用原版卡片结构
+- 友链页、随机读一篇
+- 可选 Google Analytics 4（含 Astro 客户端路由的 page_view 处理）
 - 浅色目录面板（列表图标 + 折叠开关），展开后随滚动标记当前章节；正文图片点击放大
 - 8 篇中文示例文章，含长标题、长正文、两张本地示例图和跨年份归档
 - Markdown 扩展：KaTeX、Mermaid、GitHub 卡片、媒体嵌入
@@ -52,8 +54,15 @@ export const siteConfig = {
   nav: [
     { label: '文章', href: '/' },
     { label: '归档', href: '/tags/' },
+    { label: '友链', href: '/friends/' },
     { label: '关于', href: '/about/' },
   ],
+  friends: [
+    { name: '山茶书房', url: 'https://shanchafang.example/', description: '……' },
+  ],
+  analytics: {
+    googleAnalyticsId: '', // 可选，填写 GA4 的 G-XXXXXXXXXX
+  },
   socials: [
     { label: 'RSS', href: '/rss.xml', external: true },
     { label: 'GitHub', href: 'https://github.com/', external: true },
@@ -106,6 +115,18 @@ export const siteConfig = {
 ### 改字体
 
 `siteConfig.fonts` 控制三套字体栈。默认用自托管的 **Newsreader**（SIL OFL）作为拉丁标题字体，中文标题使用自托管的 **Noto Serif SC Variable**（按 `unicode-range` 分片，浏览器只加载页面实际用到的字形）；正文用系统无衬线体，避免正文也加载大字体。
+
+### 友链
+
+在 `siteConfig.friends` 里增删条目，每项包含 `name`、`url`、`description`。友链页会自动生成，导航里的“友链”入口也来自 `siteConfig.nav`。
+
+### Google Analytics 4（可选）
+
+1. 在 [Google Analytics](https://analytics.google.com) 创建媒体资源和 Web 数据流，复制 Measurement ID（`G-XXXXXXXXXX`）。
+2. 填到 `siteConfig.analytics.googleAnalyticsId`。
+3. 重新执行 `npm run build` 并部署。
+
+只有生产构建且 ID 非空时才会注入 `gtag.js`；`npm run dev` 不会加载。`npm run preview` 预览的是生产构建，因此会加载。主题关闭了 GA 的自动 page_view，改为在 Astro 的 `astro:page-load` 事件里手动上报，客户端路由切换也能正确统计。留空则完全不加载任何 GA 脚本。
 
 ## 写文章
 

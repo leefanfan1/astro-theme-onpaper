@@ -546,7 +546,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .post-item {
   border-top: 1px solid var(--line);
-  padding: 1.5rem 0;
+  padding: 1.9rem 0 2rem;
 }
 
 .post-item:last-child {
@@ -747,6 +747,55 @@ html[data-theme="dark"] .theme-toggle .moon {
   color: var(--ink-faint);
   font-size: 0.62rem;
   font-variant-numeric: tabular-nums;
+}
+
+.friend-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 2rem;
+  margin-top: 1.6rem;
+  list-style: none;
+}
+
+.friend-grid li {
+  border-top: 1px solid var(--line);
+}
+
+.friend-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.15rem 0 1.3rem;
+}
+
+.friend-link__name {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 500;
+  line-height: 1.35;
+  transition: color 0.2s ease;
+}
+
+.friend-link:hover .friend-link__name {
+  color: var(--accent-strong);
+}
+
+.friend-link__desc {
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  line-height: 1.75;
+}
+
+.friend-link__domain {
+  color: var(--ink-faint);
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 700px) {
+  .friend-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .archive-layout {
