@@ -14,7 +14,7 @@
 - 友链页
 - 可选 Google Analytics 4（含 Astro 客户端路由的 page_view 处理）
 - 1200×630 分享卡片（Open Graph），可用 `npm run og` 重新生成
-- 页面淡入转场、按钮按压的柔和透明度反馈、卡片 hover 色温变化和滚动渐入，尊重 `prefers-reduced-motion`
+- 页面淡入转场、搜索弹窗淡入与背景虚化、按钮按压的柔和透明度反馈、卡片 hover 色温变化和滚动渐入，尊重 `prefers-reduced-motion`
 - 文章“返回”会回到来源列表页并恢复滚动位置（首页分页、标签页等）；直接打开文章时回首页
 - 文章页移动端顶栏随滚动压缩，给正文让出阅读空间
 - 全站中文统一为 Noto Serif SC，英文统一为 Newsreader；代码、数学和图表保留专用字体

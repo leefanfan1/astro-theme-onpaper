@@ -198,7 +198,10 @@ html[data-astro-transition]::view-transition-new(root) {
   flex-direction: column;
   min-height: calc(100dvh - 7rem);
   max-height: calc(100dvh - 7rem);
+  /* Room for the action buttons' hover pills to sit inside the scrollport. */
+  margin-left: -0.45rem;
   padding-top: 0.25rem;
+  padding-left: 0.45rem;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -315,6 +318,7 @@ html[data-astro-transition]::view-transition-new(root) {
 }
 
 .text-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -325,6 +329,34 @@ html[data-astro-transition]::view-transition-new(root) {
   transition: color 0.2s ease;
 }
 
+/* Match the compact, lightly tinted pills used by nav labels instead of
+   filling the whole 44px touch target. */
+.text-button::before,
+.theme-toggle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 4px;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  transition: background-color 0.2s ease;
+  pointer-events: none;
+}
+
+.text-button::before {
+  left: 50%;
+  width: calc(100% + 0.9rem);
+}
+
+.text-button:hover::before,
+.text-button:focus-visible::before,
+.theme-toggle:hover::before,
+.theme-toggle:focus-visible::before {
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+
 .text-button:hover {
   color: var(--accent-strong);
 }
@@ -333,24 +365,31 @@ html[data-astro-transition]::view-transition-new(root) {
   gap: 0;
 }
 
+.text-button--icon::before {
+  width: 1.7rem;
+}
+
 .text-button__icon {
   width: 0.95rem;
   height: 0.95rem;
 }
 
 .theme-toggle {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 2.75rem;
   height: 2.75rem;
-  border-radius: 10px;
   color: var(--ink-soft);
-  transition: color 0.2s ease, background 0.2s ease;
+  transition: color 0.2s ease;
+}
+
+.theme-toggle::before {
+  left: 50%;
 }
 
 .theme-toggle:hover {
   color: var(--accent-strong);
-  background: var(--surface);
 }
 
 .theme-toggle svg {

@@ -54,15 +54,62 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   .search-dialog::backdrop {
     background: color-mix(in oklab, var(--ink) 28%, transparent);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   .search-dialog[open] {
     animation: search-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
+  .search-dialog[open]::backdrop {
+    animation: search-backdrop-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .search-dialog.is-closing {
+    animation: search-out 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+    pointer-events: none;
+  }
+
+  .search-dialog.is-closing::backdrop {
+    animation: search-backdrop-out 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+  }
+
   @keyframes search-in {
     from {
       opacity: 0;
+      transform: scale(0.985);
+    }
+  }
+
+  @keyframes search-out {
+    to {
+      opacity: 0;
+      transform: scale(0.99);
+    }
+  }
+
+  @keyframes search-backdrop-in {
+    from {
+      opacity: 0;
+      backdrop-filter: blur(0);
+      -webkit-backdrop-filter: blur(0);
+    }
+  }
+
+  @keyframes search-backdrop-out {
+    to {
+      opacity: 0;
+      backdrop-filter: blur(0);
+      -webkit-backdrop-filter: blur(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .search-dialog[open],
+    .search-dialog.is-closing,
+    .search-dialog[open]::backdrop,
+    .search-dialog.is-closing::backdrop {
+      animation: none;
     }
   }
 
@@ -221,6 +268,7 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   let loading: Promise<SearchItem[]> | null = null
   let lastTrigger: HTMLElement | null = null
   let renderTimer: number | undefined
+  let closeTimer: number | undefined
 
   function escapeRegExp(value: string) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -377,6 +425,11 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   }
 
   function finishClose() {
+    if (closeTimer) {
+      window.clearTimeout(closeTimer)
+      closeTimer = undefined
+    }
+    dialog?.classList.remove('is-closing')
     document.body.classList.remove('search-open')
     setTriggerState(false)
     if (lastTrigger?.isConnected) lastTrigger.focus()
@@ -387,6 +440,12 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
     bindSearchDialog()
     if (!dialog || !input) return
     lastTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
+
+    if (closeTimer) {
+      window.clearTimeout(closeTimer)
+      closeTimer = undefined
+    }
+    dialog.classList.remove('is-closing')
 
     if (!dialog.open) {
       if (typeof dialog.showModal === 'function') dialog.showModal()
@@ -402,14 +461,25 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
 
   function closeSearch() {
     refreshElements()
-    if (!dialog?.open) return
-    if (typeof dialog.close === 'function') {
-      dialog.close()
+    if (!dialog?.open || dialog.classList.contains('is-closing')) return
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduce || typeof dialog.close !== 'function') {
+      if (typeof dialog.close === 'function') dialog.close()
+      else {
+        dialog.removeAttribute('open')
+        finishClose()
+      }
+      return
     }
-    else {
-      dialog.removeAttribute('open')
-      finishClose()
-    }
+
+    const closingDialog = dialog
+    closingDialog.classList.add('is-closing')
+    closeTimer = window.setTimeout(() => {
+      closeTimer = undefined
+      closingDialog.classList.remove('is-closing')
+      if (closingDialog.open) closingDialog.close()
+    }, 180)
   }
 
   function bindSearchDialog() {
