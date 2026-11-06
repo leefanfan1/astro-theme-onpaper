@@ -13,7 +13,8 @@
 - 音乐卡片：Spotify / Apple Music / 网易云 / QQ 音乐自动识别、跨平台匹配、构建期缓存，沿用原版卡片结构
 - 友链页、随机读一篇
 - 可选 Google Analytics 4（含 Astro 客户端路由的 page_view 处理）
-- 浅色目录面板（列表图标 + 折叠开关），展开后随滚动标记当前章节；正文图片点击放大
+- 1200×630 分享卡片（Open Graph），可用 `npm run og` 重新生成
+- 浅色目录面板（列表图标 + 折叠开关），展开后随滚动标记当前章节；正文图片点击放大，支持滚轮 / 双指缩放和拖动
 - 8 篇中文示例文章，含长标题、长正文、两张本地示例图和跨年份归档
 - Markdown 扩展：KaTeX、Mermaid、GitHub 卡片、媒体嵌入
 - 阅读进度、回到顶部、分享（原版 SVG 图标）、可选阅读计数（Cloudflare KV）
@@ -35,6 +36,7 @@ npm run dev
 npm run build      # 生成静态站点到 dist/
 npm run preview    # 预览构建结果
 npm run shots      # Playwright 截图检查（需要先运行 dev）
+npm run og         # 重新生成 public/og.png 分享图
 npm run music      # 重新解析并缓存 ::music 指令里的链接
 ```
 
@@ -127,6 +129,10 @@ export const siteConfig = {
 3. 重新执行 `npm run build` 并部署。
 
 只有生产构建且 ID 非空时才会注入 `gtag.js`；`npm run dev` 不会加载。`npm run preview` 预览的是生产构建，因此会加载。主题关闭了 GA 的自动 page_view，改为在 Astro 的 `astro:page-load` 事件里手动上报，客户端路由切换也能正确统计。留空则完全不加载任何 GA 脚本。
+
+### 分享图（OG）
+
+`public/og.svg` 是分享卡片模板，`npm run og` 会把它渲染成 `public/og.png`（1200×630）。页面默认用这张图作为 `og:image` / `twitter:image`，Telegram、X、微信等平台会读取它作为链接缩略图。修改标题、副标题或配色后，先同步更新 `public/og.svg`，再重新运行 `npm run og`。
 
 ## 写文章
 

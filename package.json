@@ -12,6 +12,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "shots": "node scripts/screenshots.mjs",
+    "og": "node scripts/generate-og.mjs",
     "music": "node scripts/resolve-music.mjs"
   },
   "dependencies": {

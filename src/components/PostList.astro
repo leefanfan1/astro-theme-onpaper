@@ -2,8 +2,8 @@
 import type { Post } from '@/utils/posts'
 import {
   formatDate,
+  getPostDescription,
   getPostHref,
-  stripMarkdown,
 } from '@/utils/posts'
 
 interface Props {
@@ -15,8 +15,7 @@ const { posts } = Astro.props
 
 <ol class="post-list">
   {posts.map((post, index) => {
-    const excerpt = post.data.description
-      || `${stripMarkdown(post.body ?? '').slice(0, 88)}…`
+    const excerpt = getPostDescription(post, 88)
 
     return (
       <li

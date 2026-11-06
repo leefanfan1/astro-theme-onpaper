@@ -17,6 +17,8 @@ interface Props {
   title?: string
   description?: string
   image?: string
+  imageWidth?: number
+  imageHeight?: number
   article?: boolean
   noindex?: boolean
 }
@@ -24,7 +26,9 @@ interface Props {
 const {
   title,
   description = siteConfig.description,
-  image = '/og.svg',
+  image = '/og.png',
+  imageWidth = 1200,
+  imageHeight = 630,
   article = false,
   noindex = false,
 } = Astro.props
@@ -32,6 +36,14 @@ const {
 const pageTitle = title ? `${title} · ${siteConfig.title}` : `${siteConfig.title} — ${siteConfig.subtitle}`
 const canonical = new URL(Astro.url.pathname, siteConfig.url).href
 const ogImage = new URL(image, siteConfig.url).href
+const ogImageType = image.endsWith('.png')
+  ? 'image/png'
+  : image.endsWith('.webp')
+    ? 'image/webp'
+    : image.endsWith('.jpg') || image.endsWith('.jpeg')
+      ? 'image/jpeg'
+      : undefined
+const ogLocale = siteConfig.lang.replace('-', '_')
 const { light, dark } = siteConfig.theme
 const gaId = siteConfig.analytics.googleAnalyticsId.trim()
 
@@ -87,10 +99,17 @@ html.theme-changing *{transition:none!important}
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={ogLocale} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content={String(imageWidth)} />
+    <meta property="og:image:height" content={String(imageHeight)} />
+    <meta property="og:image:alt" content={pageTitle} />
+    {ogImageType && <meta property="og:image:type" content={ogImageType} />}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={pageTitle} />
     <slot name="head" />
 
     <script is:inline define:vars={{

@@ -1,7 +1,18 @@
 <dialog class="image-zoom" data-image-zoom aria-label="查看大图">
   <button class="image-zoom__close" type="button" data-image-zoom-close aria-label="关闭大图">×</button>
-  <img data-image-zoom-img alt="" />
+
+  <div class="image-zoom__stage" data-image-zoom-stage title="滚轮缩放，拖动平移，双击切换">
+    <img data-image-zoom-img alt="" draggable="false" />
+  </div>
+
   <p class="image-zoom__caption" data-image-zoom-caption></p>
+
+  <div class="image-zoom__tools" role="group" aria-label="图片缩放">
+    <button type="button" data-image-zoom-out aria-label="缩小">−</button>
+    <output class="image-zoom__level" data-image-zoom-level>100%</output>
+    <button type="button" data-image-zoom-in aria-label="放大">+</button>
+    <button class="image-zoom__reset" type="button" data-image-zoom-reset aria-label="还原到原始大小">1:1</button>
+  </div>
 </dialog>
 
 <style is:global>
@@ -18,36 +29,64 @@
     position: fixed;
     inset: 0;
     z-index: 400;
-    max-width: 92vw;
-    max-height: 90vh;
-    margin: auto;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
     padding: 0;
     border: 0;
     background: transparent;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .image-zoom[open] {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto auto;
     align-items: center;
-    gap: 0.75rem;
+    justify-items: center;
+    gap: 0.65rem;
+    padding: 3.75rem 1.25rem 1.25rem;
   }
 
   .image-zoom::backdrop {
-    background: rgb(20 20 19 / 0.86);
-    backdrop-filter: blur(4px);
+    background: rgb(20 20 19 / 0.9);
+    backdrop-filter: blur(6px);
+  }
+
+  .image-zoom__stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    cursor: zoom-in;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .image-zoom__stage.is-zoomed {
+    cursor: grab;
+  }
+
+  .image-zoom__stage.is-dragging {
+    cursor: grabbing;
   }
 
   .image-zoom img {
     display: block;
     width: auto;
     height: auto;
-    max-width: 92vw;
-    max-height: 82vh;
+    max-width: 100%;
+    max-height: 100%;
     border-radius: 8px;
     background: var(--paper);
     box-shadow: 0 24px 80px rgb(0 0 0 / 0.4);
+    transform-origin: center center;
+    will-change: transform;
+    -webkit-user-drag: none;
   }
 
   .image-zoom__caption {
@@ -65,8 +104,9 @@
 
   .image-zoom__close {
     position: fixed;
-    top: 1rem;
-    right: 1rem;
+    z-index: 2;
+    top: max(1rem, env(safe-area-inset-top));
+    right: max(1rem, env(safe-area-inset-right));
     display: grid;
     place-items: center;
     width: 2.75rem;
@@ -83,25 +123,350 @@
     background: rgb(20 20 19 / 0.8);
   }
 
+  .image-zoom__tools {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid rgb(250 249 245 / 0.18);
+    border-radius: 999px;
+    background: rgb(20 20 19 / 0.62);
+    color: #faf9f5;
+    backdrop-filter: blur(10px);
+  }
+
+  .image-zoom__tools button {
+    display: grid;
+    place-items: center;
+    min-width: 2.1rem;
+    min-height: 2.1rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font-size: 1.05rem;
+    line-height: 1;
+    transition: background 0.15s ease;
+  }
+
+  .image-zoom__tools button:hover {
+    background: rgb(250 249 245 / 0.12);
+  }
+
+  .image-zoom__tools button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .image-zoom__tools .image-zoom__reset {
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
+  }
+
+  .image-zoom__level {
+    min-width: 3.2rem;
+    color: rgb(250 249 245 / 0.78);
+    font-size: 0.65rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+
   body.image-zoom-open {
     overflow: hidden;
+  }
+
+  @media (max-width: 520px) {
+    .image-zoom[open] {
+      gap: 0.5rem;
+      padding: 3.25rem 0.75rem 0.75rem;
+    }
+
+    .image-zoom__tools {
+      gap: 0.1rem;
+    }
   }
 </style>
 
 <script>
-  function getZoomDialog() {
-    return document.querySelector<HTMLDialogElement>('[data-image-zoom]')
+  const MIN_SCALE = 1
+  const MAX_SCALE = 6
+  const ZOOM_STEP = 1.25
+
+  interface ZoomState {
+    scale: number
+    x: number
+    y: number
+  }
+
+  interface ZoomParts {
+    dialog: HTMLDialogElement
+    stage: HTMLElement
+    image: HTMLImageElement
+    caption: HTMLElement | null
+    level: HTMLElement | null
+  }
+
+  const state: ZoomState = { scale: 1, x: 0, y: 0 }
+  const pointers = new Map<number, { x: number, y: number }>()
+  let pinchStart: { distance: number, scale: number } | null = null
+  let dragStart: { x: number, y: number, tx: number, ty: number } | null = null
+  let dragged = false
+  let pointerStartedOnStage = false
+
+  function getParts(): ZoomParts | null {
+    const dialog = document.querySelector<HTMLDialogElement>('[data-image-zoom]')
+    const stage = dialog?.querySelector<HTMLElement>('[data-image-zoom-stage]')
+    const image = dialog?.querySelector<HTMLImageElement>('[data-image-zoom-img]')
+    if (!dialog || !stage || !image) return null
+    return {
+      dialog,
+      stage,
+      image,
+      caption: dialog.querySelector<HTMLElement>('[data-image-zoom-caption]'),
+      level: dialog.querySelector<HTMLElement>('[data-image-zoom-level]'),
+    }
+  }
+
+  function clamp(value: number, min: number, max: number) {
+    return Math.min(max, Math.max(min, value))
+  }
+
+  function distance(a: { x: number, y: number }, b: { x: number, y: number }) {
+    return Math.hypot(a.x - b.x, a.y - b.y)
+  }
+
+  function applyTransform(parts: ZoomParts) {
+    parts.image.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) scale(${state.scale})`
+    if (parts.level) parts.level.textContent = `${Math.round(state.scale * 100)}%`
+    parts.stage.classList.toggle('is-zoomed', state.scale > 1)
+  }
+
+  function clampPan(parts: ZoomParts) {
+    if (state.scale <= 1) {
+      state.x = 0
+      state.y = 0
+      return
+    }
+    const stageWidth = parts.stage.clientWidth
+    const stageHeight = parts.stage.clientHeight
+    const maxX = Math.max(0, (parts.image.clientWidth * state.scale - stageWidth) / 2 + stageWidth * 0.35)
+    const maxY = Math.max(0, (parts.image.clientHeight * state.scale - stageHeight) / 2 + stageHeight * 0.35)
+    state.x = clamp(state.x, -maxX, maxX)
+    state.y = clamp(state.y, -maxY, maxY)
+  }
+
+  function setScale(parts: ZoomParts, nextScale: number, anchorX?: number, anchorY?: number) {
+    const next = clamp(nextScale, MIN_SCALE, MAX_SCALE)
+    if (Math.abs(next - state.scale) < 0.001) return
+
+    // Keep the point under the cursor / pinch midpoint fixed while scaling.
+    const ax = (anchorX ?? parts.stage.clientWidth / 2) - parts.stage.clientWidth / 2
+    const ay = (anchorY ?? parts.stage.clientHeight / 2) - parts.stage.clientHeight / 2
+    const px = (ax - state.x) / state.scale
+    const py = (ay - state.y) / state.scale
+
+    state.scale = next
+    state.x = ax - px * next
+    state.y = ay - py * next
+
+    if (next <= 1.001) {
+      state.scale = 1
+      state.x = 0
+      state.y = 0
+    }
+
+    clampPan(parts)
+    applyTransform(parts)
+  }
+
+  function resetTransform(parts: ZoomParts) {
+    state.scale = 1
+    state.x = 0
+    state.y = 0
+    applyTransform(parts)
   }
 
   function finishZoomClose() {
     document.body.classList.remove('image-zoom-open')
+    pointers.clear()
+    pinchStart = null
+    dragStart = null
+    dragged = false
+    pointerStartedOnStage = false
+    const parts = getParts()
+    if (parts) resetTransform(parts)
+  }
+
+  function closeZoom() {
+    const parts = getParts()
+    if (!parts?.dialog.open) return
+    if (typeof parts.dialog.close === 'function') {
+      parts.dialog.close()
+    }
+    else {
+      parts.dialog.removeAttribute('open')
+      finishZoomClose()
+    }
+  }
+
+  function openZoom(img: HTMLImageElement) {
+    const parts = getParts()
+    if (!parts) return
+
+    parts.image.src = img.currentSrc || img.src
+    parts.image.alt = img.alt || ''
+    if (parts.caption) parts.caption.textContent = img.alt || ''
+    resetTransform(parts)
+
+    if (!parts.dialog.open) {
+      if (typeof parts.dialog.showModal === 'function') parts.dialog.showModal()
+      else parts.dialog.setAttribute('open', '')
+    }
+    document.body.classList.add('image-zoom-open')
+    requestAnimationFrame(() => resetTransform(parts))
   }
 
   function bindZoomDialog() {
-    const dialog = getZoomDialog()
-    if (!dialog || dialog.dataset.zoomBound === 'true') return
-    dialog.dataset.zoomBound = 'true'
+    const parts = getParts()
+    if (!parts || parts.dialog.dataset.zoomBound === 'true') return
+    parts.dialog.dataset.zoomBound = 'true'
+
+    const { dialog, stage } = parts
+
     dialog.addEventListener('close', finishZoomClose)
+
+    stage.addEventListener('wheel', (event) => {
+      event.preventDefault()
+      const rect = stage.getBoundingClientRect()
+      const factor = Math.exp(-event.deltaY * 0.0015)
+      setScale(parts, state.scale * factor, event.clientX - rect.left, event.clientY - rect.top)
+    }, { passive: false })
+
+    stage.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return
+      pointerStartedOnStage = event.target === stage
+      try {
+        stage.setPointerCapture(event.pointerId)
+      }
+      catch {
+        // Synthetic events and some older browsers have no active pointer to capture.
+      }
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+
+      if (pointers.size === 1) {
+        dragStart = { x: event.clientX, y: event.clientY, tx: state.x, ty: state.y }
+        dragged = false
+      }
+      else if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()]
+        pinchStart = { distance: Math.max(1, distance(a, b)), scale: state.scale }
+        dragStart = null
+      }
+    })
+
+    stage.addEventListener('pointermove', (event) => {
+      if (!pointers.has(event.pointerId)) return
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+
+      if (pointers.size === 2 && pinchStart) {
+        const [a, b] = [...pointers.values()]
+        const rect = stage.getBoundingClientRect()
+        setScale(
+          parts,
+          pinchStart.scale * (distance(a, b) / pinchStart.distance),
+          (a.x + b.x) / 2 - rect.left,
+          (a.y + b.y) / 2 - rect.top,
+        )
+        dragged = true
+        return
+      }
+
+      if (pointers.size === 1 && dragStart) {
+        const dx = event.clientX - dragStart.x
+        const dy = event.clientY - dragStart.y
+        if (Math.abs(dx) + Math.abs(dy) > 4) dragged = true
+        if (state.scale > 1) {
+          state.x = dragStart.tx + dx
+          state.y = dragStart.ty + dy
+          clampPan(parts)
+          applyTransform(parts)
+          stage.classList.add('is-dragging')
+        }
+      }
+    })
+
+    const endPointer = (event: PointerEvent) => {
+      pointers.delete(event.pointerId)
+      if (pointers.size < 2) pinchStart = null
+      if (pointers.size === 0) {
+        dragStart = null
+        stage.classList.remove('is-dragging')
+      }
+    }
+    stage.addEventListener('pointerup', endPointer)
+    stage.addEventListener('pointercancel', endPointer)
+
+    stage.addEventListener('dblclick', (event) => {
+      event.preventDefault()
+      if (state.scale > 1) {
+        resetTransform(parts)
+        return
+      }
+      const rect = stage.getBoundingClientRect()
+      setScale(parts, 2.5, event.clientX - rect.left, event.clientY - rect.top)
+    })
+
+    stage.addEventListener('click', (event) => {
+      if (event.target === stage && pointerStartedOnStage && !dragged) closeZoom()
+    })
+
+    dialog.addEventListener('click', (event) => {
+      const target = event.target
+      if (!(target instanceof Element)) return
+
+      if (target === dialog) {
+        closeZoom()
+        return
+      }
+
+      if (target.closest('[data-image-zoom-in]')) {
+        setScale(parts, state.scale * ZOOM_STEP)
+      }
+      else if (target.closest('[data-image-zoom-out]')) {
+        setScale(parts, state.scale / ZOOM_STEP)
+      }
+      else if (target.closest('[data-image-zoom-reset]')) {
+        resetTransform(parts)
+      }
+    })
+
+    dialog.addEventListener('keydown', (event) => {
+      if (event.key === '+' || event.key === '=') {
+        event.preventDefault()
+        setScale(parts, state.scale * ZOOM_STEP)
+      }
+      else if (event.key === '-' || event.key === '_') {
+        event.preventDefault()
+        setScale(parts, state.scale / ZOOM_STEP)
+      }
+      else if (event.key === '0') {
+        event.preventDefault()
+        resetTransform(parts)
+      }
+      else if (state.scale > 1 && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        event.preventDefault()
+        if (event.key === 'ArrowLeft') state.x += 40
+        if (event.key === 'ArrowRight') state.x -= 40
+        if (event.key === 'ArrowUp') state.y += 40
+        if (event.key === 'ArrowDown') state.y -= 40
+        clampPan(parts)
+        applyTransform(parts)
+      }
+    })
   }
 
   function markZoomableImages() {
@@ -119,33 +484,6 @@
     }
   }
 
-  function openZoom(img: HTMLImageElement) {
-    const dialog = getZoomDialog()
-    const zoomImage = dialog?.querySelector<HTMLImageElement>('[data-image-zoom-img]')
-    const caption = dialog?.querySelector<HTMLElement>('[data-image-zoom-caption]')
-    if (!dialog || !zoomImage) return
-
-    zoomImage.src = img.currentSrc || img.src
-    zoomImage.alt = img.alt || ''
-    if (caption) caption.textContent = img.alt || ''
-
-    if (!dialog.open) {
-      if (typeof dialog.showModal === 'function') dialog.showModal()
-      else dialog.setAttribute('open', '')
-    }
-    document.body.classList.add('image-zoom-open')
-  }
-
-  function closeZoom() {
-    const dialog = getZoomDialog()
-    if (!dialog?.open) return
-    if (typeof dialog.close === 'function') dialog.close()
-    else {
-      dialog.removeAttribute('open')
-      finishZoomClose()
-    }
-  }
-
   document.addEventListener('click', (event) => {
     const target = event.target
     if (!(target instanceof Element)) return
@@ -155,8 +493,7 @@
       return
     }
 
-    const dialog = getZoomDialog()
-    if (dialog && target === dialog) {
+    if (target === getParts()?.dialog) {
       closeZoom()
       return
     }

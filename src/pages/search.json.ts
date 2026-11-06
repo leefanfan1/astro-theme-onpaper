@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro'
 import {
   formatDate,
   getAllPosts,
+  getPostDescription,
   getPostHref,
   stripMarkdown,
 } from '@/utils/posts'
@@ -14,7 +15,7 @@ export const GET: APIRoute = async () => {
     const content = stripMarkdown(post.body ?? '')
     return {
       title: post.data.title,
-      description: post.data.description || content.slice(0, 160),
+      description: getPostDescription(post, 160),
       tags: post.data.tags,
       date: formatDate(post.data.published),
       url: `${base}${getPostHref(post)}`,

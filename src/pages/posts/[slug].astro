@@ -13,6 +13,7 @@ import {
   formatDate,
   formatDateLong,
   getAllPosts,
+  getPostDescription,
   getPostHref,
   getTagHref,
 } from '@/utils/posts'
@@ -37,18 +38,22 @@ const index = allPosts.findIndex(item => item.id === post.id)
 const newer = index > 0 ? allPosts[index - 1] : null
 const older = index >= 0 && index < allPosts.length - 1 ? allPosts[index + 1] : null
 const canonical = new URL(Astro.url.pathname, siteConfig.url).href
+const description = getPostDescription(post, 160) || siteConfig.description
+const ogImage = new URL('/og.png', siteConfig.url).href
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
   'headline': post.data.title,
-  'description': post.data.description,
+  'description': description,
   'datePublished': post.data.published.toISOString(),
   'dateModified': (post.data.updated ?? post.data.published).toISOString(),
   'author': {
     '@type': 'Person',
     'name': siteConfig.author,
   },
+  'image': ogImage,
+  'keywords': post.data.tags.join(', '),
   'mainEntityOfPage': canonical,
 }
 
@@ -59,7 +64,7 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
 
 <BaseLayout
   title={post.data.title}
-  description={post.data.description || siteConfig.description}
+  description={description}
   article
 >
   <Fragment slot="head">

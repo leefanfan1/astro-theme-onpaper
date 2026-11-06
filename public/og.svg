@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#F7F2E8"/>
-  <circle cx="1030" cy="130" r="180" fill="#B8452F" opacity="0.08"/>
-  <circle cx="180" cy="540" r="150" fill="#6E7B5B" opacity="0.08"/>
-  <path d="M100 112h64" stroke="#B8452F" stroke-width="3"/>
-  <text x="100" y="168" fill="#B8452F" font-family="Georgia, 'Songti SC', serif" font-size="22" letter-spacing="6">YOHAKU</text>
-  <text x="96" y="330" fill="#211F1B" font-family="'Songti SC', 'STSong', Georgia, serif" font-size="156" font-weight="600">余白</text>
-  <text x="100" y="400" fill="#5C574E" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="28" letter-spacing="3">在字与字之间，留一点呼吸。</text>
-  <path d="M100 470h110" stroke="#211F1B" stroke-width="2" opacity="0.25"/>
-  <text x="100" y="520" fill="#8A8377" font-family="'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="20" letter-spacing="2">随笔 · 音乐 · 城市夜色</text>
-  <text x="100" y="580" fill="#8A8377" font-family="Georgia, serif" font-size="18" letter-spacing="2">yohaku.example.com</text>
+  <rect width="1200" height="630" fill="#FAF9F5"/>
+  <circle cx="1030" cy="130" r="180" fill="#D97757" opacity="0.08"/>
+  <circle cx="180" cy="540" r="150" fill="#788C5D" opacity="0.08"/>
+  <path d="M100 112h64" stroke="#A94E33" stroke-width="3"/>
+  <text x="100" y="168" fill="#A94E33" font-family="'Newsreader', Georgia, serif" font-size="22" letter-spacing="6">YOHAKU</text>
+  <text x="96" y="330" fill="#141413" font-family="'Noto Serif SC Variable', 'Songti SC', 'STSong', Georgia, serif" font-size="156" font-weight="600">余白</text>
+  <text x="100" y="400" fill="#5E5D59" font-family="'Noto Serif SC Variable', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="28" letter-spacing="3">在字与字之间，留一点呼吸。</text>
+  <path d="M100 470h110" stroke="#141413" stroke-width="2" opacity="0.25"/>
+  <text x="100" y="520" fill="#6F6D65" font-family="'Noto Serif SC Variable', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="20" letter-spacing="2">随笔 · 音乐 · 城市夜色</text>
+  <text x="100" y="580" fill="#6F6D65" font-family="'Newsreader', Georgia, serif" font-size="18" letter-spacing="2">yohaku.example.com</text>
 </svg>
