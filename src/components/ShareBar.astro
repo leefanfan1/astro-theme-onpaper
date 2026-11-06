@@ -1,4 +1,13 @@
 ---
+import CheckIcon from '@/assets/icons/copy-check.svg'
+import InstagramIcon from '@/assets/icons/instagram-icon.svg'
+import LinkIcon from '@/assets/icons/link-icon.svg'
+import TelegramIcon from '@/assets/icons/telegram-icon.svg'
+import ThreadsIcon from '@/assets/icons/threads-icon.svg'
+import XIcon from '@/assets/icons/twitter-icon.svg'
+import WechatIcon from '@/assets/icons/wechat-icon.svg'
+import WeiboIcon from '@/assets/icons/weibo-icon.svg'
+
 interface Props {
   title: string
   url: string
@@ -8,31 +17,123 @@ const { title, url } = Astro.props
 const encodedTitle = encodeURIComponent(title)
 const encodedUrl = encodeURIComponent(url)
 const xHref = `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`
+const telegramHref = `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`
 const weiboHref = `https://service.weibo.com/share/share.php?title=${encodedTitle}&url=${encodedUrl}`
+const threadsHref = `https://www.threads.net/intent/post?text=${encodeURIComponent(`${title} ${url}`)}`
 ---
 
 <div class="share-bar" aria-label="分享这篇文章">
   <span class="share-bar__label">分享</span>
-  <button class="share-button" type="button" data-share-copy>复制链接</button>
-  <button class="share-button" type="button" data-share-native hidden>系统分享</button>
-  <a class="share-button" href={xHref} target="_blank" rel="noopener noreferrer">X</a>
-  <a class="share-button" href={weiboHref} target="_blank" rel="noopener noreferrer">微博</a>
+
+  <a class="share-button" href={xHref} target="_blank" rel="noopener noreferrer" aria-label="分享到 X" title="X">
+    <XIcon fill="currentColor" aria-hidden="true" />
+  </a>
+  <a class="share-button" href={telegramHref} target="_blank" rel="noopener noreferrer" aria-label="分享到 Telegram" title="Telegram">
+    <TelegramIcon fill="currentColor" aria-hidden="true" />
+  </a>
+  <a class="share-button" href={weiboHref} target="_blank" rel="noopener noreferrer" aria-label="分享到微博" title="微博">
+    <WeiboIcon fill="currentColor" aria-hidden="true" />
+  </a>
+  <a class="share-button" href={threadsHref} target="_blank" rel="noopener noreferrer" aria-label="分享到 Threads" title="Threads">
+    <ThreadsIcon fill="currentColor" aria-hidden="true" />
+  </a>
+
+  <button class="share-button" type="button" data-share-native aria-label="分享到 Instagram" title="Instagram">
+    <InstagramIcon fill="currentColor" aria-hidden="true" />
+  </button>
+  <button class="share-button" type="button" data-share-native aria-label="分享到微信" title="微信">
+    <WechatIcon fill="currentColor" aria-hidden="true" />
+  </button>
+
+  <button class="share-button" type="button" data-share-copy aria-label="复制链接" title="复制链接">
+    <LinkIcon class="share-icon share-icon--link" fill="currentColor" aria-hidden="true" />
+    <CheckIcon class="share-icon share-icon--check" fill="currentColor" aria-hidden="true" />
+  </button>
+
   <span class="share-status" data-share-status aria-live="polite"></span>
 </div>
 
-<script>
-  const nativeButton = document.querySelector<HTMLButtonElement>('[data-share-native]')
-  if (nativeButton && typeof navigator.share === 'function') {
-    nativeButton.hidden = false
+<style is:global>
+  .share-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 1.2rem;
   }
 
-  async function copyCurrentUrl(status: HTMLElement | null) {
+  .share-bar__label {
+    margin-right: 0.35rem;
+    color: var(--ink-faint);
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .share-button {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: color-mix(in oklab, var(--ink-soft) 62%, transparent);
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+
+  .share-button:hover {
+    color: var(--ink);
+    background: var(--surface);
+  }
+
+  .share-button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .share-icon--check {
+    display: none;
+  }
+
+  .share-button.copied {
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+  }
+
+  .share-button.copied .share-icon--link {
+    display: none;
+  }
+
+  .share-button.copied .share-icon--check {
+    display: block;
+  }
+
+  .share-status {
+    margin-left: 0.35rem;
+    color: var(--accent-strong);
+    font-size: 0.68rem;
+  }
+
+  @media (pointer: coarse) {
+    .share-button {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+  }
+</style>
+
+<script>
+  async function copyCurrentUrl(status: HTMLElement | null, button: Element | null) {
     try {
       await navigator.clipboard.writeText(window.location.href)
+      button?.classList.add('copied')
       if (status) {
         status.textContent = '已复制'
         window.setTimeout(() => { status.textContent = '' }, 1800)
       }
+      window.setTimeout(() => button?.classList.remove('copied'), 1800)
     }
     catch {
       if (status) {
@@ -47,9 +148,10 @@ const weiboHref = `https://service.weibo.com/share/share.php?title=${encodedTitl
     if (!(target instanceof Element)) return
 
     const status = document.querySelector<HTMLElement>('[data-share-status]')
+    const copyButton = target.closest('[data-share-copy]')
 
-    if (target.closest('[data-share-copy]')) {
-      await copyCurrentUrl(status)
+    if (copyButton) {
+      await copyCurrentUrl(status, copyButton)
       return
     }
 
@@ -58,7 +160,7 @@ const weiboHref = `https://service.weibo.com/share/share.php?title=${encodedTitl
         await navigator.share({ title: document.title, url: window.location.href })
       }
       catch {
-        await copyCurrentUrl(status)
+        await copyCurrentUrl(status, null)
       }
     }
   })

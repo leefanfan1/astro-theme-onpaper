@@ -122,6 +122,17 @@ html[data-theme="dark"] .mc-cover-wrap {
   transition: color 0.25s ease;
 }
 
+/* The global .prose a rule is more specific than .mc-link; keep the
+   platform links in the card's own text color instead of the href color. */
+.prose .mc-link {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.prose .mc-link:hover {
+  color: var(--ink);
+}
+
 .mc-link svg,
 .mc-link img {
   width: 18px;
@@ -140,15 +151,6 @@ html[data-theme="dark"] .mc-cover-wrap {
 .mc-link:hover {
   background: none;
 }
-
-.mc-spotify:hover { color: oklch(60% 0.15 150 / 0.85); }
-.mc-apple:hover { color: oklch(60% 0.15 10 / 0.85); }
-.mc-netease:hover { color: oklch(55% 0.15 30 / 0.85); }
-.mc-qq:hover { color: oklch(60% 0.15 160 / 0.85); }
-html[data-theme="dark"] .mc-spotify:hover { color: oklch(72% 0.1 150 / 0.85); }
-html[data-theme="dark"] .mc-apple:hover { color: oklch(72% 0.1 10 / 0.85); }
-html[data-theme="dark"] .mc-netease:hover { color: oklch(72% 0.1 30 / 0.85); }
-html[data-theme="dark"] .mc-qq:hover { color: oklch(72% 0.1 160 / 0.85); }
 
 @media (max-width: 480px) {
   .mc-inner {

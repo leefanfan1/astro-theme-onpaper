@@ -12,7 +12,6 @@ const { Content } = about ? await render(about) : { Content: null }
   description={about?.data.description ?? '关于余白，关于写字，关于一些没有答案的问题。'}
 >
   <h1 class="sr-only">关于</h1>
-  <div class="decorative-line" data-reveal></div>
 
   <div class="prose">
     {Content && <Content />}

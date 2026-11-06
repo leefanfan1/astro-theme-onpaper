@@ -527,13 +527,6 @@ html[data-theme="dark"] .theme-toggle .moon {
    Home and post list
    --------------------------------------------------------- */
 
-.decorative-line {
-  width: 2.5rem;
-  height: 1px;
-  margin-bottom: 1.35rem;
-  background: var(--line);
-}
-
 .page-header--compact h1 {
   margin-top: 0.55rem;
   font-size: clamp(2rem, 4.5vw, 2.8rem);
@@ -620,7 +613,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .post-desc {
-  max-width: 38rem;
+  max-width: 100%;
   margin-top: 0.6rem;
   color: var(--ink-soft);
   font-size: 0.88rem;
@@ -1252,45 +1245,6 @@ html[data-theme="dark"] .theme-toggle .moon {
 /* ---------------------------------------------------------
    Share bar
    --------------------------------------------------------- */
-
-.share-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 1.2rem;
-}
-
-.share-bar__label {
-  margin-right: 0.3rem;
-  color: var(--ink-faint);
-  font-size: 0.64rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.share-button {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  padding-inline: 0.1rem;
-  color: var(--ink-faint);
-  font-size: 0.68rem;
-  text-decoration: underline;
-  text-decoration-color: var(--line);
-  text-underline-offset: 0.22em;
-  transition: color 0.2s ease, text-decoration-color 0.2s ease;
-}
-
-.share-button:hover {
-  color: var(--accent-strong);
-  text-decoration-color: var(--accent-strong);
-}
-
-.share-status {
-  color: var(--accent-strong);
-  font-size: 0.68rem;
-}
 
 /* ---------------------------------------------------------
    Utility

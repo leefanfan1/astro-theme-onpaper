@@ -16,6 +16,10 @@
   max-width: 48rem;
 }
 
+.article .prose {
+  max-width: 100%;
+}
+
 .prose > *:first-child {
   margin-top: 0;
 }
