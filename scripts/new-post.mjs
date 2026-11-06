@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 /**
- * Scaffold a new post with frontmatter.
+ * Create a new post.
  *
- *   npm run new -- "在一条不认识的街上走一会儿"
- *   npm run new -- "标题" --slug a-walk-without-a-map --tags 随笔,城市 --pin 1
- *   npm run new -- "草稿" --draft
+ *   npm run new -- a-walk-without-a-map
  *
- * Chinese titles produce an empty ASCII slug, so pass --slug when the title is
- * not Latin. Without one, the file falls back to post-YYYYMMDD-HHmm.
+ * The argument is the URL path / file name. The title defaults to a readable
+ * version of that path ("a-walk-without-a-map" → "A Walk Without a Map"), then
+ * the script asks a few quick questions so you don't have to remember flags.
+ *
+ * Everything is optional — press Enter to accept the default.
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import readline from 'node:readline/promises'
 
 const POSTS_DIR = path.resolve(process.cwd(), 'src/content/posts')
 
@@ -38,10 +40,8 @@ for (let i = 0; i < argv.length; i++) {
   }
 }
 
-const title = (positional.join(' ') || flags.get('title') || '').trim()
-if (!title) {
-  console.error('用法: npm run new -- "文章标题" [--slug my-slug] [--tags 随笔,城市] [--pin 1] [--draft]')
-  process.exit(1)
+function pad(n) {
+  return String(n).padStart(2, '0')
 }
 
 function slugify(value) {
@@ -54,43 +54,102 @@ function slugify(value) {
     .slice(0, 80)
 }
 
-function pad(n) {
-  return String(n).padStart(2, '0')
+function humanize(slug) {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }
 
-const now = new Date()
-const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`
-const customSlug = typeof flags.get('slug') === 'string' ? slugify(flags.get('slug')) : ''
-const slugFromTitle = slugify(title)
-const slug = customSlug || slugFromTitle || `post-${stamp}`
-
-if (!slug) {
-  console.error('无法从标题生成 slug，请用 --slug 指定一个英文短名。')
-  process.exit(1)
-}
-
-const tags = typeof flags.get('tags') === 'string'
-  ? flags.get('tags').split(',').map(t => t.trim()).filter(Boolean)
-  : []
-const pin = Number.parseInt(String(flags.get('pin') ?? '0'), 10)
-const draft = flags.get('draft') === true || flags.get('draft') === 'true'
-const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-
-// YAML-safe scalar: quote value when punctuation could change its meaning.
 function yamlScalar(value) {
-  const text = String(value)
+  const text = String(value).trim()
+  if (!text) return "''"
   if (/^(true|false|null|yes|no|on|off|~)$/i.test(text)) return `"${text}"`
   if (/^[\w一-龥][\w一-龥 .,!?'()/-]*$/.test(text)) return text
   return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 }
 
+const now = new Date()
+const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`
+
+const input = positional.join(' ').trim()
+if (!input && !flags.get('slug')) {
+  console.error('')
+  console.error('用法: npm run new -- 文章网址')
+  console.error('')
+  console.error('  例如: npm run new -- a-walk-without-a-map')
+  console.error('')
+  console.error('  参数就是文章的网址和文件名，用英文和连字符写。')
+  console.error('  运行后脚本会问标题、标签，回车即可跳过。')
+  console.error('')
+  process.exit(1)
+}
+
+// Positional argument is the slug. A CJK string is treated as the title and
+// gets a timestamp slug, because it cannot be used in a URL as-is.
+const looksLikeTitle = input && !/^[a-z0-9-]+$/i.test(input)
+const presetSlug = typeof flags.get('slug') === 'string' ? slugify(flags.get('slug')) : ''
+const slug = presetSlug || (looksLikeTitle ? '' : slugify(input))
+const finalSlug = slug || `post-${stamp}`
+
+if (!finalSlug) {
+  console.error('无法生成网址，请用一个英文短名，例如: npm run new -- my-new-post')
+  process.exit(1)
+}
+
+const target = path.join(POSTS_DIR, `${finalSlug}.md`)
+if (fs.existsSync(target)) {
+  console.error(`已存在 src/content/posts/${finalSlug}.md，换一个网址再试。`)
+  process.exit(1)
+}
+
+const canPrompt = Boolean(process.stdin.isTTY) && !flags.get('yes') && !flags.get('no-input')
+const rl = canPrompt ? readline.createInterface({ input: process.stdin, output: process.stdout }) : null
+
+function ask(question, fallback) {
+  if (!rl) return Promise.resolve(fallback)
+  return rl.question(`${question}${fallback ? `（回车使用「${fallback}」）` : ''}: `).then(answer => answer.trim() || fallback)
+}
+
+console.log('')
+console.log(`  新建文章  /posts/${finalSlug}/`)
+console.log('  ' + '─'.repeat(38))
+console.log('')
+
+const defaultTitle = looksLikeTitle ? input : humanize(finalSlug)
+const title = typeof flags.get('title') === 'string' ? flags.get('title') : await ask('标题', defaultTitle)
+
+const tagsInput = typeof flags.get('tags') === 'string'
+  ? flags.get('tags')
+  : await ask('标签（逗号分隔，可留空）', '')
+const tags = tagsInput ? tagsInput.split(/[,，]/).map(t => t.trim()).filter(Boolean) : []
+
+const pinInput = flags.has('pin') ? String(flags.get('pin')) : await ask('置顶权重（0 = 不置顶）', '0')
+const pin = Number.parseInt(pinInput, 10)
+
+const draftInput = flags.has('draft')
+  ? 'y'
+  : await ask('存为草稿？只有开发环境可见 (y/N)', 'n')
+const draft = /^y/i.test(draftInput)
+
+rl?.close()
+
+// Match the block style used by the existing posts:
+//   tags:
+//     - 随笔
+// An empty list has to stay inline, otherwise YAML parses it as null.
+const tagBlock = tags.length
+  ? ['tags:', ...tags.map(tag => `  - ${yamlScalar(tag)}`)]
+  : ['tags: []']
+
 const frontmatter = [
   '---',
   `title: ${yamlScalar(title)}`,
   "description: ''",
-  `published: ${date}`,
-  tags.length ? 'tags:' : 'tags: []',
-  ...tags.map(tag => `  - ${yamlScalar(tag)}`),
+  `published: ${today}`,
+  ...tagBlock,
   `pin: ${Number.isFinite(pin) ? pin : 0}`,
   ...(draft ? ['draft: true'] : []),
   '---',
@@ -100,20 +159,26 @@ const frontmatter = [
 ].join('\n')
 
 fs.mkdirSync(POSTS_DIR, { recursive: true })
-const target = path.join(POSTS_DIR, `${slug}.md`)
-
-if (fs.existsSync(target)) {
-  console.error(`已存在同名文章: src/content/posts/${slug}.md`)
-  console.error('换一个 --slug，或直接编辑已有文件。')
-  process.exit(1)
-}
-
 fs.writeFileSync(target, frontmatter, 'utf-8')
 
-console.log(`已创建 src/content/posts/${slug}.md`)
-console.log(`URL: /posts/${slug}/`)
-if (!customSlug && !slugFromTitle) {
-  console.log('提示：标题不是拉丁字符，已用时间戳作为 slug；可用 --slug 自定义。')
+console.log('')
+console.log(`  已创建 src/content/posts/${finalSlug}.md`)
+console.log(`  网址 /posts/${finalSlug}/`)
+console.log('')
+console.log('  接下来：')
+console.log(`    1. 打开 src/content/posts/${finalSlug}.md`)
+console.log('    2. 补上 description（会显示在列表、搜索和分享里）')
+console.log('    3. 把「在这里开始写正文。」换成正文')
+console.log('    4. 运行 npm run dev 预览')
+console.log('')
+console.log('  标签写法（和已有文章保持一致）：')
+console.log('    tags:')
+console.log('      - 随笔')
+console.log('      - 城市')
+console.log('')
+if (!tags.length) console.log('  提示：这次没填标签，文件里写成了 tags: []（YAML 空列表的标准写法）。')
+console.log('')
+if (!looksLikeTitle && !presetSlug && !slug) {
+  console.log('  提示：网址用的是时间戳，想换成更好记的名字可以重命名文件。')
 }
-if (draft) console.log('提示：draft: true 只会在开发环境可见。')
-console.log('下一步：npm run dev，然后打开文章页检查排版。')
+if (draft) console.log('  提示：draft: true 只会在 npm run dev 里看到。')

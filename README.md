@@ -58,7 +58,7 @@ npm run dev
 | 命令 | 说明 |
 | --- | --- |
 | `npm run dev` | 启动开发服务器 |
-| `npm run new -- "标题"` | 新建一篇带 frontmatter 的文章 |
+| `npm run new -- 网址` | 新建文章（会依次询问标题、标签等） |
 | `npm run build` | 生成静态站点到 `dist/` |
 | `npm run build:clean` | 清理 Astro 内容缓存后再构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
@@ -69,64 +69,52 @@ npm run dev
 
 ### 新建文章
 
-你可以手动在 `src/content/posts/` 建一个 `.md` 文件，也可以用这条命令让脚本帮你生成好开头：
+`npm run new` 后面跟的是**文章的网址**，也就是文件名。脚本会先按这个名字生成标题，再依次问你标题、标签、置顶和草稿——每一项都能直接回车跳过：
 
 ```bash
-npm run new -- "在一条不认识的街上走一会儿" --slug a-walk-without-a-map
+npm run new -- a-walk-without-a-map
 ```
-
-这条命令做的事很简单：在 `src/content/posts/` 里创建一个文件，把标题、今天的日期、标签这些开头的配置填好，然后在里面留一句「在这里开始写正文」。你不用再手抄一遍模板。
-
-拆开看就是这个结构：
 
 ```text
-npm run new  --  "文章标题"  --slug 文件名  --tags 标签  --pin 置顶  --draft
-└─ 运行脚本 ┘  └─ 参数，从 -- 之后开始都是参数 ───────────────────────┘
+新建文章  /posts/a-walk-without-a-map/
+──────────────────────────────────────
+
+标题（回车使用「A Walk Without a Map」）: 在一条不认识的街上走一会儿
+标签（逗号分隔，可留空）: 随笔,城市
+置顶权重（0 = 不置顶）（回车使用「0」）:
+存为草稿？只有开发环境可见 (y/N)（回车使用「n」）:
 ```
 
-- `npm run new`：执行 `scripts/new-post.mjs` 这个脚本
-- `--`：npm 的分隔符，告诉 npm「后面的内容是传给脚本的参数，不是给 npm 自己的」
-- `"文章标题"`：文章标题，会写进 `title:`。有空格或中文时用引号包起来
-- `--slug`：生成的文件名，同时也是文章网址。比如 `--slug a-walk-without-a-map`，文件就是 `src/content/posts/a-walk-without-a-map.md`，网址是 `/posts/a-walk-without-a-map/`
-- `--tags`、`--pin`、`--draft`：可选，不写就用默认值
-
-实际生成的文件长这样：
+回车到底，就得到一个可以直接开始写的文件 `src/content/posts/a-walk-without-a-map.md`：
 
 ```md
 ---
 title: 在一条不认识的街上走一会儿
 description: ''
-published: 2026-11-07        ← 自动填今天的日期
-tags: []
+published: 2026-11-07
+tags:
+  - 随笔
+  - 城市
 pin: 0
 ---
 
 在这里开始写正文。
 ```
 
-**为什么需要 `--slug`**：文件名会成为网址。中文标题没法直接当网址，所以脚本需要一个英文短名。不指定的话会用时间戳（如 `post-20261107-2143`），能用但不好看，也不方便分享。
+标签沿用列表写法（`tags:` 下面每个一行），和现有文章一致。没填标签时会写成 `tags: []`，这是 YAML 空列表的标准写法，两种都能被解析。
 
-只写标题也能用：
+几个要点：
+
+- 网址只用小写英文和连字符，例如 `a-walk-without-a-map`
+- 不填标题时，脚本会把网址变成可读标题（`a-walk-without-a-map` → `A Walk Without a Map`）
+- 网址写成中文或含空格时，会退回时间戳文件名
+- 想跳过所有提问，也可以一次带参数：
 
 ```bash
-npm run new -- "我的新文章"
+npm run new -- a-walk-without-a-map --title "在一条不认识的街上走一会儿" --tags "随笔,城市"
 ```
 
-想加上标签、置顶或先存成草稿：
-
-```bash
-npm run new -- "我的新文章" --slug my-new-post --tags 随笔,城市 --pin 1 --draft
-```
-
-| 参数 | 是否必填 | 说明 |
-| --- | --- | --- |
-| 标题 | 是 | 写在 `--` 后面，会填进 frontmatter 的 `title` |
-| `--slug` | 建议填 | 文件名 / 网址；中文标题无法自动转换时用时间戳 |
-| `--tags` | 否 | 逗号分隔，例如 `随笔,城市` |
-| `--pin` | 否 | 置顶权重，数字越大越靠前，默认 `0` |
-| `--draft` | 否 | 写入 `draft: true`，只在开发环境可见 |
-
-不想用命令也完全可以：直接新建 `src/content/posts/我的文章.md`，手动写上面那段 frontmatter，效果一样。
+不想用命令也完全可以：直接新建 `src/content/posts/我的文章.md`，手动写 frontmatter，效果一样。
 
 ---
 
@@ -270,13 +258,15 @@ npm run og
 
 ## 写文章
 
-推荐用脚手架生成，frontmatter 和日期会自动填好：
+推荐用 `npm run new` 生成（见上方「新建文章」），它会顺便问你要不要标签和置顶：
 
 ```bash
-npm run new -- "雨停之前，先别急着走" --slug rain-before-it-stops --tags 随笔,城市
+npm run new -- rain-before-it-stops
 ```
 
-也可以直接在 `src/content/posts/` 新建 `.md`，文件名即 URL slug：
+生成后打开 `src/content/posts/rain-before-it-stops.md`，补上 `description` 和正文即可。
+
+也可以直接在 `src/content/posts/` 新建 `.md`，文件名即网址：
 
 ```md
 ---

@@ -28,7 +28,7 @@ npm run dev
 | 命令 | 用途 |
 | --- | --- |
 | `npm run dev` | 启动开发服务器 |
-| `npm run new -- "标题"` | 新建一篇带 frontmatter 的文章 |
+| `npm run new -- 网址` | 新建文章（会依次询问标题、标签等） |
 | `npm run build` | 生成静态站点到 `dist/` |
 | `npm run build:clean` | 清理 Astro 内容缓存后构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
@@ -39,50 +39,67 @@ npm run dev
 
 ### 新建文章
 
-这条命令会替你在 `src/content/posts/` 里建好文件，并把标题、日期、标签这些开头配置填上：
+`npm run new` 后面跟的是**文章的网址**，也就是文件名。脚本会先按这个名字生成一个标题，再依次问你标题、标签、置顶和草稿——每一项都可以直接回车跳过：
 
 ```bash
-npm run new -- "在一条不认识的街上走一会儿" --slug a-walk-without-a-map
+npm run new -- rain-before-it-stops
 ```
-
-拆开看：
 
 ```text
-npm run new  --  "文章标题"  --slug 文件名  --tags 标签  --pin 置顶  --draft
-└─ 运行脚本 ┘  └─ 参数 ─────────────────────────────────────────────────┘
+新建文章  /posts/rain-before-it-stops/
+──────────────────────────────────────
+
+标题（回车使用「Rain Before It Stops」）: 雨停之前，先别急着走
+标签（逗号分隔，可留空）: 随笔,城市
+置顶权重（0 = 不置顶）（回车使用「0」）:
+存为草稿？只有开发环境可见 (y/N)（回车使用「n」）:
 ```
 
-- `npm run new`：运行 `scripts/new-post.mjs`
-- `--`：npm 的分隔符，后面写的内容会传给脚本，而不是给 npm
-- `"文章标题"`：写进 frontmatter 的 `title`，中文或带空格时用引号包住
-- `--slug`：文件名，也是文章网址。`--slug a-walk-without-a-map` 会生成 `src/content/posts/a-walk-without-a-map.md`，网址是 `/posts/a-walk-without-a-map/`
-- 其余参数可选，不写就用默认值
-
-生成的文件长这样：
+回车到底，就得到一个可以直接开始写的空文章：
 
 ```md
 ---
-title: 在一条不认识的街上走一会儿
+title: 雨停之前，先别急着走
 description: ''
-published: 2026-11-07        ← 自动填今天的日期
-tags: []
+published: 2026-11-07
+tags:
+  - 随笔
+  - 城市
 pin: 0
 ---
 
 在这里开始写正文。
 ```
 
-**为什么要 `--slug`**：文件名就是网址，中文标题没法直接当网址，所以需要一个英文短名。不填会退回到时间戳，能用但不好看。
+标签用列表写法，和仓库里已有文章一致；没填标签时写 `tags: []`。
 
-| 参数 | 是否必填 | 说明 |
-| --- | --- | --- |
-| 标题 | 是 | 写在 `--` 之后 |
-| `--slug` | 建议填 | 文件名 / 网址；中文标题自动转换不了时用时间戳 |
-| `--tags` | 否 | 逗号分隔，例如 `随笔,城市` |
-| `--pin` | 否 | 置顶权重，默认 `0` |
-| `--draft` | 否 | 写入 `draft: true`，只在开发环境可见 |
+几个要点：
 
-不习惯命令的话，直接在 `src/content/posts/` 新建 `.md` 并手写 frontmatter，效果完全一样。
+- 网址只用小写英文和连字符，例如 `rain-before-it-stops`
+- 不写标题时，脚本会把网址变成可读标题（`rain-before-it-stops` → `Rain Before It Stops`）
+- 网址已经是中文或含空格时，会退回时间戳文件名
+- 想跳过所有提问、一条命令写到底，也可以直接带参数：
+
+```bash
+npm run new -- rain-before-it-stops --title "雨停之前，先别急着走" --tags "随笔,城市"
+```
+
+不习惯命令行的话，直接在 `src/content/posts/` 新建 `.md` 并手写 frontmatter，效果完全一样：
+
+```yaml
+---
+title: 文章标题
+description: 一句话摘要
+published: 2026-11-06
+tags:
+  - 随笔
+  - 城市
+pin: 0
+draft: false
+---
+```
+
+正文直接写 Markdown。首页摘要会优先用 frontmatter 的 `description`，没有时自动取正文前 88 个字；列表、搜索和 SEO 都会使用清理后的纯文本。
 
 ### 什么时候用 build:clean
 
@@ -110,31 +127,6 @@ src/
 functions/api/views.js      可选的 Cloudflare Pages Function
 public/                     字体、分享图、示例图片、_headers
 ```
-
-## 写一篇新文章
-
-推荐用脚手架生成，frontmatter 和日期会自动填好：
-
-```bash
-npm run new -- "文章标题" --slug my-post --tags 随笔,城市
-```
-
-也可以直接在 `src/content/posts/` 新建 `.md`，文件名就是 URL slug：
-
-```yaml
----
-title: 文章标题
-description: 一句话摘要
-published: 2026-11-06
-tags:
-  - 随笔
-  - 城市
-pin: 0
-draft: false
----
-```
-
-正文直接写 Markdown。首页摘要会优先用 frontmatter 的 `description`，没有时自动取正文前 88 个字；列表、搜索和 SEO 都会使用清理后的纯文本。
 
 ## 站点配置
 
