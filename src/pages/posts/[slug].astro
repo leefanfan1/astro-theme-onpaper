@@ -66,10 +66,8 @@ const jsonLd = {
   <ReadingProgress />
 
   <article class="article">
-    <header class="article-header" data-reveal>
-      <h1 class="article-title">
-        <span transition:name={`post-title-${post.id}`}>{post.data.title}</span>
-      </h1>
+    <header class="article-header">
+      <h1 class="article-title">{post.data.title}</h1>
 
       <div class="article-meta">
         <time datetime={post.data.published.toISOString()}>{formatDateLong(post.data.published)}</time>
