@@ -1,6 +1,6 @@
 ---
-title: 余白上手指南：命令、配置与发布
-description: 从 npm run dev 到 Cloudflare Pages 部署，整理余白的命令、目录、配置和上线前检查。
+title: 纸上留白上手指南：命令、配置与发布
+description: 从 npm run dev 到 Cloudflare Pages 部署，整理纸上留白的命令、目录、配置和上线前检查。
 published: 2026-06-16
 updated: 2026-11-06
 tags:
@@ -209,5 +209,3 @@ npx wrangler pages deploy dist
 - [ ] 在 iPhone Safari 和 Android Chrome 各看一次
 - [ ] 如果开启 GA4，决定是否需要 consent
 - [ ] 如果开放投稿，先处理原始 HTML 的 sanitizer
-
-更多安全与性能说明见仓库根目录的 `AUDIT.md` 和 `SECURITY.md`。

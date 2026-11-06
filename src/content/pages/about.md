@@ -1,6 +1,6 @@
 ---
 title: 关于
-description: 关于余白，关于写字，关于一些没有答案的问题。
+description: 关于纸上留白，关于写字，关于一些没有答案的问题。
 ---
 
 你好，我是林间。
@@ -16,13 +16,13 @@ description: 关于余白，关于写字，关于一些没有答案的问题。
 
 ## 关于这个站点
 
-站点叫「余白」，主题也叫「余白」。它基于 Astro 构建，托管在 Cloudflare Pages 上，没有数据库，没有评论系统，只有一个轻量的阅读计数。
+站点叫「纸上留白」，英文名 OnPaper。它基于 Astro 构建，托管在 Cloudflare Pages 上，没有数据库，没有评论系统，只有一个轻量的阅读计数。
 
 如果这里的一两句话刚好陪你度过了一个晚上，那就够了。
 
 ## 联系
 
-- 邮件：[hello@yohaku.example](mailto:hello@yohaku.example)
+- 邮件：[hello@onpaper.example](mailto:hello@onpaper.example)
 - RSS：[订阅](/rss.xml)
 - GitHub：[github.com](https://github.com/)
 

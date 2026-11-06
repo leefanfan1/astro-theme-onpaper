@@ -1,5 +1,5 @@
 /* =========================================================
-   余白 / Yohaku — editorial rail layout
+   纸上留白 / OnPaper — editorial rail layout
    Claude/Anthropic-inspired cream, ink, terracotta and olive.
    ========================================================= */
 
@@ -226,11 +226,14 @@ html[data-astro-transition]::view-transition-new(root) {
 .rail-wordmark__cn {
   display: block;
   font-family: var(--font-display);
-  font-size: 3.4rem;
+  /* Four CJK characters at 3.4rem overflow the 13rem rail, so scale with the
+     available width instead of wrapping onto a second line. */
+  font-size: clamp(2.1rem, 2.9rem, 3rem);
   font-weight: 500;
   line-height: 1.08;
   padding-top: 0.06em;
   letter-spacing: -0.04em;
+  white-space: nowrap;
 }
 
 .rail-subtitle {
@@ -487,7 +490,7 @@ html[data-theme="dark"] .theme-toggle .moon {
   }
 
   .mobile-bar .rail-wordmark__cn {
-    font-size: 3rem;
+    font-size: 2.6rem;
     line-height: 1.05;
     transition: font-size 0.36s cubic-bezier(0.33, 1, 0.68, 1);
   }

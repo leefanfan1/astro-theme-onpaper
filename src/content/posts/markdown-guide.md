@@ -1,6 +1,6 @@
 ---
 title: Markdown 语法手册
-description: 余白支持的标题、列表、表格、代码、LaTeX、Mermaid，以及音乐 / GitHub / 视频卡片和嵌入指令的完整速查。
+description: 纸上留白支持的标题、列表、表格、代码、LaTeX、Mermaid，以及音乐 / GitHub / 视频卡片和嵌入指令的完整速查。
 published: 2026-06-18
 updated: 2026-11-06
 tags:
@@ -10,7 +10,7 @@ tags:
 pin: 0
 ---
 
-这篇手册只列余白实际支持的写法，可以直接复制使用。想看渲染后的效果，请打开[格式示例](/posts/format-showcase/)；想了解命令、配置和部署，请看[上手指南](/posts/getting-started/)。
+这篇手册只列纸上留白实际支持的写法，可以直接复制使用。想看渲染后的效果，请打开[格式示例](/posts/format-showcase/)；想了解命令、配置和部署，请看[上手指南](/posts/getting-started/)。
 
 ## Frontmatter
 
@@ -140,7 +140,7 @@ $E = mc^2$
 
 ```md
 $$
-\text{余白} = \text{内容} - \text{噪音}
+\text{留白} = \text{内容} - \text{噪音}
 $$
 ```
 
@@ -162,7 +162,7 @@ flowchart LR
 
 ## 音乐卡片
 
-余白有两种写法。**推荐用自动解析**，因为构建期会做跨平台匹配。
+纸上留白有两种写法。**推荐用自动解析**，因为构建期会做跨平台匹配。
 
 > 所有 `::指令` 的属性都要写在**同一行**里；这里为了可读性会折行显示，但真实文件里请保持单行。
 
@@ -268,4 +268,4 @@ Markdown 里可以直接写 HTML，用于图注、表格等 Markdown 不方便�
 - 新增 `::music` 后是否运行了 `npm run music`；
 - 修改插件或指令后是否用了 `npm run build:clean`。
 
-更多命令和配置见[余白上手指南](/posts/getting-started/)。
+更多命令和配置见[纸上留白上手指南](/posts/getting-started/)。

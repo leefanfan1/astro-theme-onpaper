@@ -25,7 +25,7 @@
     const blocks = [...document.querySelectorAll<HTMLElement>('.prose pre[data-language="mermaid"], .prose pre.mermaid')]
     if (!blocks.length) return
     if (mermaidRendering) return
-    if (!force && blocks.every(block => block.dataset.yohakuRendered === 'true')) return
+    if (!force && blocks.every(block => block.dataset.onpaperRendered === 'true')) return
     mermaidRendering = true
 
     try {
@@ -41,7 +41,7 @@
         block.removeAttribute('style')
         block.removeAttribute('data-copy-ready')
         block.removeAttribute('data-processed')
-        block.removeAttribute('data-yohaku-rendered')
+        block.removeAttribute('data-onpaper-rendered')
         block.className = 'mermaid'
         block.textContent = block.dataset.source
       }
@@ -58,10 +58,10 @@
       })
 
       await mermaid.run({ nodes: blocks })
-      for (const block of blocks) block.dataset.yohakuRendered = 'true'
+      for (const block of blocks) block.dataset.onpaperRendered = 'true'
     }
     catch (error) {
-      console.warn('[Yohaku] Mermaid render failed:', error)
+      console.warn('[OnPaper] Mermaid render failed:', error)
     }
     finally {
       mermaidRendering = false
@@ -79,7 +79,7 @@
       const repo = card.dataset.repo
       if (!repo) continue
 
-      const cacheKey = `yohaku-gh:${repo}`
+      const cacheKey = `onpaper-gh:${repo}`
       let data: {
         description?: string | null
         stargazers_count?: number
@@ -124,7 +124,7 @@
 
     const blocks = [...document.querySelectorAll<HTMLElement>('.prose pre[data-language="mermaid"], .prose pre.mermaid')]
     if (!blocks.length) return
-    if (blocks.every(block => block.dataset.yohakuRendered === 'true')) return
+    if (blocks.every(block => block.dataset.onpaperRendered === 'true')) return
     if (!('IntersectionObserver' in window)) {
       void renderMermaid()
       return

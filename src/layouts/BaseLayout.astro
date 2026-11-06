@@ -129,7 +129,7 @@ html.theme-changing *{transition:none!important}
       (function () {
         document.documentElement.classList.add('js')
         var stored = null
-        try { stored = localStorage.getItem('yohaku-theme') } catch (error) {}
+        try { stored = localStorage.getItem('onpaper-theme') } catch (error) {}
         var system = window.matchMedia('(prefers-color-scheme: dark)').matches
         var mode = (stored === 'light' || stored === 'dark') ? stored : defaultMode
         var isDark = mode === 'dark' || (mode === 'auto' && system)
@@ -143,7 +143,7 @@ html.theme-changing *{transition:none!important}
         document.addEventListener('astro:before-swap', function (event) {
           try {
             if (!event.newDocument) return
-            var nextStored = localStorage.getItem('yohaku-theme')
+            var nextStored = localStorage.getItem('onpaper-theme')
             var nextSystem = window.matchMedia('(prefers-color-scheme: dark)').matches
             var nextMode = (nextStored === 'light' || nextStored === 'dark') ? nextStored : defaultMode
             var nextDark = nextMode === 'dark' || (nextMode === 'auto' && nextSystem)
@@ -278,12 +278,12 @@ html.theme-changing *{transition:none!important}
       function rememberNavigation() {
         try {
           const current = location.pathname + location.search
-          sessionStorage.setItem('yohaku:immediate-previous', JSON.stringify({
+          sessionStorage.setItem('onpaper:immediate-previous', JSON.stringify({
             url: current,
             at: Date.now(),
           }))
           if (!location.pathname.startsWith('/posts/')) {
-            sessionStorage.setItem('yohaku:list-context', JSON.stringify({
+            sessionStorage.setItem('onpaper:list-context', JSON.stringify({
               url: current,
               scrollY: window.scrollY,
               at: Date.now(),
@@ -295,15 +295,15 @@ html.theme-changing *{transition:none!important}
 
       function restoreListScroll() {
         try {
-          const raw = sessionStorage.getItem('yohaku:restore-scroll')
+          const raw = sessionStorage.getItem('onpaper:restore-scroll')
           if (!raw) return
           const saved = JSON.parse(raw)
           const current = location.pathname + location.search
           if (!saved?.url || saved.url !== current) {
-            sessionStorage.removeItem('yohaku:restore-scroll')
+            sessionStorage.removeItem('onpaper:restore-scroll')
             return
           }
-          sessionStorage.removeItem('yohaku:restore-scroll')
+          sessionStorage.removeItem('onpaper:restore-scroll')
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               window.scrollTo({ top: saved.scrollY || 0, left: 0, behavior: 'instant' })

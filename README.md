@@ -1,4 +1,4 @@
-# 余白 / Yohaku
+# 纸上留白 / OnPaper
 
 一个为中文个人博客写的 Astro 主题。借鉴 Claude / Anthropic 官网的配色与字体气质，页面布局则回到传统博客：正文列 + 右侧窄栏、文章列表、时间线归档、文章直接铺在纸面上。
 
@@ -10,7 +10,7 @@
 - 浅色 / 深色 / 跟随系统
 - 首页、文章、归档时间线、标签、关于、404、分页
 - 全文搜索（Ctrl / Cmd + K，或按 `/`）
-- 音乐卡片：Spotify / Apple Music / 网易云 / QQ 音乐自动识别、跨平台匹配、构建期缓存，沿用原版卡片结构
+- 音乐卡片：Spotify / Apple Music / 网易云 / QQ 音乐自动识别、跨平台匹配、构建期缓存
 - 友链页
 - 可选 Google Analytics 4（含 Astro 客户端路由的 page_view 处理）
 - 1200×630 分享卡片（Open Graph），可用 `npm run og` 重新生成
@@ -21,7 +21,7 @@
 - 浅色目录面板（列表图标 + 折叠开关），展开后随滚动标记当前章节；正文图片点击放大，支持滚轮 / 双指缩放和拖动
 - 6 篇中文示例文章：格式示例、Markdown 语法手册、上手指南和 2025 / 2026 跨年份归档
 - Markdown 扩展：KaTeX、Mermaid、GitHub 卡片、媒体嵌入
-- 阅读进度、回到顶部、分享（原版 SVG 图标）、可选阅读计数（Cloudflare KV）
+- 阅读进度、回到顶部、分享（内联 SVG 图标）、可选阅读计数（Cloudflare KV）
 - RSS、sitemap、robots、Open Graph
 - 键盘焦点、跳转正文、减少动效、44px 触控热区
 
@@ -51,11 +51,11 @@ npm run music       # 重新解析并缓存 ::music 指令里的链接
 
 ```ts
 export const siteConfig = {
-  title: '余白',
+  title: '纸上留白',
   subtitle: '在字与字之间，留一点呼吸。',
   description: '……',
   author: '林间',
-  url: 'https://yohaku.example.com',
+  url: 'https://onpaper.example.com',
   postsPerPage: 4,
   tocOpen: false, // 文章目录默认收起
   nav: [
@@ -73,7 +73,7 @@ export const siteConfig = {
   socials: [
     { label: 'RSS', href: '/rss.xml', external: true },
     { label: 'GitHub', href: 'https://github.com/', external: true },
-    { label: 'Email', href: 'mailto:hello@yohaku.example' },
+    { label: 'Email', href: 'mailto:hello@onpaper.example' },
   ],
   theme: {
     defaultMode: 'auto', // auto | light | dark
@@ -196,7 +196,7 @@ npm run music
 ::music-card{title="城市" artist="张悬" cover="https://.../cover.jpg" type="album" spotify="https://open.spotify.com/album/..."}
 ```
 
-音乐卡片、自动解析、跨平台匹配和平台 SVG 图标沿用作者原有博客的实现。自动卡片只显示类型、标题、艺人和平台链接，不显示歌词或额外文案；手动 `music-card` 仍可选填 `lyric`。桌面是紧凑横向卡片（118px 封面）；移动端改为垂直卡片：140px 封面居中，类型/标题/艺人居中，平台链接固定两行两列（4 个平台，内容块居中、图标按列对齐），卡片最大 360px，标题使用站点衬线字体。
+音乐卡片包含自动解析、跨平台匹配和平台 SVG 图标。自动卡片只显示类型、标题、艺人和平台链接，不显示歌词或额外文案；手动 `music-card` 仍可选填 `lyric`。桌面是紧凑横向卡片（118px 封面）；移动端改为垂直卡片：140px 封面居中，类型/标题/艺人居中，平台链接固定两行两列（4 个平台，内容块居中、图标按列对齐），卡片最大 360px，标题使用站点衬线字体。
 
 ### GitHub 卡片
 
@@ -227,7 +227,7 @@ B 站同时设置 `autoplay=0`、`poster=1` 和 `allow="autoplay 'none'; …"`�
 
 ```md
 $$
-\text{余白} = \text{内容} - \text{噪音}
+\text{留白} = \text{内容} - \text{噪音}
 $$
 ```
 
@@ -266,7 +266,7 @@ npx wrangler pages deploy dist
 
 在 Cloudflare 控制台：
 
-1. 进入 **Workers & Pages → KV**，创建一个命名空间，例如 `yohaku-views`。
+1. 进入 **Workers & Pages → KV**，创建一个命名空间，例如 `onpaper-views`。
 2. 进入 Pages 项目 → **Settings → Functions → KV namespace bindings**。
 3. 变量名填 **`VIEWS_KV`**，选择刚创建的命名空间。
 4. 重新部署。
@@ -304,16 +304,16 @@ src/
   styles/                   字体、布局、正文、扩展卡片
   utils/                    文章查询、格式化、音乐解析
 functions/api/views.js      Cloudflare Pages Function
-scripts/                    音乐缓存、截图
-public/                     favicon、OG、字体、_headers
+scripts/                    音乐缓存、OG 生成、截图、缓存清理
+public/                     favicon、OG、字体、示例图片、_headers
 ```
 
 ## 设计说明
 
 - 布局：正文列 + 右侧固定窄栏（刊头、导航、搜索、主题、页脚）；移动端折叠为顶部导航和单列文章列表。
-- 刊头：右栏只保留大号「余白」和副标题，去掉卷号与英文小字，减少视觉噪音。
+- 刊头：右栏只保留大号「纸上留白」和副标题，去掉卷号与英文小字，减少视觉噪音。
 - 首页：文章列表 + 分页，不做营销式 hero 或卡片网格；列表标题、描述和分隔线与内容列同宽。
-- 文章页：宽屏桌面左侧固定层级目录；窄桌面/平板回退到顶部目录面板；移动端只看顶部目录，不显示返回首页按钮。宽屏桌面标题左侧的「← 首页」固定悬浮，阅读时始终可见；较窄的桌面宽度放在标题上方，移动端隐藏；右下角 Top 已移到左下。正文图片可点击放大；分享栏使用原项目的 SVG 图标。
+- 文章页：宽屏桌面左侧固定层级目录；窄桌面/平板回退到顶部目录面板；移动端只看顶部目录，不显示返回首页按钮。宽屏桌面标题左侧的「← 首页」固定悬浮，阅读时始终可见；较窄的桌面宽度放在标题上方，移动端隐藏；右下角 Top 已移到左下。正文图片可点击放大；分享栏使用内联 SVG 图标。
 - 归档：按年份分组的纵向时间线 + 标签索引；关于页直接使用正文排版。
 - 字体：Newsreader（拉丁标题）+ Noto Serif SC Variable（中文标题）+ 系统无衬线（正文）；日期使用 Newsreader 斜体。
 - 颜色：奶油纸色、墨色、赤陶橙、橄榄绿；平涂背景，没有渐变和装饰光效；导航当前项使用平涂赤陶色记号。

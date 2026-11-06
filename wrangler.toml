@@ -9,7 +9,7 @@
 #
 # The rest of the site is static; only /api/views uses this Function.
 
-name = "yohaku"
+name = "onpaper"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-01-01"
 

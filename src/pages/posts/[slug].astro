@@ -123,9 +123,9 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
 </BaseLayout>
 
 <script>
-  const LIST_KEY = 'yohaku:list-context'
-  const PREVIOUS_KEY = 'yohaku:immediate-previous'
-  const RESTORE_KEY = 'yohaku:restore-scroll'
+  const LIST_KEY = 'onpaper:list-context'
+  const PREVIOUS_KEY = 'onpaper:immediate-previous'
+  const RESTORE_KEY = 'onpaper:restore-scroll'
   const MAX_AGE = 1000 * 60 * 60 * 2
 
   function readSession(key: string) {

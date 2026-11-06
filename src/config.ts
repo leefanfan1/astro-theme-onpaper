@@ -1,5 +1,5 @@
 /**
- * 余白 / Yohaku — 站点配置
+ * 纸上留白 / OnPaper — 站点配置
  *
  * 这个文件是主题的单一配置入口：站点信息、导航、社交链接、
  * 配色、字体、功能开关都在这里。改主题颜色只需要改 `theme`。
@@ -31,13 +31,13 @@ export interface SocialLink {
 }
 
 export const siteConfig = {
-  title: '余白',
+  title: '纸上留白',
   subtitle: '在字与字之间，留一点呼吸。',
-  description: '一个关于随笔、音乐与城市夜色的个人博客。把说不清楚的事写下来，给日子留一点余白。',
+  description: '一个关于随笔、音乐与城市夜色的个人博客。把说不清楚的事写下来，给日子留一点空白。',
   author: '林间',
-  email: 'hello@yohaku.example',
+  email: 'hello@onpaper.example',
   // 部署后改成你的域名。sitemap、canonical、RSS 都会使用它。
-  url: 'https://yohaku.example.com',
+  url: 'https://onpaper.example.com',
   lang: 'zh-CN',
   locale: 'zh_CN',
   startYear: 2024,
@@ -56,7 +56,7 @@ export const siteConfig = {
   socials: [
     { label: 'RSS', href: '/rss.xml', external: true },
     { label: 'GitHub', href: 'https://github.com/', external: true },
-    { label: 'Email', href: 'mailto:hello@yohaku.example' },
+    { label: 'Email', href: 'mailto:hello@onpaper.example' },
   ] satisfies SocialLink[],
 
   // 友链示例。开源前替换成你自己的朋友。
@@ -87,8 +87,8 @@ export const siteConfig = {
       description: '植物、散步和慢慢长出来的生活。',
     },
     {
-      name: '余白手记',
-      url: 'https://yohaku.example/',
+      name: '纸上留白',
+      url: 'https://onpaper.example/',
       description: '留白不是空，是让内容有地方站直。',
     },
   ],

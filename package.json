@@ -1,9 +1,9 @@
 {
-  "name": "astro-theme-yohaku",
+  "name": "astro-theme-onpaper",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "余白 / Yohaku — an original Chinese editorial blog theme for Astro and Cloudflare Pages.",
+  "description": "纸上留白 / OnPaper — an original Chinese editorial blog theme for Astro and Cloudflare Pages.",
   "engines": {
     "node": ">=22.12.0"
   },

@@ -1,6 +1,6 @@
 ---
-title: 一篇文章看懂余白支持的全部文章格式
-description: 从 LaTeX、Mermaid 到音乐卡片和 B 站 / YouTube 嵌入，用一篇示例文章查看余白支持的排版能力。
+title: 一篇文章看懂纸上留白支持的全部文章格式
+description: 从 LaTeX、Mermaid 到音乐卡片和 B 站 / YouTube 嵌入，用一篇示例文章查看纸上留白支持的排版能力。
 published: 2026-11-06
 updated: 2026-11-06
 tags:
@@ -10,9 +10,9 @@ tags:
 pin: 0
 ---
 
-这是一篇格式示例，不是一篇需要认真读完的文章。它把余白支持的主要 Markdown 语法和自定义组件放在同一页里，方便你复制、修改，再删掉不需要的部分。
+这是一篇格式示例，不是一篇需要认真读完的文章。它把纸上留白支持的主要 Markdown 语法和自定义组件放在同一页里，方便你复制、修改，再删掉不需要的部分。
 
-相关阅读：[Markdown 语法手册](/posts/markdown-guide/) · [余白上手指南](/posts/getting-started/)
+相关阅读：[Markdown 语法手册](/posts/markdown-guide/) · [纸上留白上手指南](/posts/getting-started/)
 
 ## 文字与段落
 
@@ -83,7 +83,7 @@ npm run preview
 独立公式会单独占一行：
 
 $$
-\text{余白} = \text{内容} - \text{噪音}
+\text{留白} = \text{内容} - \text{噪音}
 $$
 
 公式块支持横向滚动，不会把正文撑出屏幕。
@@ -142,6 +142,6 @@ flowchart LR
 
 ## 小结
 
-以上是余白目前支持的主要格式。写作时不必全部用上：一篇文章通常只需要标题、正文、目录和少量图片；音乐、图表和嵌入留给真正需要它们的段落。
+以上是纸上留白目前支持的主要格式。写作时不必全部用上：一篇文章通常只需要标题、正文、目录和少量图片；音乐、图表和嵌入留给真正需要它们的段落。
 
-如果你要复制某一段语法，可以回到 [Markdown 语法手册](/posts/markdown-guide/)；如果要修改站点配置或部署，请看[余白上手指南](/posts/getting-started/)。
+如果你要复制某一段语法，可以回到 [Markdown 语法手册](/posts/markdown-guide/)；如果要修改站点配置或部署，请看[纸上留白上手指南](/posts/getting-started/)。

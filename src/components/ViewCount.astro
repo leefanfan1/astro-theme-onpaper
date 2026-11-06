@@ -27,7 +27,7 @@ const { slug } = Astro.props
     // view increment from the immediate init below.
     el.dataset.viewInit = 'true'
 
-    const storageKey = `yohaku-viewed:${slug}`
+    const storageKey = `onpaper-viewed:${slug}`
     const base = import.meta.env.BASE_URL.replace(/\/$/, '')
     let isNewVisit = false
     try {

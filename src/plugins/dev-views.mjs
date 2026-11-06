@@ -47,7 +47,7 @@ export function devViews() {
     if (!handleViews(req, res, counts)) next()
   }
   return {
-    name: 'yohaku-dev-views',
+    name: 'onpaper-dev-views',
     configureServer(server) {
       server.middlewares.use(middleware)
     },
@@ -60,7 +60,7 @@ export function devViews() {
 export function devViewsIntegration() {
   const counts = createCounts()
   return {
-    name: 'yohaku-dev-views-integration',
+    name: 'onpaper-dev-views-integration',
     hooks: {
       'astro:server:setup': ({ server }) => {
         // Astro 7's dev router answers page requests before Vite's Connect

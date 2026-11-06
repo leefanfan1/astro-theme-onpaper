@@ -1,14 +1,13 @@
 /**
- * 余白的 Markdown 扩展指令：
+ * 纸上留白的 Markdown 扩展指令：
  *
  *   ::music{url="https://open.spotify.com/album/..."}
  *   ::music-card{title="..." artist="..." cover="..." type="album" lyric="..." spotify="..."}
  *   ::github{repo="withastro/astro" description="..." stars="..."}
  *   ::embed{url="https://www.youtube.com/watch?v=..." title="..."}
  *
- * 音乐卡片沿用作者现有博客的解析器与卡片结构：Spotify / Apple Music /
- * 网易云 / QQ 音乐自动识别、跨平台匹配，并读取 src/data/music-cache.json
- * 的构建期缓存。卡片 SVG 图标也来自作者原版。
+ * 音乐卡片支持 Spotify / Apple Music / 网易云 / QQ 音乐自动识别、
+ * 跨平台匹配，并读取 src/data/music-cache.json 的构建期缓存。
  */
 
 import { resolveMusicUrl } from '../utils/music-resolver.mjs'
@@ -117,7 +116,7 @@ async function renderMusic(attrs) {
     }))
   }
   catch (error) {
-    console.warn(`[yohaku] music: ${error.message}`)
+    console.warn(`[onpaper] music: ${error.message}`)
     return html(`
 <div class="mc-card" style="opacity:0.5">
   <div class="mc-inner" style="justify-content:center;padding:20px;text-align:center">
