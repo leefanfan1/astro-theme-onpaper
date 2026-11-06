@@ -200,11 +200,14 @@ npm run music
 
 ### GitHub 卡片
 
+可以直接粘贴仓库网址，也可以写 `owner/name`：
+
 ```md
+::github{url="https://github.com/withastro/astro"}
 ::github{repo="withastro/astro" description="The web framework for content-driven websites." stars="52k" forks="2.8k" language="TypeScript"}
 ```
 
-卡片在浏览器里按需读取 GitHub 公开 API，并用 `sessionStorage` 缓存。没有网络时会保留下面的静态字段。
+`url` 形式会在构建时解析出 owner / repo。卡片在浏览器里按需读取 GitHub 公开 API，并用 `sessionStorage` 缓存；没有网络时会保留下面的静态字段。
 
 ### 媒体嵌入
 
@@ -213,6 +216,10 @@ npm run music
 ```
 
 支持 YouTube、Bilibili、Spotify、Vimeo。使用带 `loading="lazy"` 的 iframe，进入视口后自动加载；不自动播放，仍由播放器自己的播放按钮控制。
+
+B 站同时设置 `autoplay=0`、`poster=1` 和 `allow="autoplay 'none'; …"`，显示播放器封面并显式禁止自动播放；手动点击播放仍可正常使用。
+
+修改 Markdown 插件后，请先停止开发服务，运行 `npm run clean`，再重新运行 `npm run dev`，以免 Astro 继续使用旧的内容缓存。
 
 ### 数学与图表
 

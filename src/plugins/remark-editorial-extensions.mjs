@@ -153,10 +153,30 @@ function renderManualMusicCard(attrs) {
   }))
 }
 
+// Accept either repo="owner/name" or url="https://github.com/owner/name".
+function parseGithubRepo(attrs) {
+  const rawRepo = String(attrs.repo ?? '').trim().replace(/^\/+|\/+$/g, '')
+  if (rawRepo) return rawRepo.replace(/\.git$/i, '')
+
+  const rawUrl = String(attrs.url ?? '').trim()
+  if (!rawUrl) return ''
+  try {
+    const parsed = new URL(rawUrl)
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '')
+    if (host !== 'github.com') return ''
+    const parts = parsed.pathname.split('/').filter(Boolean)
+    if (parts.length < 2) return ''
+    return `${parts[0]}/${parts[1].replace(/\.git$/i, '')}`
+  }
+  catch {
+    return ''
+  }
+}
+
 function renderGithub(attrs) {
-  const repo = String(attrs.repo ?? '').trim()
+  const repo = parseGithubRepo(attrs)
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) {
-    return html('<p class="editorial-note">GitHub 卡片缺少合法的 repo 参数。</p>')
+    return html('<p class="editorial-note">GitHub 卡片需要 repo="owner/name" 或 github.com 的网址。</p>')
   }
   const description = attrs.description || '正在读取仓库信息…'
   const stars = attrs.stars || '—'
@@ -213,7 +233,9 @@ function detectEmbed(rawUrl) {
     if (match) {
       const id = match[1]
       const query = id.startsWith('BV') ? `bvid=${id}` : `aid=${id.slice(2)}`
-      return { provider: 'Bilibili', src: `https://player.bilibili.com/player.html?${query}&autoplay=0&high_quality=1` }
+      // Show the player's own cover until the reader presses play. Keep this
+      // explicit: preloading a video frame is separate from loading the iframe.
+      return { provider: 'Bilibili', src: `https://player.bilibili.com/player.html?${query}&autoplay=0&poster=1&high_quality=1` }
     }
   }
   if (host === 'open.spotify.com') {
@@ -237,6 +259,7 @@ function renderEmbed(attrs) {
   const detected = detectEmbed(rawUrl)
   const title = attrs.title || '播放媒体'
   const caption = attrs.caption ? `<p class="embed-card__caption">${esc(attrs.caption)}</p>` : ''
+  const permissions = `${detected?.provider === 'Bilibili' ? "autoplay 'none'; " : ''}accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share`
 
   if (!detected) {
     return html(`
@@ -255,7 +278,7 @@ function renderEmbed(attrs) {
     src="${esc(detected.src)}"
     title="${esc(`${detected.provider}：${title}`)}"
     loading="lazy"
-    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allow="${esc(permissions)}"
     allowfullscreen
     referrerpolicy="strict-origin-when-cross-origin"
   ></iframe>

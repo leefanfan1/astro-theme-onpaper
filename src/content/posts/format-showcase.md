@@ -105,7 +105,7 @@ flowchart LR
 
 ## 音乐卡片
 
-`::music` 会读取构建期缓存，识别 Spotify、Apple Music、网易云和 QQ 音乐，并自动匹配其他平台的链接。
+`::music` 会读取构建期缓存，识别 Spotify、Apple Music、网易云和 QQ 音乐，并自动匹配其他平台的链接。完整参数和手动写法见 [Markdown 语法手册](/posts/markdown-guide/#音乐卡片)。
 
 它的解析原理大致是：
 
@@ -120,9 +120,9 @@ flowchart LR
 
 ## GitHub 卡片
 
-`::github` 会在文章加载时读取一次 GitHub 公开 API；没有网络时保留静态字段。
+`::github` 支持两种写法：直接粘贴仓库网址，或写 `repo="owner/name"`。下面用的是网址形式，构建时会解析出仓库；文章加载时再读取一次 GitHub 公开 API 补全 Star、Fork 和语言，没有网络时保留静态字段。
 
-::github{repo="withastro/astro" description="The web framework for content-driven websites." stars="52k" forks="2.8k" language="TypeScript"}
+::github{url="https://github.com/withastro/astro" description="The web framework for content-driven websites." stars="52k" forks="2.8k" language="TypeScript"}
 
 ## 视频与媒体嵌入
 

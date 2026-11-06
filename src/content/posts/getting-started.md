@@ -96,12 +96,29 @@ draft: false
 
 部署前至少检查 `url`、`email`、`socials` 和 `friends`，它们目前是示例值。
 
-## 音乐卡片
+## 在文章里插入卡片
 
-自动解析：
+所有卡片都是 Markdown 指令，属性写在同一行里：
 
 ```md
 ::music{url="https://open.spotify.com/album/..."}
+::github{url="https://github.com/withastro/astro"}
+::embed{url="https://www.bilibili.com/video/BV..." title="B 站视频"}
+```
+
+| 指令 | 用途 | 最小写法 |
+| --- | --- | --- |
+| `::music` | 音乐卡片，自动跨平台匹配 | `::music{url="Spotify 链接"}` |
+| `::music-card` | 音乐卡片，手动填字段 | `::music-card{title="..." artist="..."}` |
+| `::github` | GitHub 仓库卡片 | `::github{repo="owner/name"}` |
+| `::embed` | 视频 / 音乐播放器嵌入 | `::embed{url="YouTube / B 站 / Spotify / Vimeo 链接"}` |
+
+完整参数、可选项和注意事项见 [Markdown 语法手册](/posts/markdown-guide/)。
+
+### 音乐卡片
+
+```md
+::music{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy"}
 ```
 
 **推荐从 Spotify 链接开始。** 构建期会 `fetch` Spotify 元数据，解析专辑/歌曲、艺人和类型，再到 Apple Music、网易云、QQ 音乐搜索，按标题、艺人和类型打分，取每个平台的最高分结果合并成卡片；Spotify 作为起点时准确率最高。
@@ -113,6 +130,37 @@ npm run music
 ```
 
 结果写入 `src/data/music-cache.json`，建议提交。缓存过的链接构建时不会再次请求平台。
+
+匹配不准的冷门版本，用手动写法固定字段：
+
+```md
+::music-card{title="城市" artist="张悬" type="album" cover="https://example.com/cover.jpg" spotify="https://open.spotify.com/album/..."}
+```
+
+### GitHub 卡片
+
+最省事的方式是直接粘贴仓库网址，构建时会解析出 owner / repo：
+
+```md
+::github{url="https://github.com/withastro/astro"}
+```
+
+也可以直接写 `repo`：
+
+```md
+::github{repo="withastro/astro" description="The web framework for content-driven websites." stars="52k" forks="2.8k" language="TypeScript"}
+```
+
+文章加载时请求一次 GitHub 公开 API 补全描述、Star、Fork 和语言；请求失败时保留你写的静态字段，卡片仍然可点。
+
+### 视频与媒体嵌入
+
+```md
+::embed{url="https://www.youtube.com/watch?v=..." title="YouTube 视频"}
+::embed{url="https://www.bilibili.com/video/BV..." title="B 站视频"}
+```
+
+支持 YouTube、B 站、Spotify、Vimeo。iframe 使用 `loading="lazy"`，进入视口后自动加载，但不会自动播放；不支持的链接会降级成普通外链卡片。
 
 ## 分享图
 
