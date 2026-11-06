@@ -237,6 +237,8 @@ html[data-theme="dark"] .mc-cover-wrap {
     gap: 0.4rem 0.5rem;
     width: 100%;
     margin-top: 0.9rem;
+    position: relative;
+    left: 1.95rem; /* 负数向左，正数向右 */
   }
 
   .mc-link {

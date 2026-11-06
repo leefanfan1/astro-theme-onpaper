@@ -937,6 +937,7 @@ html[data-theme="dark"] .theme-toggle .moon {
    --------------------------------------------------------- */
 
 .article {
+  position: relative;
   max-width: 44rem;
 }
 
@@ -946,50 +947,45 @@ html[data-theme="dark"] .theme-toggle .moon {
   gap: 0.4rem;
   width: fit-content;
   min-height: 2.6rem;
-  margin-bottom: 0.35rem;
-  padding: 0.45rem 0.72rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--surface) 72%, transparent);
+  margin-bottom: 0.4rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--ink-soft);
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   letter-spacing: 0.08em;
-  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .article-home svg {
-  width: 1.18rem;
-  height: 1.18rem;
+  width: 1.45rem;
+  height: 1.45rem;
+  color: var(--accent-strong);
 }
 
 .article-home:hover {
   color: var(--accent-strong);
-  border-color: color-mix(in oklab, var(--accent) 38%, var(--line));
-  background: var(--accent-soft);
 }
 
 @media (min-width: 1280px) {
   .article-home {
-    position: fixed;
-    left: max(1.25rem, calc(50vw - 37rem));
-    top: 30vh;
+    position: absolute;
+    left: -4.8rem;
+    top: 0.1rem;
     z-index: 60;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.55rem;
     margin: 0;
-    padding: 0.7rem 0.55rem;
-    font-size: 0.76rem;
-    backdrop-filter: blur(8px);
   }
 
   .article-home svg {
-    width: 1.3rem;
-    height: 1.3rem;
+    width: 1.6rem;
+    height: 1.6rem;
   }
 
   .article-home span {
     writing-mode: vertical-rl;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.16em;
   }
 }
 
@@ -1256,7 +1252,8 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .back-to-top {
   position: fixed;
-  right: 1.25rem;
+  left: 1.25rem;
+  right: auto;
   bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   z-index: 80;
   display: inline-flex;
