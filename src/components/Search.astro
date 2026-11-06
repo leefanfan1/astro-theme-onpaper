@@ -58,20 +58,20 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   }
 
   .search-dialog[open] {
-    animation: search-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: search-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .search-dialog[open]::backdrop {
-    animation: search-backdrop-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: search-backdrop-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .search-dialog.is-closing {
-    animation: search-out 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+    animation: search-out 0.24s cubic-bezier(0.4, 0, 1, 1) both;
     pointer-events: none;
   }
 
   .search-dialog.is-closing::backdrop {
-    animation: search-backdrop-out 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+    animation: search-backdrop-out 0.24s cubic-bezier(0.4, 0, 1, 1) both;
   }
 
   @keyframes search-in {
@@ -479,7 +479,7 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
       closeTimer = undefined
       closingDialog.classList.remove('is-closing')
       if (closingDialog.open) closingDialog.close()
-    }, 180)
+    }, 240)
   }
 
   function bindSearchDialog() {

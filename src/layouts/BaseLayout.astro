@@ -77,6 +77,7 @@ const themeCSS = `
 :root{${tokensToCss(light)}--font-display:${siteConfig.fonts.display};--font-body:${siteConfig.fonts.body};--font-mono:${siteConfig.fonts.mono};color-scheme:light}
 html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 @media (prefers-color-scheme: dark){html:not([data-theme="light"]){${tokensToCss(dark)}color-scheme:dark}}
+html.theme-changing::view-transition-old(root),html.theme-changing::view-transition-new(root){animation:none;mix-blend-mode:normal}
 html.theme-changing *{transition:none!important}
 `
 ---
