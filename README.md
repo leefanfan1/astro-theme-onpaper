@@ -4,13 +4,9 @@
 
 **在字与字之间，留一点呼吸。**
 
-一个为中文个人博客写的 Astro 主题：正文列 + 右侧窄栏、文章列表、时间线归档。
-纯静态输出，零前端框架，几分钟就能部署到 Cloudflare Pages。
+[![License](https://img.shields.io/badge/LICENSE-MIT-2f363d?style=for-the-badge)](LICENSE) [![Astro](https://img.shields.io/badge/ASTRO-7.x-BC52EE?style=for-the-badge&logo=astro&logoColor=white)](https://astro.build) [![Node](https://img.shields.io/badge/NODE-%E2%89%A522.12-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org) [![Cloudflare Pages](https://img.shields.io/badge/CLOUDFLARE-PAGES-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com)
 
-[![License](https://img.shields.io/badge/license-MIT-2f363d?style=flat-square)](LICENSE)
-[![Astro](https://img.shields.io/badge/Astro-7.x-BC52EE?style=flat-square&logo=astro&logoColor=white)](https://astro.build)
-[![Node](https://img.shields.io/badge/Node-%E2%89%A522.12-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
-[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com)
+**[预览](#预览) · [特性](#特性) · [快速开始](#快速开始) · [部署](#部署到-cloudflare-pages) · [设计说明](#设计说明)**
 
 </div>
 
@@ -18,29 +14,18 @@
 
 ## 预览
 
-<p align="center">
-  <img src="docs/home-light.png" alt="首页（浅色）" width="49%" />
-  <img src="docs/home-dark.png" alt="首页（深色）" width="49%" />
-  <br />
-  <img src="docs/article.png" alt="文章页" width="49%" />
-  <img src="docs/archive.png" alt="归档页" width="49%" />
-  <br />
-  <img src="docs/home-mobile.png" alt="移动端首页" width="32%" />
-  <img src="docs/mobile-article.png" alt="移动端文章页" width="32%" />
-</p>
+![纸上留白界面预览：浅色首页、深色首页、文章页、归档页与移动端](docs/showcase.png)
 
 ---
 
 ## 特性
 
-- **排版优先**：中文正文使用自托管 Noto Serif SC，英文标题使用 Newsreader，代码、数学与图表各用专用字体
-- **阅读体验**：文章目录、阅读进度、图片灯箱（滚轮 / 双指缩放、拖动）、回到顶部、分享栏
-- **移动端**：文章页顶栏随滚动压缩，给正文让出空间；44px 触控热区
-- **搜索**：<kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>K</kbd> 或 <kbd>/</kbd> 唤起，构建期生成索引，覆盖标题、标签与正文
-- **主题**：浅色 / 深色 / 跟随系统，圆形揭示切换，可持久化
-- **Markdown 扩展**：KaTeX 公式、Mermaid 图表、音乐卡片、GitHub 卡片、视频嵌入
-- **可选能力**：Google Analytics 4、基于 Cloudflare KV 的阅读计数
-- **无障碍**：跳转正文、可见焦点、语义化标题、`aria-current`、可键盘操作的弹窗
+| | |
+| :--- | :--- |
+| **✦ 排版优先**<br>中文正文使用自托管 Noto Serif SC，英文标题使用 Newsreader；代码、数学与图表各用专用字体。 | **◐ 阅读体验**<br>文章目录、阅读进度、图片灯箱（滚轮 / 双指缩放、拖动）、回到顶部与分享栏。 |
+| **▯ 移动端**<br>文章页顶栏随滚动压缩，给正文让出空间；44px 触控热区。 | **◯ 搜索**<br><kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>K</kbd> 或 <kbd>/</kbd> 唤起，构建期索引覆盖标题、标签与正文。 |
+| **◑ 主题**<br>浅色 / 深色 / 跟随系统，圆形揭示切换，可持久化。 | **✎ Markdown 扩展**<br>KaTeX 公式、Mermaid 图表、音乐卡片、GitHub 卡片与视频嵌入。 |
+| **◎ 可选能力**<br>Google Analytics 4，以及基于 Cloudflare KV 的阅读计数。 | **⌘ 无障碍**<br>跳转正文、可见焦点、语义化标题、`aria-current`、可键盘操作的弹窗。 |
 
 ---
 
@@ -58,7 +43,7 @@ npm run dev
 | 命令 | 说明 |
 | --- | --- |
 | `npm run dev` | 启动开发服务器 |
-| `npm run new -- 网址` | 新建文章（会依次询问标题、标签等） |
+| `npm run new 网址` | 新建文章（可带 `title` / `tags` / `pin` / `draft` 参数） |
 | `npm run build` | 生成静态站点到 `dist/` |
 | `npm run build:clean` | 清理 Astro 内容缓存后再构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
@@ -69,50 +54,50 @@ npm run dev
 
 ### 新建文章
 
-`npm run new` 后面跟的是**文章的网址**，也就是文件名。脚本会先按这个名字生成标题，再依次问你标题、标签、置顶和草稿——每一项都能直接回车跳过：
+`npm run new` 后面跟的是**文章的网址**，也就是文件名。标题默认由网址生成，日期自动填今天：
 
 ```bash
-npm run new -- a-walk-without-a-map
+npm run new a-walk-without-a-map
 ```
 
-```text
-新建文章  /posts/a-walk-without-a-map/
-──────────────────────────────────────
-
-标题（回车使用「A Walk Without a Map」）: 在一条不认识的街上走一会儿
-标签（逗号分隔，可留空）: 随笔,城市
-置顶权重（0 = 不置顶）（回车使用「0」）:
-存为草稿？只有开发环境可见 (y/N)（回车使用「n」）:
-```
-
-回车到底，就得到一个可以直接开始写的文件 `src/content/posts/a-walk-without-a-map.md`：
+生成 `src/content/posts/a-walk-without-a-map.md`：
 
 ```md
 ---
-title: 在一条不认识的街上走一会儿
+title: A Walk Without a Map
 description: ''
 published: 2026-11-07
 tags:
-  - 随笔
-  - 城市
+  - _未分类
 pin: 0
 ---
 
 在这里开始写正文。
 ```
 
-标签沿用列表写法（`tags:` 下面每个一行），和现有文章一致。没填标签时会写成 `tags: []`，这是 YAML 空列表的标准写法，两种都能被解析。
+命令不会提问，跑完就结束；标题不合适，打开文件改 `title` 即可。
+
+想一次把标题、标签、置顶和草稿都定好，就用 `key=value` 写在网址后面（不需要 `--`，也不用记位置）：
+
+```bash
+npm run new a-walk-without-a-map title=在一条不认识的街上走一会儿 tags=随笔,城市 pin=1 draft=1
+```
+
+| 参数 | 说明 |
+| --- | --- |
+| `title` | 标题，默认把网址变成可读标题 |
+| `tags` | 标签，逗号分隔，中英文逗号都行 |
+| `pin` | 置顶权重，默认 0 |
+| `draft` | 写 `draft=1` 存为草稿，只在开发环境可见 |
 
 几个要点：
 
-- 网址只用小写英文和连字符，例如 `a-walk-without-a-map`
-- 不填标题时，脚本会把网址变成可读标题（`a-walk-without-a-map` → `A Walk Without a Map`）
-- 网址写成中文或含空格时，会退回时间戳文件名
-- 想跳过所有提问，也可以一次带参数：
+- 网址只用小写英文、数字和连字符，例如 `a-walk-without-a-map`
+- 中文标题写成 `title=...`，不要把中文直接放在网址位置
+- 不写 `tags` 时，脚本会填一个占位标签 `_未分类`。它只用来保持 frontmatter 的列表格式，不会出现在文章页、标签页、搜索或 RSS 里
+- 同名文件已存在时会拒绝覆盖，换一个网址再试
 
-```bash
-npm run new -- a-walk-without-a-map --title "在一条不认识的街上走一会儿" --tags "随笔,城市"
-```
+标签沿用列表写法（`tags:` 下面每个一行），和现有文章一致。
 
 不想用命令也完全可以：直接新建 `src/content/posts/我的文章.md`，手动写 frontmatter，效果一样。
 
@@ -258,10 +243,10 @@ npm run og
 
 ## 写文章
 
-推荐用 `npm run new` 生成（见上方「新建文章」），它会顺便问你要不要标签和置顶：
+推荐用 `npm run new` 生成（见上方「新建文章」），标题、标签和置顶可以一次写清：
 
 ```bash
-npm run new -- rain-before-it-stops
+npm run new rain-before-it-stops title=雨停之前，先别急着走 tags=随笔,城市
 ```
 
 生成后打开 `src/content/posts/rain-before-it-stops.md`，补上 `description` 和正文即可。
@@ -434,3 +419,5 @@ slug 只接受小写字母、数字和连字符，最长 96 字符。KV 未绑�
 ## 许可
 
 [MIT](LICENSE) · 字体 Newsreader 与 Noto Serif SC 使用 SIL Open Font License 1.1，见 `public/fonts/` 下的授权文件。
+
+*纸上留白 · 在字与字之间，留一点呼吸。*
