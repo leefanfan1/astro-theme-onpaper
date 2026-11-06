@@ -14,7 +14,6 @@ import {
   formatDateLong,
   getAllPosts,
   getPostDescription,
-  getPostHref,
   getTagHref,
 } from '@/utils/posts'
 
@@ -33,10 +32,6 @@ interface Props {
 const { post } = Astro.props
 const { Content, headings } = await render(post)
 const hasMath = /\$[^$\n]+\$|\$\$[\s\S]+?\$\$/.test(post.body ?? '')
-const allPosts = await getAllPosts()
-const index = allPosts.findIndex(item => item.id === post.id)
-const newer = index > 0 ? allPosts[index - 1] : null
-const older = index >= 0 && index < allPosts.length - 1 ? allPosts[index + 1] : null
 const canonical = new URL(Astro.url.pathname, siteConfig.url).href
 const description = getPostDescription(post, 160) || siteConfig.description
 const ogImage = new URL('/og.png', siteConfig.url).href
@@ -115,25 +110,6 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
       )}
 
       <ShareBar title={post.data.title} url={canonical} />
-
-      <nav class="post-nav" aria-label="相邻文章">
-        {newer
-          ? (
-            <a class="post-nav__item" href={getPostHref(newer)}>
-              <span class="post-nav__label">← 更新一篇</span>
-              <span class="post-nav__title">{newer.data.title}</span>
-            </a>
-          )
-          : <span />}
-        {older
-          ? (
-            <a class="post-nav__item post-nav__item--next" href={getPostHref(older)}>
-              <span class="post-nav__label">更早一篇 →</span>
-              <span class="post-nav__title">{older.data.title}</span>
-            </a>
-          )
-          : <span />}
-      </nav>
 
       </footer>
   </article>
