@@ -284,7 +284,7 @@ html[data-theme="dark"] .mc-cover-wrap {
 
 .github-card {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.95rem;
   margin: 1.8em 0;
   padding: 1.05rem 1.15rem;
