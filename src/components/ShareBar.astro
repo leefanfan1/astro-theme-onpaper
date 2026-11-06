@@ -130,7 +130,21 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
     }
   }
 
-  @media (max-width: 700px) {
+  /* Tablets / larger phones: keep label and icons on one compact line. */
+  @media (max-width: 700px) and (min-width: 360px) {
+    .share-bar {
+      flex-wrap: wrap;
+      gap: 0.2rem 0.1rem;
+    }
+
+    .share-button {
+      width: 2.35rem;
+      height: 2.35rem;
+    }
+  }
+
+  /* Narrow phones: label gets its own row, icons share one row. */
+  @media (max-width: 359px) {
     .share-bar {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -156,6 +170,13 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
       height: auto;
       aspect-ratio: 1;
       justify-self: center;
+    }
+  }
+
+  /* Very small screens: fall back to a two-row icon grid. */
+  @media (max-width: 300px) {
+    .share-bar {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 </style>
