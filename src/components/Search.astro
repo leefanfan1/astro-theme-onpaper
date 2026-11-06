@@ -4,6 +4,7 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
 
 <dialog
   class="search-dialog"
+  id="search-dialog"
   data-search-dialog
   data-index-url={searchIndexUrl}
   aria-label="搜索文章"
@@ -35,6 +36,9 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
 
 <style is:global>
   .search-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
     width: min(42rem, calc(100vw - 2rem));
     max-height: min(78vh, 44rem);
     margin: auto;
@@ -354,11 +358,31 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
     }
   }
 
+  function setTriggerState(open: boolean) {
+    document.querySelectorAll<HTMLElement>('[data-search-trigger]').forEach((trigger) => {
+      trigger.setAttribute('aria-haspopup', 'dialog')
+      trigger.setAttribute('aria-controls', 'search-dialog')
+      trigger.setAttribute('aria-expanded', String(open))
+    })
+  }
+
+  function finishClose() {
+    document.body.classList.remove('search-open')
+    setTriggerState(false)
+    lastTrigger?.focus()
+  }
+
   function openSearch() {
     if (!dialog || !input) return
     lastTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    if (!dialog.open) dialog.showModal()
+
+    if (!dialog.open) {
+      if (typeof dialog.showModal === 'function') dialog.showModal()
+      else dialog.setAttribute('open', '')
+    }
+
     document.body.classList.add('search-open')
+    setTriggerState(true)
     input.value = ''
     render('')
     requestAnimationFrame(() => input.focus())
@@ -366,26 +390,35 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
 
   function closeSearch() {
     if (!dialog?.open) return
-    dialog.close()
+    if (typeof dialog.close === 'function') {
+      dialog.close()
+    }
+    else {
+      dialog.removeAttribute('open')
+      finishClose()
+    }
   }
 
-  document.addEventListener('click', (event) => {
-    const target = event.target
-    if (!(target instanceof Element)) return
-    if (target.closest('[data-search-trigger]')) {
-      event.preventDefault()
-      openSearch()
-    }
-  })
+  function bindSearchTriggers() {
+    document.querySelectorAll<HTMLElement>('[data-search-trigger]').forEach((trigger) => {
+      if (trigger.dataset.searchBound === 'true') return
+      trigger.dataset.searchBound = 'true'
+      trigger.addEventListener('click', (event) => {
+        event.preventDefault()
+        openSearch()
+      })
+    })
+    setTriggerState(dialog?.open === true)
+  }
+
+  bindSearchTriggers()
+  document.addEventListener('astro:page-load', bindSearchTriggers)
 
   dialog?.addEventListener('click', (event) => {
     if (event.target === dialog) closeSearch()
   })
 
-  dialog?.addEventListener('close', () => {
-    document.body.classList.remove('search-open')
-    lastTrigger?.focus()
-  })
+  dialog?.addEventListener('close', finishClose)
 
   document.querySelector('[data-search-close]')?.addEventListener('click', closeSearch)
 

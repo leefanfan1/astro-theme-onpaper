@@ -21,6 +21,8 @@ const cases = [
   { name: 'post-music', path: '/posts/headphones-on/', width: 1440, height: 1000, scheme: 'light' },
   { name: 'post-extensions', path: '/posts/a-little-margin/', width: 1440, height: 1000, scheme: 'dark' },
   { name: 'post-mobile', path: '/posts/a-little-margin/', width: 390, height: 844, scheme: 'light' },
+  { name: 'post-long-title', path: '/posts/long-title-example/', width: 1440, height: 1000, scheme: 'light' },
+  { name: 'post-long-title-mobile', path: '/posts/long-title-example/', width: 390, height: 844, scheme: 'light' },
   { name: 'archive', path: '/tags/', width: 1440, height: 1000, scheme: 'light' },
   { name: 'about-mobile', path: '/about/', width: 390, height: 844, scheme: 'light' },
 ]
