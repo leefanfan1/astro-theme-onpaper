@@ -546,7 +546,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .post-item {
   border-top: 1px solid var(--line);
-  padding: 1.9rem 0 2rem;
+  padding: 1.5rem 0;
 }
 
 .post-item:last-child {
