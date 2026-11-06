@@ -12,7 +12,7 @@
 - 全文搜索（Ctrl / Cmd + K，或按 `/`）
 - 音乐卡片：Spotify / Apple Music / 网易云 / QQ 音乐自动识别、跨平台匹配、构建期缓存，沿用原版卡片结构
 - 浅色目录面板（列表图标 + 折叠开关），展开后随滚动标记当前章节；正文图片点击放大
-- 7 篇中文示例文章，含长标题、长正文和两张本地示例图
+- 8 篇中文示例文章，含长标题、长正文、两张本地示例图和跨年份归档
 - Markdown 扩展：KaTeX、Mermaid、GitHub 卡片、媒体嵌入
 - 阅读进度、回到顶部、分享（原版 SVG 图标）、可选阅读计数（Cloudflare KV）
 - RSS、sitemap、robots、Open Graph

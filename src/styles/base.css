@@ -831,7 +831,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 .timeline-item::before {
   content: "";
   position: absolute;
-  left: -1.72rem;
+  left: -1.59rem;
   top: 1.02rem;
   width: 0.42rem;
   height: 0.42rem;
@@ -1290,12 +1290,13 @@ html[data-theme="dark"] .theme-toggle .moon {
   .toc-desktop a[aria-current="location"]::before {
     content: "";
     position: absolute;
-    left: -2.5px;
+    left: -3.5px;
     top: 0.78em;
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--accent);
+    box-shadow: 0 0 0 2px var(--paper);
   }
 
   .toc-desktop .toc-depth-3 a {
