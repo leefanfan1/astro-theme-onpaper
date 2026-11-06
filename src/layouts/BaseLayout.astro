@@ -48,6 +48,7 @@ const ogImageType = image.endsWith('.png')
 const ogLocale = siteConfig.lang.replace('-', '_')
 const { light, dark } = siteConfig.theme
 const gaId = siteConfig.analytics.googleAnalyticsId.trim()
+const isHomePage = Astro.url.pathname === '/' || Astro.url.pathname.startsWith('/page/')
 
 const tokenNames: Record<keyof typeof light, string> = {
   paper: '--paper',
@@ -196,7 +197,7 @@ html.theme-changing *{transition:none!important}
     <MobileBar />
 
     <div class="site-shell">
-      <main id="main" class="site-main">
+      <main id="main" class:list={['site-main', !isHomePage && 'site-main--inner']}>
         <slot />
         <Footer class="footer--mobile" />
       </main>

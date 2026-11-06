@@ -114,7 +114,7 @@ export const siteConfig = {
       accentSoft: '#F7E8E2',
       peach: '#EBC9B7',
       moss: '#788C5D',
-      selection: '#A94E33',
+      selection: 'rgba(217, 119, 87, 0.22)',
     } satisfies ColorTokens,
     dark: {
       paper: '#141413',
@@ -130,7 +130,7 @@ export const siteConfig = {
       accentSoft: 'rgba(217, 119, 87, 0.15)',
       peach: '#5A3A2E',
       moss: '#9AAE7C',
-      selection: '#E08B6D',
+      selection: 'rgba(217, 119, 87, 0.30)',
     } satisfies ColorTokens,
   },
 

@@ -33,7 +33,6 @@ body {
 body::selection,
 body *::selection {
   background: var(--selection);
-  color: var(--paper);
 }
 
 a {
@@ -94,11 +93,11 @@ pre {
 
 /* Page transitions (ClientRouter). The theme toggle opts out below. */
 html[data-astro-transition]::view-transition-old(root) {
-  animation: page-out 170ms ease both;
+  animation: page-out 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 html[data-astro-transition]::view-transition-new(root) {
-  animation: page-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: page-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 @keyframes page-out {
@@ -379,6 +378,14 @@ html[data-theme="dark"] .theme-toggle .moon {
 
   .site-rail {
     display: none;
+  }
+
+  .site-main--inner {
+    padding-top: 1.25rem;
+  }
+
+  .page-header {
+    padding-bottom: 1.7rem;
   }
 
   .mobile-bar {
@@ -967,12 +974,13 @@ html[data-theme="dark"] .theme-toggle .moon {
   .archive-layout {
     display: flex;
     flex-direction: column;
+    gap: 0;
   }
 
   .archive-tags {
     position: static;
     order: -1;
-    margin-bottom: 2.2rem;
+    margin-bottom: 1.5rem;
   }
 
   .archive-tags .tag-list {
@@ -1449,7 +1457,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .js [data-reveal].is-reveal-pending {
   opacity: 0;
-  transition: opacity 0.45s ease;
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: var(--reveal-delay, 0ms);
 }
 
@@ -1493,10 +1501,10 @@ html[data-theme="dark"] .theme-toggle .moon {
 .rail-nav a,
 .mobile-nav a {
   transition:
-    color 0.2s ease,
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    opacity 0.14s ease;
+    color 0.22s ease,
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    opacity 0.18s ease;
 }
 
 .text-button:active,
@@ -1512,5 +1520,5 @@ html[data-theme="dark"] .theme-toggle .moon {
 .code-copy:active,
 .rail-nav a:active,
 .mobile-nav a:active {
-  opacity: 0.7;
+  opacity: 0.82;
 }
