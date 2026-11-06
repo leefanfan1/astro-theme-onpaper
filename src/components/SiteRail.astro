@@ -1,6 +1,5 @@
 ---
 import Footer from '@/components/Footer.astro'
-import RandomPostButton from '@/components/RandomPostButton.astro'
 import ThemeToggle from '@/components/ThemeToggle.astro'
 import { siteConfig } from '@/config'
 
@@ -36,7 +35,7 @@ const nav = siteConfig.nav.map((item, index) => {
         <li>
           <a href={item.href} aria-current={item.active ? 'page' : undefined}>
             <span class="rail-nav__num" aria-hidden="true">{item.num}</span>
-            <span>{item.label}</span>
+            <span class="rail-nav__label"><span class="rail-nav__label-text">{item.label}</span></span>
           </a>
         </li>
       ))}
@@ -51,7 +50,6 @@ const nav = siteConfig.nav.map((item, index) => {
       </svg>
       搜索
     </button>
-    <RandomPostButton />
     <ThemeToggle />
   </div>
 

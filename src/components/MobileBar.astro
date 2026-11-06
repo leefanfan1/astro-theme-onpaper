@@ -1,5 +1,4 @@
 ---
-import RandomPostButton from '@/components/RandomPostButton.astro'
 import ThemeToggle from '@/components/ThemeToggle.astro'
 import { siteConfig } from '@/config'
 
@@ -39,13 +38,12 @@ const nav = siteConfig.nav.map((item) => {
             <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
           </svg>
         </button>
-        <RandomPostButton compact />
         <ThemeToggle />
       </div>
     </div>
     <nav class="mobile-nav" aria-label="移动端导航">
       {nav.map(item => (
-        <a href={item.href} aria-current={item.active ? 'page' : undefined}>{item.label}</a>
+        <a href={item.href} aria-current={item.active ? 'page' : undefined}><span class="mobile-nav__label">{item.label}</span></a>
       ))}
     </nav>
   </div>

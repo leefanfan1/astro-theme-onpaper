@@ -3,16 +3,51 @@
 </div>
 
 <script>
-  function updateProgress() {
-    const bar = document.querySelector<HTMLElement>('[data-progress-bar]')
-    if (!bar) return
-    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
-    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
-    bar.style.width = scrollHeight > 0 ? `${(scrollTop / scrollHeight) * 100}%` : '0%'
+  let bar: HTMLElement | null = null
+  let maxScroll = 0
+  let ticking = false
+  let observer: ResizeObserver | null = null
+
+  function measure() {
+    const root = document.documentElement
+    maxScroll = root.scrollHeight - root.clientHeight
+    render()
   }
 
-  document.addEventListener('astro:page-load', updateProgress)
-  window.addEventListener('scroll', updateProgress, { passive: true })
-  window.addEventListener('resize', updateProgress, { passive: true })
-  updateProgress()
+  function render() {
+    if (!bar) return
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
+    const progress = maxScroll > 0 ? Math.min(scrollTop / maxScroll, 1) : 0
+    // scaleX is composited; animating width would force a layout pass per frame.
+    bar.style.transform = `scaleX(${progress})`
+  }
+
+  function onScroll() {
+    if (ticking) return
+    ticking = true
+    requestAnimationFrame(() => {
+      render()
+      ticking = false
+    })
+  }
+
+  function refresh() {
+    bar = document.querySelector<HTMLElement>('[data-progress-bar]')
+    // Fonts, lazy images and viewport changes all alter the article height;
+    // keep maxScroll current without reading layout on every scroll frame.
+    observer?.disconnect()
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(measure)
+      observer.observe(document.body)
+    }
+    measure()
+  }
+
+  document.addEventListener('astro:page-load', refresh)
+  window.addEventListener('scroll', onScroll, { passive: true })
+  window.addEventListener('resize', measure, { passive: true })
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', refresh, { once: true })
+  else
+    refresh()
 </script>
