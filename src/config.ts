@@ -87,9 +87,9 @@ export const siteConfig = {
       description: '植物、散步和慢慢长出来的生活。',
     },
     {
-      name: '纸上留白',
+      name: '余白',
       url: 'https://onpaper.example/',
-      description: '留白不是空，是让内容有地方站直。',
+      description: '余白不是空，是让内容有地方站直。',
     },
   ],
 
