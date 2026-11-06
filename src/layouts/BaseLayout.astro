@@ -2,6 +2,7 @@
 import { ClientRouter } from 'astro:transitions'
 import BackToTop from '@/components/BackToTop.astro'
 import Footer from '@/components/Footer.astro'
+import ImageZoom from '@/components/ImageZoom.astro'
 import MobileBar from '@/components/MobileBar.astro'
 import Search from '@/components/Search.astro'
 import SiteRail from '@/components/SiteRail.astro'
@@ -129,6 +130,7 @@ html.theme-changing *{transition:none!important}
 
     <Search />
     <BackToTop />
+    <ImageZoom />
 
     <script>
       function initReveal() {

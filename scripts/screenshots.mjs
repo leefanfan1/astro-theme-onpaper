@@ -67,4 +67,17 @@ for (const item of cases) {
   await context.close()
 }
 
+// Image zoom
+{
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' })
+  const page = await context.newPage()
+  await page.goto(`${base}/posts/long-title-example/`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+  await page.waitForTimeout(800)
+  await page.locator('.prose figure img').first().click()
+  await page.waitForTimeout(450)
+  await page.screenshot({ path: `${outDir}/image-zoom.png` })
+  console.log(`saved ${outDir}/image-zoom.png`)
+  await context.close()
+}
+
 await browser.close()

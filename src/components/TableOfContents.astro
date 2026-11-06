@@ -12,15 +12,94 @@ const items = headings.filter(heading => heading.depth >= 2 && heading.depth <= 
 
 {
   items.length >= 2 && (
-    <details class="toc" open={siteConfig.tocOpen}>
-      <summary>目录</summary>
+    <details class="toc" open={siteConfig.tocOpen} data-toc>
+      <summary>
+        <span class="toc__label">目录</span>
+        <span class="toc__current" data-toc-current></span>
+      </summary>
       <ol>
         {items.map(heading => (
           <li class={`toc-depth-${heading.depth}`}>
-            <a href={`#${heading.slug}`}>{heading.text}</a>
+            <a href={`#${heading.slug}`} data-toc-link={heading.slug}>{heading.text}</a>
           </li>
         ))}
       </ol>
     </details>
   )
 }
+
+<script>
+  let cleanupToc: (() => void) | null = null
+
+  function initToc() {
+    cleanupToc?.()
+    cleanupToc = null
+
+    const toc = document.querySelector<HTMLElement>('[data-toc]')
+    const currentLabel = toc?.querySelector<HTMLElement>('[data-toc-current]')
+    if (!toc || !currentLabel) return
+
+    const links = [...toc.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')]
+    const headings = links
+      .map(link => document.getElementById(link.dataset.tocLink ?? ''))
+      .filter((heading): heading is HTMLElement => Boolean(heading))
+    if (!headings.length) return
+
+    let activeId = ''
+    let ticking = false
+
+    const setActive = (id: string) => {
+      if (id === activeId) return
+      activeId = id
+
+      for (const link of links) {
+        if (link.dataset.tocLink === id) link.setAttribute('aria-current', 'location')
+        else link.removeAttribute('aria-current')
+      }
+
+      const heading = headings.find(item => item.id === id)
+      currentLabel.textContent = heading?.textContent?.trim() ?? ''
+    }
+
+    const update = () => {
+      ticking = false
+      const offset = window.innerHeight * 0.18
+      let current = headings[0]
+
+      for (const heading of headings) {
+        if (heading.getBoundingClientRect().top <= offset) current = heading
+        else break
+      }
+
+      // At the very bottom, the last section may never cross the offset line.
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+        current = headings[headings.length - 1]
+      }
+
+      setActive(current.id)
+    }
+
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(update)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    update()
+
+    cleanupToc = () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }
+
+  document.addEventListener('astro:page-load', initToc)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initToc, { once: true })
+  }
+  else {
+    initToc()
+  }
+</script>

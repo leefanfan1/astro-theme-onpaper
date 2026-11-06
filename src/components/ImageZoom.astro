@@ -1,0 +1,190 @@
+<dialog class="image-zoom" data-image-zoom aria-label="查看大图">
+  <button class="image-zoom__close" type="button" data-image-zoom-close aria-label="关闭大图">×</button>
+  <img data-image-zoom-img alt="" />
+  <p class="image-zoom__caption" data-image-zoom-caption></p>
+</dialog>
+
+<style is:global>
+  .prose img[data-zoomable="true"] {
+    cursor: zoom-in;
+  }
+
+  .prose img[data-zoomable="true"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .image-zoom {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    max-width: 92vw;
+    max-height: 90vh;
+    margin: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .image-zoom[open] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .image-zoom::backdrop {
+    background: rgb(20 20 19 / 0.86);
+    backdrop-filter: blur(4px);
+  }
+
+  .image-zoom img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 92vw;
+    max-height: 82vh;
+    border-radius: 8px;
+    background: var(--paper);
+    box-shadow: 0 24px 80px rgb(0 0 0 / 0.4);
+  }
+
+  .image-zoom__caption {
+    max-width: 42rem;
+    margin: 0;
+    color: rgb(250 249 245 / 0.75);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .image-zoom__caption:empty {
+    display: none;
+  }
+
+  .image-zoom__close {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid rgb(250 249 245 / 0.25);
+    border-radius: 999px;
+    background: rgb(20 20 19 / 0.55);
+    color: #faf9f5;
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .image-zoom__close:hover {
+    background: rgb(20 20 19 / 0.8);
+  }
+
+  body.image-zoom-open {
+    overflow: hidden;
+  }
+</style>
+
+<script>
+  function getZoomDialog() {
+    return document.querySelector<HTMLDialogElement>('[data-image-zoom]')
+  }
+
+  function finishZoomClose() {
+    document.body.classList.remove('image-zoom-open')
+  }
+
+  function bindZoomDialog() {
+    const dialog = getZoomDialog()
+    if (!dialog || dialog.dataset.zoomBound === 'true') return
+    dialog.dataset.zoomBound = 'true'
+    dialog.addEventListener('close', finishZoomClose)
+  }
+
+  function markZoomableImages() {
+    bindZoomDialog()
+    const images = [...document.querySelectorAll<HTMLImageElement>('.prose img')]
+    for (const img of images) {
+      if (img.closest('a, .mc-card, .github-card, .embed-card')) continue
+      if (!img.hasAttribute('loading')) img.loading = 'lazy'
+      if (!img.hasAttribute('decoding')) img.decoding = 'async'
+      if (img.dataset.zoomable === 'true') continue
+      img.dataset.zoomable = 'true'
+      img.tabIndex = 0
+      img.setAttribute('role', 'button')
+      img.setAttribute('aria-label', `放大图片：${img.alt || '文章图片'}`)
+    }
+  }
+
+  function openZoom(img: HTMLImageElement) {
+    const dialog = getZoomDialog()
+    const zoomImage = dialog?.querySelector<HTMLImageElement>('[data-image-zoom-img]')
+    const caption = dialog?.querySelector<HTMLElement>('[data-image-zoom-caption]')
+    if (!dialog || !zoomImage) return
+
+    zoomImage.src = img.currentSrc || img.src
+    zoomImage.alt = img.alt || ''
+    if (caption) caption.textContent = img.alt || ''
+
+    if (!dialog.open) {
+      if (typeof dialog.showModal === 'function') dialog.showModal()
+      else dialog.setAttribute('open', '')
+    }
+    document.body.classList.add('image-zoom-open')
+  }
+
+  function closeZoom() {
+    const dialog = getZoomDialog()
+    if (!dialog?.open) return
+    if (typeof dialog.close === 'function') dialog.close()
+    else {
+      dialog.removeAttribute('open')
+      finishZoomClose()
+    }
+  }
+
+  document.addEventListener('click', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+
+    if (target.closest('[data-image-zoom-close]')) {
+      closeZoom()
+      return
+    }
+
+    const dialog = getZoomDialog()
+    if (dialog && target === dialog) {
+      closeZoom()
+      return
+    }
+
+    const img = target.closest<HTMLImageElement>('.prose img[data-zoomable="true"]')
+    if (img) {
+      event.preventDefault()
+      openZoom(img)
+    }
+  })
+
+  document.addEventListener('keydown', (event) => {
+    const target = event.target
+    if (event.key === 'Escape') {
+      closeZoom()
+      return
+    }
+    if ((event.key === 'Enter' || event.key === ' ') && target instanceof HTMLImageElement && target.matches('.prose img[data-zoomable="true"]')) {
+      event.preventDefault()
+      openZoom(target)
+    }
+  })
+
+  document.addEventListener('astro:page-load', markZoomableImages)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', markZoomableImages, { once: true })
+  }
+  else {
+    markZoomableImages()
+  }
+</script>

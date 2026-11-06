@@ -6,19 +6,13 @@
  *   ::github{repo="withastro/astro" description="..." stars="..."}
  *   ::embed{url="https://www.youtube.com/watch?v=..." title="..."}
  *
- * 音乐卡片沿用作者现有博客的解析器：Spotify / Apple Music / 网易云 / QQ 音乐
- * 自动识别、跨平台匹配，并读取 src/data/music-cache.json 的构建期缓存。
- * 卡片外观则重新设计成余白的 Claude 风格。
+ * 音乐卡片沿用作者现有博客的解析器与卡片结构：Spotify / Apple Music /
+ * 网易云 / QQ 音乐自动识别、跨平台匹配，并读取 src/data/music-cache.json
+ * 的构建期缓存。卡片 SVG 图标也来自作者原版。
  */
 
 import { resolveMusicUrl } from '../utils/music-resolver.mjs'
-
-const MUSIC_PLATFORMS = [
-  ['spotify', 'Spotify', '#1DB954'],
-  ['apple', 'Apple Music', '#FA243C'],
-  ['netease', '网易云音乐', '#E72D2C'],
-  ['qqmusic', 'QQ 音乐', '#02B053'],
-]
+import { MUSIC_PLATFORM_META } from './music-platform-icons.mjs'
 
 const MUSIC_TYPES = {
   album: '专辑',
@@ -46,27 +40,30 @@ function html(value) {
 
 function musicCardHtml({ title, artist, type, cover, lyric, links }) {
   const typeLabel = MUSIC_TYPES[type] || (type === 'album' ? '专辑' : '单曲')
-  const initial = Array.from(title || '♪')[0] || '♪'
-  const coverHtml = isHttpUrl(cover)
-    ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
-    : `<span class="music-card__initial" aria-hidden="true">${esc(initial)}</span>`
+  const hasCover = isHttpUrl(cover)
+  const coverClass = hasCover ? 'mc-cover-wrap' : 'mc-cover-wrap mc-cover-missing'
+  const coverStyle = hasCover ? ` style="background-image:url(&quot;${esc(cover)}&quot;)"` : ''
 
-  const linkHtml = MUSIC_PLATFORMS
-    .filter(([key]) => isHttpUrl(links?.[key]))
-    .map(([key, label, color]) => `<a class="music-card__link" style="--dot:${color}" href="${esc(links[key])}" target="_blank" rel="noopener noreferrer">${label}<span aria-hidden="true">↗</span></a>`)
+  const linkHtml = Object.entries(MUSIC_PLATFORM_META)
+    .map(([key, meta]) => {
+      const url = links?.[key]
+      if (!isHttpUrl(url)) return ''
+      const cls = key === 'qqmusic' ? 'qq' : key
+      return `<a href="${esc(url)}" class="mc-link mc-${cls} no-heti" target="_blank" rel="noopener noreferrer">${meta.icon}<span>${esc(meta.label)}</span></a>`
+    })
     .join('')
 
   return `
-<aside class="music-card">
-  <div class="music-card__cover">${coverHtml}</div>
-  <div class="music-card__body">
-    <p class="music-card__eyebrow">${typeLabel}</p>
-    <p class="music-card__title">${esc(title || '未命名')}</p>
-    <p class="music-card__artist">${esc(artist || '未知艺人')}</p>
-    ${lyric ? `<p class="music-card__lyric">“${esc(lyric)}”</p>` : ''}
-    ${linkHtml ? `<div class="music-card__links">${linkHtml}</div>` : ''}
+<div class="mc-card"><div class="mc-inner">
+  <div class="${coverClass}"${coverStyle}></div>
+  <div class="mc-info">
+    <span class="mc-type-badge">${typeLabel}</span>
+    <p class="mc-title">${esc(title || '未命名')}</p>
+    <p class="mc-artist">${esc(artist || '未知艺人')}</p>
+    ${lyric ? `<p class="mc-lyric">“${esc(lyric)}”</p>` : ''}
+    ${linkHtml ? `<div class="mc-links">${linkHtml}</div>` : ''}
   </div>
-</aside>`
+</div></div>`
 }
 
 async function renderMusic(attrs) {
@@ -82,21 +79,20 @@ async function renderMusic(attrs) {
       artist: info.artist,
       type: info.type,
       cover: info.cover,
-      lyric: attrs.lyric,
       links: info.links || {},
     }))
   }
   catch (error) {
     console.warn(`[yohaku] music: ${error.message}`)
     return html(`
-<aside class="music-card music-card--error">
-  <div class="music-card__cover"><span class="music-card__initial" aria-hidden="true">♪</span></div>
-  <div class="music-card__body">
-    <p class="music-card__eyebrow">音乐</p>
-    <p class="music-card__title">暂时读不到这张唱片</p>
-    <a class="music-card__link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">打开链接 <span aria-hidden="true">↗</span></a>
+<div class="mc-card" style="opacity:0.5">
+  <div class="mc-inner" style="justify-content:center;padding:20px;text-align:center">
+    <div class="mc-info">
+      <p class="mc-title" style="font-size:0.85rem;white-space:normal;margin:0">${esc(url)}</p>
+      <p class="mc-artist" style="margin:4px 0 0;font-size:0.7rem">Failed to load music info</p>
+    </div>
   </div>
-</aside>`)
+</div>`)
   }
 }
 

@@ -15,7 +15,7 @@ tags:
 
 ## 张悬《城市》
 
-::music{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy" lyric="城市很大，耳机里的世界刚好够小。"}
+::music{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy"}
 
 这张专辑我听了许多年。最早喜欢它，是因为旋律好听；后来再听，才发现它唱的其实不是某座具体的城市，而是人在城市里那种既想靠近、又想逃开的矛盾。
 
@@ -23,7 +23,7 @@ tags:
 
 ## 陈粒《十年自选》
 
-::music{url="https://open.spotify.com/album/6fbvyqPZVxVPk5DBm4krJf" lyric="熟悉的东西被重新擦亮，也是一种新。"}
+::music{url="https://open.spotify.com/album/6fbvyqPZVxVPk5DBm4krJf"}
 
 一张把旧歌重新唱一遍的专辑。奇怪的是，它没有那种“回忆杀”的用力感。编曲更干净了，声音更松弛了，很多以前被情绪盖住的细节，这次终于听清楚。
 

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" role="img" aria-labelledby="vinylTitle vinylDesc">
+  <title id="vinylTitle">深夜的唱片</title>
+  <desc id="vinylDesc">深色桌面上的一张黑胶唱片、唱臂和奶油色唱片封套。</desc>
+  <rect width="1200" height="800" fill="#1A1918"/>
+  <rect x="0" y="566" width="1200" height="234" fill="#24221F"/>
+  <line x1="0" y1="566" x2="1200" y2="566" stroke="#3A3732" stroke-width="3"/>
+
+  <circle cx="430" cy="398" r="282" fill="#0D0C0B"/>
+  <g fill="none" stroke="#3A3732" stroke-width="2">
+    <circle cx="430" cy="398" r="252"/>
+    <circle cx="430" cy="398" r="224"/>
+    <circle cx="430" cy="398" r="196"/>
+    <circle cx="430" cy="398" r="168"/>
+    <circle cx="430" cy="398" r="140"/>
+  </g>
+  <path d="M205 286a282 282 0 0 1 118-118" fill="none" stroke="#4C4842" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+  <circle cx="430" cy="398" r="94" fill="#D97757"/>
+  <circle cx="430" cy="398" r="12" fill="#1A1918"/>
+  <path d="M382 380h96" stroke="#F5EFE3" stroke-width="3" opacity="0.55"/>
+  <path d="M396 404h68" stroke="#F5EFE3" stroke-width="3" opacity="0.35"/>
+
+  <g>
+    <circle cx="850" cy="236" r="30" fill="#7A8A5E"/>
+    <circle cx="850" cy="236" r="9" fill="#1A1918"/>
+    <line x1="836" y1="254" x2="646" y2="392" stroke="#EDE6D8" stroke-width="9" stroke-linecap="round"/>
+    <rect x="620" y="382" width="42" height="25" rx="4" transform="rotate(38 620 382)" fill="#EDE6D8"/>
+    <path d="M626 396l-12 8" stroke="#D97757" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g>
+    <rect x="842" y="430" width="230" height="230" rx="3" fill="#EDE6D8"/>
+    <rect x="866" y="454" width="182" height="182" fill="#D97757"/>
+    <rect x="866" y="454" width="182" height="24" fill="#A94E33"/>
+    <circle cx="957" cy="558" r="46" fill="#F5EFE3"/>
+    <circle cx="957" cy="558" r="8" fill="#1A1918"/>
+    <path d="M888 620h138" stroke="#F5EFE3" stroke-width="4" opacity="0.7"/>
+  </g>
+
+  <g>
+    <rect x="1028" y="196" width="74" height="132" rx="8" fill="#2E2B27"/>
+    <path d="M1045 196c0-30 10-46 20-46s20 16 20 46" fill="none" stroke="#7A8A5E" stroke-width="7"/>
+    <line x1="1048" y1="246" x2="1082" y2="246" stroke="#D97757" stroke-width="5"/>
+    <line x1="1048" y1="264" x2="1070" y2="264" stroke="#EDE6D8" stroke-width="4" opacity="0.5"/>
+  </g>
+</svg>
