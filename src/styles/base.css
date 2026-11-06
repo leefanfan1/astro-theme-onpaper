@@ -33,6 +33,7 @@ body {
 body::selection,
 body *::selection {
   background: var(--selection);
+  color: var(--paper);
 }
 
 a {
@@ -246,7 +247,7 @@ html[data-astro-transition]::view-transition-new(root) {
 .rail-nav a {
   position: relative;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.65rem;
   min-height: 2.35rem;
   padding-block: 0.4rem;
@@ -257,10 +258,14 @@ html[data-astro-transition]::view-transition-new(root) {
 }
 
 .rail-nav a > span:last-child {
-  padding: 0.04rem 0.3rem;
-  margin-left: -0.3rem;
-  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7rem;
+  padding: 0 0.45rem;
+  margin-left: -0.45rem;
+  border-radius: 4px;
   background: transparent;
+  line-height: 1;
   transition: background 0.2s ease;
 }
 
@@ -498,6 +503,7 @@ html[data-theme="dark"] .theme-toggle .moon {
   display: none;
   margin-top: 3rem;
   padding-top: 1.4rem;
+  padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--line);
 }
 
@@ -1028,6 +1034,7 @@ html[data-theme="dark"] .theme-toggle .moon {
   background: transparent;
   color: var(--ink-soft);
   font-size: 0.78rem;
+  line-height: 1;
   letter-spacing: 0.08em;
   transition: color 0.2s ease;
 }
@@ -1124,6 +1131,11 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .article-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem 1.5rem;
   margin-top: 3.2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--line);
@@ -1131,6 +1143,18 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .article-tags {
   margin-top: 1.4rem;
+}
+
+.article-footer > .article-tags,
+.article-footer > .share-bar {
+  margin-top: 0;
+}
+
+@media (max-width: 700px) {
+  .article-footer > .article-tags,
+  .article-footer > .share-bar {
+    width: 100%;
+  }
 }
 
 .article-back {
@@ -1424,6 +1448,19 @@ html[data-theme="dark"] .theme-toggle .moon {
     transition: none;
   }
 }
+/* Keep icon + label rows on the same optical line after the serif switch. */
+.text-button,
+.mc-link__inner,
+.toc__title,
+.pinned-badge,
+.back-to-top,
+.share-bar__label,
+.article-home,
+.rail-nav__num,
+.github-card__eyebrow {
+  line-height: 1;
+}
+
 /* ---------------------------------------------------------
    Interaction motion
    --------------------------------------------------------- */

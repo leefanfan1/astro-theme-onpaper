@@ -58,14 +58,17 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.15rem;
     margin-top: 1.2rem;
   }
 
   .share-bar__label {
-    margin-right: 0.35rem;
+    margin-right: 0.55rem;
+    padding-right: 0.6rem;
+    border-right: 1px solid var(--line);
     color: var(--ink-faint);
     font-size: 0.64rem;
+    line-height: 1;
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
@@ -116,10 +119,43 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
     font-size: 0.68rem;
   }
 
+  .share-status:empty {
+    display: none;
+  }
+
   @media (pointer: coarse) {
     .share-button {
       width: 2.75rem;
       height: 2.75rem;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .share-bar {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0.15rem;
+      width: 100%;
+    }
+
+    .share-bar__label {
+      grid-column: 1 / -1;
+      margin: 0 0 0.15rem;
+      padding: 0;
+      border-right: 0;
+    }
+
+    .share-status {
+      grid-column: 1 / -1;
+      margin: 0.1rem 0 0;
+    }
+
+    .share-button {
+      width: 100%;
+      max-width: 2.75rem;
+      height: auto;
+      aspect-ratio: 1;
+      justify-self: center;
     }
   }
 </style>
