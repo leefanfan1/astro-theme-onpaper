@@ -83,7 +83,11 @@ html.theme-changing *{transition:none!important}
 ---
 
 <!doctype html>
-<html lang={siteConfig.lang} data-default-mode={siteConfig.theme.defaultMode}>
+<html
+  lang={siteConfig.lang}
+  data-default-mode={siteConfig.theme.defaultMode}
+  data-theme={siteConfig.theme.defaultMode === 'auto' ? undefined : siteConfig.theme.defaultMode}
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -91,7 +95,7 @@ html.theme-changing *{transition:none!important}
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <meta name="author" content={siteConfig.author} />
-    <meta name="theme-color" content={light.paper} />
+    <meta name="theme-color" content={siteConfig.theme.defaultMode === 'dark' ? dark.paper : light.paper} />
     <meta name="robots" content={noindex ? 'noindex,nofollow' : 'index,follow'} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -143,6 +147,7 @@ html.theme-changing *{transition:none!important}
             var nextSystem = window.matchMedia('(prefers-color-scheme: dark)').matches
             var nextMode = (nextStored === 'light' || nextStored === 'dark') ? nextStored : defaultMode
             var nextDark = nextMode === 'dark' || (nextMode === 'auto' && nextSystem)
+            event.newDocument.documentElement.classList.add('js')
             event.newDocument.documentElement.dataset.theme = nextDark ? 'dark' : 'light'
             event.newDocument.documentElement.style.colorScheme = nextDark ? 'dark' : 'light'
             var nextMeta = event.newDocument.querySelector('meta[name="theme-color"]')
@@ -309,6 +314,7 @@ html.theme-changing *{transition:none!important}
       }
 
       function initPage() {
+        document.documentElement.classList.add('js')
         initReveal()
         initCodeCopy()
         restoreListScroll()

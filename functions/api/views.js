@@ -9,8 +9,9 @@
  */
 
 const MAX_SLUG_LENGTH = 96
-// Post slugs are lowercase ASCII. Restricting the key shape prevents arbitrary
-// KV keys and keeps the counter from being used as a general-purpose store.
+// Post slugs are lowercase ASCII. This validates key shape/length, not that
+// the slug belongs to a real post; add WAF rate limiting (or an allowlist) if
+// key-space abuse/cost becomes a concern.
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/
 
 function json(body, status = 200, extraHeaders = {}) {
@@ -20,6 +21,9 @@ function json(body, status = 200, extraHeaders = {}) {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'no-referrer',
+      'Cross-Origin-Resource-Policy': 'same-origin',
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
       ...extraHeaders,
     },
   })
