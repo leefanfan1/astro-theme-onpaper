@@ -39,19 +39,50 @@ npm run dev
 
 ### 新建文章
 
+这条命令会替你在 `src/content/posts/` 里建好文件，并把标题、日期、标签这些开头配置填上：
+
 ```bash
 npm run new -- "在一条不认识的街上走一会儿" --slug a-walk-without-a-map
-npm run new -- "标题" --tags 随笔,城市 --pin 1 --draft
 ```
 
-| 参数 | 说明 |
-| --- | --- |
-| `--slug` | 文件名 / URL。中文标题转不出英文时用时间戳，建议手动指定 |
-| `--tags` | 逗号分隔的标签 |
-| `--pin` | 置顶权重，默认 `0` |
-| `--draft` | 写入 `draft: true`，只在开发环境可见 |
+拆开看：
 
-生成的文件在 `src/content/posts/<slug>.md`。
+```text
+npm run new  --  "文章标题"  --slug 文件名  --tags 标签  --pin 置顶  --draft
+└─ 运行脚本 ┘  └─ 参数 ─────────────────────────────────────────────────┘
+```
+
+- `npm run new`：运行 `scripts/new-post.mjs`
+- `--`：npm 的分隔符，后面写的内容会传给脚本，而不是给 npm
+- `"文章标题"`：写进 frontmatter 的 `title`，中文或带空格时用引号包住
+- `--slug`：文件名，也是文章网址。`--slug a-walk-without-a-map` 会生成 `src/content/posts/a-walk-without-a-map.md`，网址是 `/posts/a-walk-without-a-map/`
+- 其余参数可选，不写就用默认值
+
+生成的文件长这样：
+
+```md
+---
+title: 在一条不认识的街上走一会儿
+description: ''
+published: 2026-11-07        ← 自动填今天的日期
+tags: []
+pin: 0
+---
+
+在这里开始写正文。
+```
+
+**为什么要 `--slug`**：文件名就是网址，中文标题没法直接当网址，所以需要一个英文短名。不填会退回到时间戳，能用但不好看。
+
+| 参数 | 是否必填 | 说明 |
+| --- | --- | --- |
+| 标题 | 是 | 写在 `--` 之后 |
+| `--slug` | 建议填 | 文件名 / 网址；中文标题自动转换不了时用时间戳 |
+| `--tags` | 否 | 逗号分隔，例如 `随笔,城市` |
+| `--pin` | 否 | 置顶权重，默认 `0` |
+| `--draft` | 否 | 写入 `draft: true`，只在开发环境可见 |
+
+不习惯命令的话，直接在 `src/content/posts/` 新建 `.md` 并手写 frontmatter，效果完全一样。
 
 ### 什么时候用 build:clean
 

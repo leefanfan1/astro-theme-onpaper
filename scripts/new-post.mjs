@@ -76,13 +76,21 @@ const pin = Number.parseInt(String(flags.get('pin') ?? '0'), 10)
 const draft = flags.get('draft') === true || flags.get('draft') === 'true'
 const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
+// YAML-safe scalar: quote value when punctuation could change its meaning.
+function yamlScalar(value) {
+  const text = String(value)
+  if (/^(true|false|null|yes|no|on|off|~)$/i.test(text)) return `"${text}"`
+  if (/^[\w一-龥][\w一-龥 .,!?'()/-]*$/.test(text)) return text
+  return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
 const frontmatter = [
   '---',
-  `title: ${title}`,
-  'description:',
+  `title: ${yamlScalar(title)}`,
+  "description: ''",
   `published: ${date}`,
   tags.length ? 'tags:' : 'tags: []',
-  ...tags.map(tag => `  - ${tag}`),
+  ...tags.map(tag => `  - ${yamlScalar(tag)}`),
   `pin: ${Number.isFinite(pin) ? pin : 0}`,
   ...(draft ? ['draft: true'] : []),
   '---',
