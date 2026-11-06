@@ -573,17 +573,27 @@ html[data-theme="dark"] .theme-toggle .moon {
   color: var(--accent-strong);
 }
 
-.pin-mark {
+.pinned-badge {
   display: inline-flex;
-  width: 0.82rem;
-  height: 0.82rem;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.5rem;
+  padding: 0.14rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
   color: var(--accent-strong);
-  transform: translateY(0.08em);
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  line-height: 1;
 }
 
-.pin-mark svg {
-  width: 100%;
-  height: 100%;
+.pinned-badge svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  transform: rotate(28deg);
 }
 
 .post-meta {
@@ -1069,7 +1079,8 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .toc {
   margin: 1.4rem 0 1.8rem;
-  background: transparent;
+  border-radius: 8px;
+  background: var(--surface);
 }
 
 .toc summary {
@@ -1078,7 +1089,7 @@ html[data-theme="dark"] .theme-toggle .moon {
   justify-content: space-between;
   gap: 1rem;
   min-height: 2.7rem;
-  padding: 0.55rem 0;
+  padding: 0.55rem 0.8rem;
   color: var(--ink-soft);
   font-family: var(--font-display);
   font-size: 0.84rem;
@@ -1089,6 +1100,18 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .toc summary::-webkit-details-marker {
   display: none;
+}
+
+.toc__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.toc__icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--accent-strong);
 }
 
 .toc summary::after {
@@ -1105,7 +1128,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .toc ol {
   margin: 0;
-  padding: 0.15rem 0 0.9rem;
+  padding: 0.15rem 0.8rem 0.9rem;
   list-style: none;
   counter-reset: toc;
 }

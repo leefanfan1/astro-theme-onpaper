@@ -183,22 +183,22 @@ html[data-theme="dark"] .mc-cover-wrap {
   background: none;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 600px) {
   .mc-card {
     max-width: 100%;
     margin-block: 1.5rem;
   }
 
   .mc-inner {
-    grid-template-columns: 84px minmax(0, 1fr);
-    gap: 14px;
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 12px;
     padding: 14px;
     align-items: start;
   }
 
   .mc-cover-wrap {
-    width: 84px;
-    height: 84px;
+    width: 82px;
+    height: 82px;
   }
 
   .mc-type-badge {
@@ -206,23 +206,34 @@ html[data-theme="dark"] .mc-cover-wrap {
   }
 
   .mc-title {
-    font-size: 1.12rem;
+    font-size: 1.08rem;
   }
 
   .mc-links {
-    margin-top: 0.6rem;
-    column-gap: 0.7rem;
-    row-gap: 0.25rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem 0.5rem;
+    margin-top: 0.65rem;
+    width: 100%;
   }
 
   .mc-link {
-    font-size: 0.68rem;
+    width: 100%;
+    min-width: 0;
+    gap: 0.25rem;
+    font-size: 0.66rem;
+  }
+
+  .mc-link span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .mc-link svg,
   .mc-link img {
-    width: 0.9rem;
-    height: 0.9rem;
+    width: 0.85rem;
+    height: 0.85rem;
   }
 }
 

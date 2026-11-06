@@ -27,17 +27,18 @@ const { posts } = Astro.props
         <article class="post-row">
           <h2 class="post-title">
             <a href={getPostHref(post)}>{post.data.title}</a>
-            {post.data.pin > 0 && (
-              <span class="pin-mark" role="img" aria-label="置顶" title="置顶">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M9.2 4.2h5.6l-.9 4.7 2.8 2.8v1.1H7.3v-1.1l2.8-2.8-.9-4.7Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path>
-                  <path d="M12 12.8v7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
-                </svg>
-              </span>
-            )}
           </h2>
 
           <div class="post-meta">
+            {post.data.pin > 0 && (
+              <span class="pinned-badge" role="img" aria-label="置顶文章" title="置顶文章">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9.2 4.2h5.6l-.9 4.7 2.8 2.8v1.1H7.3v-1.1l2.8-2.8-.9-4.7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+                  <path d="M12 12.8v7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                </svg>
+                <span>PINNED</span>
+              </span>
+            )}
             <time datetime={post.data.published.toISOString()}>{formatDate(post.data.published)}</time>
           </div>
 

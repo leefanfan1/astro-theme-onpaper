@@ -13,7 +13,14 @@ const items = headings.filter(heading => heading.depth >= 2 && heading.depth <= 
 {
   items.length >= 2 && (
     <details class="toc" open={siteConfig.tocOpen} data-toc>
-      <summary>目录</summary>
+      <summary>
+        <span class="toc__title">
+          <svg class="toc__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 6h16M4 12h10M4 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          目录
+        </span>
+      </summary>
       <ol>
         {items.map(heading => (
           <li class={`toc-depth-${heading.depth}`}>
