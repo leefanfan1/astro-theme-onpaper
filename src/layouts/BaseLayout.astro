@@ -221,8 +221,6 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 
       let revealObserver: IntersectionObserver | undefined
 
-      document.addEventListener('astro:before-preparation', cancelContentMotion)
-
       document.addEventListener('astro:before-swap', (event) => {
         cancelContentMotion()
         revealObserver?.disconnect()
