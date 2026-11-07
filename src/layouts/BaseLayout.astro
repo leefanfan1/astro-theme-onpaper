@@ -78,8 +78,6 @@ const themeCSS = `
 :root{${tokensToCss(light)}--font-display:${siteConfig.fonts.display};--font-body:${siteConfig.fonts.body};--font-mono:${siteConfig.fonts.mono};color-scheme:light}
 html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 @media (prefers-color-scheme: dark){html:not([data-theme="light"]){${tokensToCss(dark)}color-scheme:dark}}
-html.theme-changing::view-transition-old(page-content),html.theme-changing::view-transition-new(page-content){animation:none;mix-blend-mode:normal}
-html.theme-changing *{transition:none!important}
 `
 ---
 
@@ -202,6 +200,7 @@ html.theme-changing *{transition:none!important}
     <a class="skip-link" href="#main">跳到正文</a>
 
     <MobileBar />
+    <div class="navigation-progress" data-navigation-progress aria-hidden="true"></div>
 
     <div class="site-shell">
       <main id="main" class:list={['site-main', !isHomePage && 'site-main--inner']}>
@@ -216,7 +215,46 @@ html.theme-changing *{transition:none!important}
     <ImageZoom />
 
     <script>
+      import { animateContent, cancelContentMotion } from '@/utils/content-motion'
+
+      let navigationVersion = 0
+      let revealObserver: IntersectionObserver | undefined
+
+      function clearNavigationPending() {
+        document.documentElement.removeAttribute('data-navigation-pending')
+        document.getElementById('main')?.removeAttribute('aria-busy')
+      }
+
+      document.addEventListener('astro:before-preparation', (event) => {
+        cancelContentMotion()
+        const current = ++navigationVersion
+        const content = document.getElementById('main')
+        const indicator = document.querySelector<HTMLElement>('[data-navigation-progress]')
+        if (content && indicator) {
+          const rect = content.getBoundingClientRect()
+          indicator.style.left = `${rect.left}px`
+          indicator.style.width = `${rect.width}px`
+          content.setAttribute('aria-busy', 'true')
+          document.documentElement.setAttribute('data-navigation-pending', '')
+        }
+        event.signal.addEventListener('abort', () => {
+          if (current === navigationVersion) clearNavigationPending()
+        }, { once: true })
+      })
+
+      document.addEventListener('astro:before-swap', (event) => {
+        cancelContentMotion()
+        revealObserver?.disconnect()
+        revealObserver = undefined
+        // Keep ClientRouter navigation/history without its snapshot overlay.
+        event.viewTransition?.ready.catch(() => {})
+        event.viewTransition?.skipTransition()
+      })
+      document.addEventListener('astro:after-swap', clearNavigationPending)
+
       function initReveal() {
+        revealObserver?.disconnect()
+        revealObserver = undefined
         const elements = [...document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-visible)')]
         if (!elements.length) return
         if (!('IntersectionObserver' in window)) {
@@ -247,6 +285,7 @@ html.theme-changing *{transition:none!important}
             observer.unobserve(entry.target)
           }
         }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 })
+        revealObserver = observer
         belowFold.forEach(element => observer.observe(element))
       }
 
@@ -296,6 +335,7 @@ html.theme-changing *{transition:none!important}
       }
 
       function restoreListScroll() {
+        if (document.fonts && document.documentElement.dataset.fontState !== 'ready') return
         try {
           const raw = sessionStorage.getItem('onpaper:restore-scroll')
           if (!raw) return
@@ -306,22 +346,23 @@ html.theme-changing *{transition:none!important}
             return
           }
           sessionStorage.removeItem('onpaper:restore-scroll')
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              window.scrollTo({ top: saved.scrollY || 0, left: 0, behavior: 'instant' })
-            })
-          })
+          window.scrollTo({ top: saved.scrollY || 0, left: 0, behavior: 'instant' })
         }
         catch (error) {}
       }
 
       function initPage() {
         document.documentElement.classList.add('js')
-        initReveal()
+        if (!document.fonts || document.documentElement.dataset.fontState === 'ready') initReveal()
         initCodeCopy()
         restoreListScroll()
       }
 
+      document.addEventListener('onpaper:content-ready', () => {
+        restoreListScroll()
+        initReveal()
+        if (document.documentElement.hasAttribute('data-font-navigation')) animateContent()
+      })
       document.addEventListener('astro:before-swap', rememberNavigation)
       window.addEventListener('pagehide', rememberNavigation)
       document.addEventListener('astro:page-load', initPage)

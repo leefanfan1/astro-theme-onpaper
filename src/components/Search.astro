@@ -561,6 +561,7 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   }
 
   bindSearchTriggers()
+  document.addEventListener('astro:after-swap', bindSearchTriggers)
   document.addEventListener('astro:page-load', bindSearchTriggers)
 
   document.addEventListener('keydown', (event) => {

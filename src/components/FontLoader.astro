@@ -28,7 +28,8 @@
     border: 2px solid var(--line);
     border-top-color: var(--accent);
     border-radius: 50%;
-    animation: font-loading 900ms linear infinite;
+    opacity: 0;
+    animation: font-loading 900ms linear infinite, font-loading-show 0s 150ms forwards;
   }
 
   .font-load-retry {
@@ -46,8 +47,9 @@
   }
   .font-load-retry svg { width: 22px; height: 22px; }
   @keyframes font-loading { to { transform: rotate(360deg); } }
+  @keyframes font-loading-show { to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) {
-    html[data-font-state='loading']::after { animation: none; }
+    html[data-font-state='loading']::after { animation: none; opacity: 1; }
   }
 </style>
 
@@ -112,6 +114,7 @@
       // The mobile spacer must be measured with the final font metrics.
       document.dispatchEvent(new Event('onpaper:fonts-ready'))
       document.documentElement.dataset.fontState = 'ready'
+      document.dispatchEvent(new Event('onpaper:content-ready'))
     }
     catch {
       if (current !== version) return

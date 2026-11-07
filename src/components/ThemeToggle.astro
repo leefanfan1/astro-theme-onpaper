@@ -15,6 +15,8 @@
 </button>
 
 <script>
+  import { animateContent } from '@/utils/content-motion'
+
   const STORAGE_KEY = 'onpaper-theme'
   const media = window.matchMedia('(prefers-color-scheme: dark)')
 
@@ -77,51 +79,8 @@
     if (!(target instanceof Element) || !target.closest('[data-theme-toggle]'))
       return
 
-    const button = target.closest('[data-theme-toggle]')
-    const isDark = document.documentElement.dataset.theme === 'dark'
-    const nextDark = !isDark
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-    if (!document.startViewTransition || reduce) {
-      applyTheme(nextDark)
-      return
-    }
-
-    const rect = button?.getBoundingClientRect()
-    const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
-    const y = rect ? rect.top + rect.height / 2 : 0
-    const radius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y),
-    )
-
-    const contentRect = document.querySelector('main')?.getBoundingClientRect()
-    if (!contentRect) {
-      applyTheme(nextDark)
-      return
-    }
-    const contentX = x - contentRect.left
-    const contentY = y - contentRect.top
-
-    document.documentElement.classList.add('theme-changing')
-    const transition = document.startViewTransition(() => applyTheme(nextDark))
-    transition.ready.then(() => {
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(0px at ${contentX}px ${contentY}px)`,
-            `circle(${radius}px at ${contentX}px ${contentY}px)`,
-          ],
-        },
-        {
-          duration: 480,
-          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-          pseudoElement: '::view-transition-new(page-content)',
-        },
-      )
-    }).catch(() => {})
-    transition.finished.finally(() => {
-      document.documentElement.classList.remove('theme-changing')
-    })
+    const nextDark = document.documentElement.dataset.theme !== 'dark'
+    applyTheme(nextDark)
+    animateContent(0.65)
   })
 </script>
