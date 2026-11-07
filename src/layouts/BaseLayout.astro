@@ -200,7 +200,6 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
     <a class="skip-link" href="#main">跳到正文</a>
 
     <MobileBar />
-    <div class="navigation-progress" data-navigation-progress aria-hidden="true"></div>
 
     <div class="site-shell">
       <main id="main" class:list={['site-main', !isHomePage && 'site-main--inner']}>
@@ -216,31 +215,13 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 
     <script>
       import { animateContent, cancelContentMotion } from '@/utils/content-motion'
+      import { installNavigation } from '@/utils/navigation'
 
-      let navigationVersion = 0
+      installNavigation()
+
       let revealObserver: IntersectionObserver | undefined
 
-      function clearNavigationPending() {
-        document.documentElement.removeAttribute('data-navigation-pending')
-        document.getElementById('main')?.removeAttribute('aria-busy')
-      }
-
-      document.addEventListener('astro:before-preparation', (event) => {
-        cancelContentMotion()
-        const current = ++navigationVersion
-        const content = document.getElementById('main')
-        const indicator = document.querySelector<HTMLElement>('[data-navigation-progress]')
-        if (content && indicator) {
-          const rect = content.getBoundingClientRect()
-          indicator.style.left = `${rect.left}px`
-          indicator.style.width = `${rect.width}px`
-          content.setAttribute('aria-busy', 'true')
-          document.documentElement.setAttribute('data-navigation-pending', '')
-        }
-        event.signal.addEventListener('abort', () => {
-          if (current === navigationVersion) clearNavigationPending()
-        }, { once: true })
-      })
+      document.addEventListener('astro:before-preparation', cancelContentMotion)
 
       document.addEventListener('astro:before-swap', (event) => {
         cancelContentMotion()
@@ -250,7 +231,6 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
         event.viewTransition?.ready.catch(() => {})
         event.viewTransition?.skipTransition()
       })
-      document.addEventListener('astro:after-swap', clearNavigationPending)
 
       function initReveal() {
         revealObserver?.disconnect()

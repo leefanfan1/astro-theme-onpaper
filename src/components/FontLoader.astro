@@ -3,7 +3,8 @@
 ---
 
 <script is:inline>
-  if (document.fonts) document.documentElement.dataset.fontState = 'loading'
+  if (document.fonts && document.documentElement.dataset.fontState !== 'ready')
+    document.documentElement.dataset.fontState = 'loading'
 </script>
 
 <style is:global>
@@ -54,6 +55,9 @@
 </style>
 
 <script>
+  import { isPreparedNavigation } from '@/utils/navigation'
+
+  let settledContent: Element | null = null
   let version = 0
   let slowTimer: number | undefined
 
@@ -73,6 +77,17 @@
 
   async function revealWithFonts() {
     if (!document.fonts) return
+    const content = document.getElementById('main')
+    if (content === settledContent && document.documentElement.dataset.fontState === 'ready') return
+    // Client navigation warms its fonts before the DOM swap. Paint immediately;
+    // don't hide it again or walk the full document after page scripts execute.
+    if (document.documentElement.hasAttribute('data-font-navigation')
+      && document.documentElement.dataset.fontState === 'ready') {
+      settledContent = content
+      document.dispatchEvent(new Event('onpaper:fonts-ready'))
+      document.dispatchEvent(new Event('onpaper:content-ready'))
+      return
+    }
     const current = ++version
     window.clearTimeout(slowTimer)
     document.getElementById('font-load-retry')?.remove()
@@ -114,6 +129,7 @@
       // The mobile spacer must be measured with the final font metrics.
       document.dispatchEvent(new Event('onpaper:fonts-ready'))
       document.documentElement.dataset.fontState = 'ready'
+      settledContent = content
       document.dispatchEvent(new Event('onpaper:content-ready'))
     }
     catch {
@@ -129,7 +145,10 @@
     event.newDocument.documentElement.toggleAttribute('data-font-navigation',
       document.documentElement.dataset.fontState === 'ready'
         || document.documentElement.hasAttribute('data-font-navigation'))
-    event.newDocument.documentElement.dataset.fontState = 'loading'
+    event.newDocument.documentElement.dataset.fontState = isPreparedNavigation(event.newDocument) ? 'ready' : 'loading'
+  })
+  document.addEventListener('astro:after-swap', () => {
+    if (document.documentElement.dataset.fontState === 'ready') void revealWithFonts()
   })
   document.addEventListener('astro:page-load', revealWithFonts)
   if (document.readyState === 'loading') {
