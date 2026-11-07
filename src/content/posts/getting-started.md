@@ -113,7 +113,7 @@ npm run build:clean
 src/
   config.ts                 站点、导航、配色、字体、功能开关
   content/posts/            文章
-  content/pages/about.md    关于页
+  content/pages/            about.md 关于页、friends.md 友链页
   components/               界面组件
   layouts/BaseLayout.astro  页面外壳、主题和 SEO
   pages/                    首页、归档、标签、RSS、搜索索引
@@ -132,12 +132,27 @@ public/                     字体、分享图、示例图片、_headers
 - `url`：部署后的真实域名，影响 canonical、RSS、sitemap 和 OG
 - `nav`：导航顺序和标签
 - `socials`：页脚社交链接
-- `friends`：友链页条目
 - `analytics.googleAnalyticsId`：可选 GA4 ID，留空不加载
 - `theme`：默认明暗模式、颜色 token
 - `features`：搜索、阅读数、音乐卡片、GitHub 卡片、媒体嵌入、数学、Mermaid 开关
 
-部署前至少检查 `url`、`email`、`socials` 和 `friends`，它们目前是示例值。
+部署前至少检查 `url`、`email`、`socials`，它们目前是示例值。
+
+### 管理友情链接
+
+所有友情链接集中写在 `src/content/pages/friends.md`，每个友链依次写名称、网址、简介三行，友链之间空一行：
+
+```text
+朋友的博客
+https://example.com/
+一段简短的介绍。
+
+另一位朋友
+https://example.org/
+另一段介绍。
+```
+
+复制一组三行即可新增友链，删除对应组即可移除，调整上下顺序即可改变展示顺序。无需括号、列表符号或缩进；网址填写完整地址，简介可以省略，也可以写多行。文件顶部的 `title` 和 `description` 分别设置页面标题和搜索摘要。页面会自动将这些内容显示为友链卡片，线上修改后需要重新构建部署。
 
 ## 在文章里插入卡片
 
@@ -244,7 +259,7 @@ npx wrangler pages deploy dist
 
 ## 上线前检查
 
-- [ ] 替换 `siteConfig.url`、邮箱、社交链接、友链
+- [ ] 替换 `siteConfig.url`、邮箱、社交链接，以及 `src/content/pages/friends.md` 中的示例友链
 - [ ] 更新 `public/og.svg` 里的域名并运行 `npm run og`
 - [ ] 把 `wrangler.toml` 的 `name` 改成真实项目名
 - [ ] 检查 `_headers` 和 CSP
