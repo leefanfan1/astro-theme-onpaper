@@ -45,7 +45,6 @@ npm run dev
 | `npm run dev` | 启动开发服务器 |
 | `npm run new 网址` | 新建文章（可带 `title` / `tags` / `pin` / `draft` 参数） |
 | `npm run build` | 生成静态站点到 `dist/` |
-| `npm test` | 运行友链解析、内容安全和阅读计数接口的回归测试 |
 | `npm run build:clean` | 清理 Astro 内容缓存后再构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
 | `npm run preview` | 预览生产构建 |

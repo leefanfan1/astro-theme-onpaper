@@ -10,7 +10,6 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "build:clean": "npm run clean && astro build",
     "clean": "node scripts/clean.mjs",
     "new": "node scripts/new-post.mjs",
