@@ -2,6 +2,7 @@
 import { ClientRouter } from 'astro:transitions'
 import BackToTop from '@/components/BackToTop.astro'
 import Footer from '@/components/Footer.astro'
+import FontLoader from '@/components/FontLoader.astro'
 import ImageZoom from '@/components/ImageZoom.astro'
 import MobileBar from '@/components/MobileBar.astro'
 import Search from '@/components/Search.astro'
@@ -91,6 +92,7 @@ html.theme-changing *{transition:none!important}
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <FontLoader />
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />

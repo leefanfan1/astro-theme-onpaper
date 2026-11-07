@@ -457,6 +457,17 @@ html[data-theme="dark"] .theme-toggle .moon {
     transition: border-color 0.25s ease;
   }
 
+  .mobile-bar[data-bar-measuring] {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .mobile-bar[data-bar-measuring],
+  .mobile-bar[data-bar-measuring] * {
+    transition: none !important;
+    animation: none !important;
+  }
+
   .mobile-bar.is-scrolled {
     border-bottom-color: var(--line);
   }
