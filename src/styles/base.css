@@ -10,6 +10,8 @@
 }
 
 html {
+  /* Navigation uses live content; avoid document snapshots and input overlays. */
+  view-transition-name: none;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   scrollbar-gutter: stable;
@@ -85,40 +87,24 @@ pre {
   outline-offset: 3px;
 }
 
-/* Keep the page shell still; only the content column gets a snapshot animation. */
-::view-transition-group(root),
-::view-transition-group(page-content) {
-  animation: none;
+/* Network activity is feedback, not part of the content animation. */
+.navigation-progress {
+  position: fixed;
+  top: 0;
+  z-index: 130;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
 }
 
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+html[data-navigation-pending] .navigation-progress {
+  opacity: 0.7;
+  animation: navigation-pulse 900ms ease-in-out infinite alternate;
 }
 
-::view-transition-old(root) {
-  display: none;
-}
-
-html[data-astro-transition]::view-transition-old(page-content) {
-  animation: page-out 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-
-html[data-astro-transition]::view-transition-new(page-content) {
-  animation: page-in 300ms cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-
-@keyframes page-out {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes page-in {
-  from {
-    opacity: 0;
-  }
+@keyframes navigation-pulse {
+  to { opacity: 0.25; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -134,10 +120,7 @@ html[data-astro-transition]::view-transition-new(page-content) {
     scroll-behavior: auto !important;
   }
 
-  html[data-astro-transition]::view-transition-old(page-content),
-  html[data-astro-transition]::view-transition-new(page-content) {
-    animation: none;
-  }
+  html[data-navigation-pending] .navigation-progress { animation: none; }
 }
 
 .sr-only {
@@ -185,7 +168,6 @@ html[data-astro-transition]::view-transition-new(page-content) {
 
 .site-main {
   min-width: 0;
-  view-transition-name: page-content;
   background: var(--paper);
 }
 

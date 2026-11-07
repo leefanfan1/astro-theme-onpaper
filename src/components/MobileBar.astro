@@ -59,6 +59,7 @@ const nav = siteConfig.nav.map((item) => {
   function measureBarHeight() {
     const bar = document.querySelector<HTMLElement>('[data-mobile-bar]')
     if (!bar) return
+    if (window.innerWidth > 1100) { measuredWidth = window.innerWidth; return }
     // Never measure the live bar while its compact transition is running.
     // A hidden, expanded copy keeps the content spacer stable at full height.
     const probe = bar.cloneNode(true) as HTMLElement
