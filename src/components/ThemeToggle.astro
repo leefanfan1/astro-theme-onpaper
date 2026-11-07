@@ -95,20 +95,28 @@
       Math.max(y, window.innerHeight - y),
     )
 
+    const contentRect = document.querySelector('main')?.getBoundingClientRect()
+    if (!contentRect) {
+      applyTheme(nextDark)
+      return
+    }
+    const contentX = x - contentRect.left
+    const contentY = y - contentRect.top
+
     document.documentElement.classList.add('theme-changing')
     const transition = document.startViewTransition(() => applyTheme(nextDark))
     transition.ready.then(() => {
       document.documentElement.animate(
         {
           clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${radius}px at ${x}px ${y}px)`,
+            `circle(0px at ${contentX}px ${contentY}px)`,
+            `circle(${radius}px at ${contentX}px ${contentY}px)`,
           ],
         },
         {
           duration: 480,
           easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-          pseudoElement: '::view-transition-new(root)',
+          pseudoElement: '::view-transition-new(page-content)',
         },
       )
     }).catch(() => {})

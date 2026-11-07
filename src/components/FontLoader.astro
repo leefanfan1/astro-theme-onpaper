@@ -10,6 +10,14 @@
   html[data-font-state='loading'] body,
   html[data-font-state='error'] body { visibility: hidden; }
 
+  /* The rail's fonts are already loaded during client navigation. Keep it
+     visible while the incoming content waits for any new glyph subsets. */
+  html[data-font-navigation][data-font-state='loading'] body,
+  html[data-font-navigation][data-font-state='error'] body { visibility: visible; }
+
+  html[data-font-navigation][data-font-state='loading'] .site-main,
+  html[data-font-navigation][data-font-state='error'] .site-main { visibility: hidden; }
+
   html[data-font-state='loading']::after {
     content: '';
     position: fixed;
@@ -115,6 +123,9 @@
   document.addEventListener('astro:before-swap', (event) => {
     ++version
     window.clearTimeout(slowTimer)
+    event.newDocument.documentElement.toggleAttribute('data-font-navigation',
+      document.documentElement.dataset.fontState === 'ready'
+        || document.documentElement.hasAttribute('data-font-navigation'))
     event.newDocument.documentElement.dataset.fontState = 'loading'
   })
   document.addEventListener('astro:page-load', revealWithFonts)
