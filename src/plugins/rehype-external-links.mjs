@@ -3,27 +3,34 @@
  * - drop javascript:/vbscript:/data: URLs
  * - add safe rel/target attributes to external links
  *
- * Markdown is treated as trusted author content, but this still blocks the
- * most common HTML-injection payloads if a post or guest submission slips in.
+ * Markdown is treated as trusted author content; this blocks dangerous URL
+ * schemes. This is URL hardening, not an HTML sanitizer.
  */
 
-const DANGEROUS_URL = /^\s*(?:javascript|vbscript|data):/i
+import rehypeRaw from 'rehype-raw'
+
+// Parse raw HTML before applying the same URL policy to all links and media.
+const DANGEROUS_URL = /^(?:javascript|vbscript|data):/i
 
 function isDangerous(value) {
-  return typeof value === 'string' && DANGEROUS_URL.test(value)
+  if (typeof value !== 'string') return false
+  // Match browser URL parsing: strip TAB/LF/CR anywhere and leading C0/space.
+  const normalized = value.replace(/[\t\n\r]/g, '').replace(/^[\u0000-\u0020]+/, '')
+  return DANGEROUS_URL.test(normalized)
 }
 
 export function rehypeExternalLinks() {
   return (tree) => {
+    const parsed = rehypeRaw()(tree)
     function walk(node) {
       if (node.type === 'element') {
         const properties = node.properties ?? {}
 
         if (node.tagName === 'a') {
-          if (isDangerous(properties.href)) {
-            properties.href = '#'
+          for (const property of ['href', 'xLinkHref']) {
+            if (isDangerous(properties[property])) properties[property] = '#'
           }
-          else if (typeof properties.href === 'string' && /^https?:\/\//i.test(properties.href)) {
+          if (typeof properties.href === 'string' && /^https?:\/\//i.test(properties.href)) {
             properties.target = '_blank'
             properties.rel = ['noopener', 'noreferrer']
           }
@@ -50,6 +57,7 @@ export function rehypeExternalLinks() {
       if (node.children) node.children.forEach(walk)
     }
 
-    walk(tree)
+    walk(parsed)
+    return parsed
   }
 }

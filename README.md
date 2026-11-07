@@ -45,6 +45,7 @@ npm run dev
 | `npm run dev` | 启动开发服务器 |
 | `npm run new 网址` | 新建文章（可带 `title` / `tags` / `pin` / `draft` 参数） |
 | `npm run build` | 生成静态站点到 `dist/` |
+| `npm test` | 运行友链解析、内容安全和阅读计数接口的回归测试 |
 | `npm run build:clean` | 清理 Astro 内容缓存后再构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
 | `npm run preview` | 预览生产构建 |
@@ -111,7 +112,7 @@ src/
 ├── content.config.ts         内容集合 schema
 ├── content/
 │   ├── posts/                文章
-│   └── pages/about.md        关于页
+│   └── pages/                about.md 关于页、friends.md 友链页
 ├── components/               界面组件
 ├── layouts/BaseLayout.astro  页面外壳、主题脚本、全局样式
 ├── pages/                    首页、文章、归档、标签、关于、搜索索引、RSS
@@ -128,7 +129,7 @@ public/                       favicon、OG、字体、示例图片、_headers
 
 ## 站点配置
 
-所有站点信息集中在 `src/config.ts`：
+站点信息、导航和主题设置集中在 `src/config.ts`；友情链接内容在 `src/content/pages/friends.md` 中单独维护：
 
 <details>
 <summary><b>展开完整配置示例</b></summary>
@@ -149,10 +150,6 @@ export const siteConfig = {
     { label: '归档', href: '/tags/' },
     { label: '关于', href: '/about/' },
     { label: '友链', href: '/friends/' },
-  ],
-
-  friends: [
-    { name: '山茶书房', url: 'https://shanchafang.example/', description: '……' },
   ],
 
   analytics: {
@@ -219,7 +216,19 @@ Noto Serif SC 使用 `font-display: optional`：首次冷加载若子集未就�
 
 ### 友链
 
-在 `siteConfig.friends` 增删条目，每项包含 `name`、`url`、`description`。友链页会自动生成，导航入口来自 `siteConfig.nav`。
+所有友情链接集中写在 `src/content/pages/friends.md`，每个友链依次写名称、网址、简介三行，友链之间空一行：
+
+```text
+朋友的博客
+https://example.com/
+一段简短的介绍。
+
+另一位朋友
+https://example.org/
+另一段介绍。
+```
+
+复制一组三行即可新增友链，删除对应组即可移除，调整上下顺序即可改变展示顺序。无需括号、列表符号或缩进；网址填写完整地址，简介可以省略，也可以写多行。文件顶部的 `title` 和 `description` 分别设置页面标题和搜索摘要。页面会自动将这些内容显示为友链卡片，线上修改后需要重新构建部署。
 
 ### 分享图（OG）
 
@@ -399,7 +408,7 @@ slug 只接受小写字母、数字和连字符，最长 96 字符。KV 未绑�
 - **布局**：正文列 + 右侧固定窄栏（刊头、导航、搜索、主题、页脚）；移动端折叠为顶部导航和单列列表
 - **刊头**：只保留大号「纸上留白」和副标题，去掉卷号与英文小字
 - **首页**：文章列表 + 分页，不做营销式 hero；列表标题、描述和分隔线与内容列同宽
-- **文章页**：宽屏桌面左侧固定层级目录，窄屏回退顶部目录面板；宽屏标题左侧固定「← 首页」，较窄宽度放在标题上方
+- **文章页**：宽屏桌面左侧固定层级目录，窄屏回退顶部目录面板；宽屏标题左侧固定「← 返回」，较窄宽度放在标题上方
 - **归档**：按年份分组的纵向时间线 + 标签索引
 - **颜色**：平涂背景，没有渐变和装饰光效
 - **动效**：页面过渡、滚动渐入、主题圆形揭示；优先使用透明度与 transform，全部尊重 `prefers-reduced-motion`

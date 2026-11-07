@@ -74,34 +74,96 @@ export function detectPlatform(rawUrl) {
   return null
 }
 
+// Apply the same boundary to every request, including API calls and redirect
+// hops. Checking only detectPlatform() cannot constrain fetch's default follow.
+const FETCH_HOSTS = new Set([
+  'open.spotify.com', 'www.open.spotify.com',
+  'music.apple.com', 'www.music.apple.com', 'itunes.apple.com',
+  'music.163.com', 'www.music.163.com',
+  'y.qq.com', 'www.y.qq.com', 'i.y.qq.com', 'www.i.y.qq.com', 'c.y.qq.com',
+])
+const MAX_REDIRECTS = 5
+const MAX_RESPONSE_BYTES = 5 * 1024 * 1024
+
+function checkedFetchUrl(value) {
+  const url = new URL(value)
+  if (url.protocol !== 'https:' || !FETCH_HOSTS.has(url.hostname)
+    || url.username || url.password || url.port) {
+    throw new Error('Disallowed music fetch URL')
+  }
+  return url
+}
+
+async function fetchMusic(url, options = {}) {
+  let target = checkedFetchUrl(url)
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const response = await fetch(target.href, {
+      ...options,
+      credentials: 'omit',
+      redirect: 'manual',
+    })
+    if (![301, 302, 303, 307, 308].includes(response.status)) return response
+    await response.body?.cancel()
+    const location = response.headers.get('location')
+    if (!location || hop === MAX_REDIRECTS) throw new Error('Invalid music redirect chain')
+    target = checkedFetchUrl(new URL(location, target))
+  }
+  throw new Error('Too many music redirects')
+}
+
+async function readMusicText(response) {
+  if (!response.ok) {
+    await response.body?.cancel()
+    throw new Error('HTTP ' + response.status)
+  }
+  if (Number(response.headers.get('content-length')) > MAX_RESPONSE_BYTES) {
+    await response.body?.cancel()
+    throw new Error('Music response exceeds byte limit')
+  }
+  if (!response.body) return ''
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  const chunks = []
+  let size = 0
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      size += value.byteLength
+      if (size > MAX_RESPONSE_BYTES) throw new Error('Music response exceeds byte limit')
+      chunks.push(decoder.decode(value, { stream: true }))
+    }
+    chunks.push(decoder.decode())
+    return chunks.join('')
+  }
+  catch (error) {
+    await reader.cancel().catch(() => {})
+    throw error
+  }
+  finally {
+    reader.releaseLock()
+  }
+}
+
 function fetchText(url, timeout = 10000) {
-  return fetch(url, {
+  return fetchMusic(url, {
     headers: { 'User-Agent': UA, Accept: 'text/html' },
-    credentials: 'omit',
     signal: AbortSignal.timeout(timeout),
-  }).then((r) => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`)
-    return r.text()
-  })
+  }).then(readMusicText)
 }
 
 function fetchJson(url, timeout = 10000) {
-  return fetch(url, {
+  return fetchMusic(url, {
     headers: { 'User-Agent': UA, Accept: 'application/json' },
-    credentials: 'omit',
     signal: AbortSignal.timeout(timeout),
-  }).then((r) => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`)
-    return r.json()
-  })
+  }).then(readMusicText).then(JSON.parse)
 }
 
 async function fetchWithRetry(url, options, retries = 1) {
   for (let i = 0; i <= retries; i++) {
     try {
-      const res = await fetch(url, options)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      return await res.json()
+      const res = await fetchMusic(url, options)
+      return JSON.parse(await readMusicText(res))
     } catch (err) {
       if (i < retries) {
         await new Promise((r) => setTimeout(r, 1000))
@@ -379,9 +441,8 @@ async function resolveNetease(url) {
   const headers = { 'User-Agent': UA, Referer: 'https://music.163.com/' }
 
   if (isAlbum) {
-    const res = await fetch(`https://music.163.com/api/v1/album/${id}`, { headers, signal: AbortSignal.timeout(10000) })
-    if (!res.ok) throw new Error(`Netease album API HTTP ${res.status}`)
-    const data = await res.json()
+    const res = await fetchMusic(`https://music.163.com/api/v1/album/${id}`, { headers, signal: AbortSignal.timeout(10000) })
+    const data = JSON.parse(await readMusicText(res))
     const songs = data?.songs
     if (!songs?.length) throw new Error('Netease album not found')
     const first = songs[0]
@@ -390,9 +451,8 @@ async function resolveNetease(url) {
     const cover = first.al?.picUrl || ''
     return { title, artist, cover, type: 'album', platform: 'netease' }
   } else {
-    const res = await fetch(`https://music.163.com/api/song/detail?id=${id}&ids=[${id}]`, { headers, signal: AbortSignal.timeout(10000) })
-    if (!res.ok) throw new Error(`Netease song API HTTP ${res.status}`)
-    const data = await res.json()
+    const res = await fetchMusic(`https://music.163.com/api/song/detail?id=${id}&ids=[${id}]`, { headers, signal: AbortSignal.timeout(10000) })
+    const data = JSON.parse(await readMusicText(res))
     const song = data?.songs?.[0]
     if (!song) throw new Error('Netease song not found')
     const artist = song.artists?.map?.((a) => a.name).join(', ') || song.artists?.[0]?.name || ''

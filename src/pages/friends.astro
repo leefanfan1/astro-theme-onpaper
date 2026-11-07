@@ -1,6 +1,11 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { siteConfig } from '@/config'
+import { getEntry } from 'astro:content'
+import { parseFriends } from '@/utils/friends'
+
+const page = await getEntry('pages', 'friends')
+if (!page) throw new Error('缺少友情链接内容：src/content/pages/friends.md')
+const friends = parseFriends(page.body ?? '')
 
 function displayDomain(url: string) {
   try {
@@ -13,8 +18,8 @@ function displayDomain(url: string) {
 ---
 
 <BaseLayout
-  title="友链"
-  description="一些常去串门的个人博客，和他们的近况。"
+  title={page.data.title}
+  description={page.data.description}
 >
   <header class="page-header" data-reveal>
     <div class="page-header__kicker">
@@ -22,12 +27,12 @@ function displayDomain(url: string) {
       <span aria-hidden="true">/</span>
       <span>常去串门的地方</span>
     </div>
-    <h1 class="display-title">友链</h1>
+    <h1 class="display-title">{page.data.title}</h1>
     <p class="page-lead">一些常去串门的个人博客。排名不分先后，愿大家都能慢慢写下去。</p>
   </header>
 
   <ul class="friend-grid">
-    {siteConfig.friends.map((friend, index) => (
+    {friends.map((friend, index) => (
       <li data-reveal style={`--reveal-delay:${Math.min(index, 5) * 45}ms`}>
         <a
           class="friend-link"
