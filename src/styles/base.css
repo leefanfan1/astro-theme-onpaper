@@ -1578,20 +1578,21 @@ html[data-theme="dark"] .theme-toggle .moon {
   z-index: 80;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
-  min-height: 3rem;
-  padding: 0.55rem 1rem;
-  border: 1px solid var(--accent-strong);
+  min-height: 2.75rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--ink-soft) 28%, var(--paper));
   border-radius: 999px;
-  background: var(--accent-strong);
-  color: var(--paper);
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 12%, transparent);
+  background: var(--paper);
+  color: var(--ink-soft);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 5%, transparent);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.06em;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.22s ease, visibility 0.22s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: opacity 0.22s ease, visibility 0.22s ease, color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .back-to-top.is-visible {
@@ -1600,13 +1601,23 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .back-to-top:hover {
-  background: color-mix(in srgb, var(--accent-strong) 90%, var(--ink));
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 18%, transparent);
+  background: var(--surface);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--ink-soft) 45%, var(--paper));
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--ink) 7%, transparent);
 }
 
 .back-to-top svg {
-  width: 1rem;
-  height: 1rem;
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.back-to-top__label {
+  display: block;
+  line-height: 1;
+  /* Center Newsreader's capital letters optically with the arrow. */
+  transform: translateY(0.1em);
 }
 
 /* ---------------------------------------------------------
