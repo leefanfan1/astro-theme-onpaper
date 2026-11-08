@@ -4,13 +4,15 @@ import { preloadPageFonts } from '@/utils/fonts'
 interface Page {
   document: Document
   url: string
-  fonts?: Promise<void>
 }
 
 const pages = new Map<string, { expires: number, page: Promise<Page | null> }>()
 const MAX_PAGES = 16
 const CACHE_MS = 5 * 60 * 1000
 let installed = false
+const speculations = new Map<string, AbortController>()
+let prefetchVersion = 0
+let navigating = false
 
 function pageUrl(href: string) {
   const url = new URL(href, location.href)
@@ -36,31 +38,45 @@ function cached(url: string) {
   return entry.page
 }
 
-async function fontsFor(page: Page) {
-  if (!page.fonts) {
-    page.fonts = preloadPageFonts(page.document.body)
-    page.fonts.catch(() => { page.fonts = undefined })
-  }
-  await page.fonts
+function fontsFor(page: Page, signal: AbortSignal) {
+  return preloadPageFonts(page.document.body, { signal, priority: 'high' })
+}
+
+function cancelSpeculation(href: string, controller: AbortController) {
+  controller.abort()
+  speculations.delete(href)
+  pages.delete(href)
+}
+
+function cancelSpeculations() {
+  ++prefetchVersion
+  for (const [href, controller] of speculations) cancelSpeculation(href, controller)
 }
 
 function prefetch(href: string) {
   const url = pageUrl(href)
-  if (!url) return Promise.resolve(null)
+  if (navigating || !url || url.href === location.href.split('#')[0]) return Promise.resolve(null)
   const existing = cached(url.href)
   if (existing) return existing
-  const pending = fetch(url.href, { priority: 'low' }).then(async response => {
+  // Speculation warms HTML only. Font downloads belong to an actual navigation,
+  // and two speculative requests must never compete with a foreground click.
+  if (speculations.size >= 2) {
+    const [href, controller] = speculations.entries().next().value!
+    cancelSpeculation(href, controller)
+  }
+  const controller = new AbortController()
+  speculations.set(url.href, controller)
+  const pending = fetch(url.href, { priority: 'low', signal: controller.signal }).then(async response => {
     if (!response.ok || !response.headers.get('content-type')?.includes('text/html')) return null
     const finalUrl = new URL(response.url)
     if (finalUrl.origin !== location.origin) return null
     const next = new DOMParser().parseFromString(await response.text(), 'text/html')
     if (!next.querySelector('[name="astro-view-transitions-enabled"]')) return null
     next.querySelectorAll('noscript').forEach(node => node.remove())
-    const page: Page = { document: next, url: finalUrl.href }
-    // Keep fetched HTML usable while speculative font requests are pending.
-    void fontsFor(page).catch(() => {})
-    return page
-  }).catch(() => null)
+    return { document: next, url: finalUrl.href } as Page
+  }).catch(() => null).finally(() => {
+    if (speculations.get(url.href) === controller) speculations.delete(url.href)
+  })
   store(url.href, pending)
   pending.then(page => { if (!page && pages.get(url.href)?.page === pending) pages.delete(url.href) })
   return pending
@@ -108,6 +124,12 @@ export function installNavigation() {
 
   document.addEventListener('astro:before-preparation', (event: TransitionBeforePreparationEvent) => {
     if (event.formData || !pageUrl(event.to.href)) return
+    cancelSpeculations()
+    window.clearTimeout(hoverTimer)
+    window.clearTimeout(idle)
+    navigating = true
+    const current = prefetchVersion
+    event.signal.addEventListener('abort', () => { if (prefetchVersion === current) navigating = false }, { once: true })
     const load = event.loader
     event.loader = async () => {
       const hit = cached(event.to.href.split('#')[0])
@@ -132,7 +154,7 @@ export function installNavigation() {
       let onAbort: () => void = () => {}
       const aborted = new Promise<void>(resolve => { onAbort = resolve })
       event.signal.addEventListener('abort', onAbort, { once: true })
-      try { await Promise.race([fontsFor(page), aborted]) }
+      try { await Promise.race([fontsFor(page, event.signal), aborted]) }
       catch { /* The inline loader retries failed requests after the swap. */ }
       finally { event.signal.removeEventListener('abort', onAbort) }
     }
@@ -140,7 +162,7 @@ export function installNavigation() {
 
   function canPrefetch() {
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean, effectiveType?: string } }).connection
-    return navigator.onLine && !connection?.saveData && !['slow-2g', '2g'].includes(connection?.effectiveType ?? '')
+    return !navigating && navigator.onLine && !connection?.saveData && !['slow-2g', '2g'].includes(connection?.effectiveType ?? '')
   }
   function linkFrom(target: EventTarget | null) {
     const link = target instanceof Element ? target.closest<HTMLAnchorElement>('a[href]') : null
@@ -168,27 +190,31 @@ export function installNavigation() {
     if (link && canPrefetch()) void prefetch(link.href)
   }, { passive: true })
 
-  // Prepare a small working set while idle, rather than waiting for a click.
-  // Two workers and a bounded cache avoid fetching an entire blog at once.
+  // Warm at most two HTML documents while idle, with one request at a time.
   function warmVisibleLinks() {
     if (!canPrefetch()) return
     const connection = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection
     if (connection?.effectiveType === '3g') return
-    const urls = new Set([location.href.split('#')[0]])
+    const urls = new Set<string>()
     const links = [
       ...document.querySelectorAll<HTMLAnchorElement>('.rail-nav a, .mobile-nav a'),
       ...document.querySelectorAll<HTMLAnchorElement>('.post-title a, .pagination a'),
     ]
     links.forEach(link => {
-      if (urls.size >= 7 || !link.getClientRects().length || !linkFrom(link)) return
+      if (urls.size >= 2 || link.href.split('#')[0] === location.href.split('#')[0] || !link.getClientRects().length || !linkFrom(link)) return
       const rect = link.getBoundingClientRect()
       if (rect.bottom > 0 && rect.top < innerHeight) urls.add(link.href.split('#')[0])
     })
-    const queue = [...urls].filter(url => url !== location.href.split('#')[0])
-    const worker = async () => { for (let href; (href = queue.shift());) await prefetch(href) }
-    void worker()
+    const current = prefetchVersion
+    const worker = async () => {
+      for (const href of urls) {
+        if (current !== prefetchVersion || !canPrefetch()) break
+        await prefetch(href)
+      }
+    }
     void worker()
   }
+  document.addEventListener('astro:page-load', () => { navigating = false })
   let idle: number | undefined
   document.addEventListener('onpaper:content-ready', () => {
     window.clearTimeout(idle)

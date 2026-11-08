@@ -42,7 +42,7 @@
     const style = getComputedStyle(document.documentElement)
     const stacks = ['--font-body-web', '--font-display-web'].map(property =>
       style.getPropertyValue(property).split(',').map(familyName)
-        .filter(family => !originalFamilies || !family.startsWith('OnPaper Page ')))
+        .filter(family => !originalFamilies || !family.startsWith('OnPaper ')))
     const batches = new Map()
     for (const face of document.fonts) batches.set(faceKey(face), face)
     const faces = [...batches.values()].reverse()
@@ -176,7 +176,7 @@
 
   const preloads = new Map()
 
-  async function preloadPageFonts(content) {
+  async function preloadPageFonts(content, options = {}) {
     for (const sheet of document.styleSheets) scanSources(sheet)
     const pageFonts = content.ownerDocument.querySelector('style[data-onpaper-page-fonts]')
     const exclude = new Set(pageFonts?.dataset.characters ?? '')
@@ -187,15 +187,19 @@
       if (url) urls.add(url)
     }
     await Promise.all([...urls].map(url => {
-      if (preloads.has(url)) return preloads.get(url)
-      // Warm bytes only; the incoming stylesheet activates its own page faces.
-      const pending = fetch(url, { mode: 'cors', credentials: 'same-origin', priority: 'low' })
+      const existing = preloads.get(url)
+      if (existing && !existing.signal?.aborted) return existing.promise
+      // Bytes only: activation belongs to the incoming stylesheet. A newer
+      // navigation can cancel these requests without touching live font faces.
+      const entry = { signal: options.signal, promise: null }
+      entry.promise = fetch(url, { mode: 'cors', credentials: 'same-origin', priority: options.priority ?? 'low', signal: options.signal })
         .then(async response => {
           if (!response.ok) throw new Error('Font preload interrupted')
           await response.arrayBuffer()
-        }).catch(error => { preloads.delete(url); throw error })
-      preloads.set(url, pending)
-      return pending
+          entry.signal = undefined
+        }).catch(error => { if (preloads.get(url) === entry) preloads.delete(url); throw error })
+      preloads.set(url, entry)
+      return entry.promise
     }))
   }
 

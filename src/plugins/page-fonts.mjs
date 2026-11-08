@@ -80,48 +80,67 @@ export function pageFontIntegration(fonts) {
         await Promise.all([mkdir(destination, { recursive: true }), mkdir(cache, { recursive: true })])
         const buffers = new Map()
         const subsets = new Map()
-        let count = 0
+        const pages = []
         for await (const path of files(output)) {
           if (!path.endsWith('.html')) continue
           const html = await readFile(path, 'utf8')
-          const characters = pageText(html).filter(character => !latinFirst || !latin.some(face => contains(face['unicode-range'], character.codePointAt(0))))
+          pages.push({ path, html, characters: pageText(html) })
+        }
+        // One Latin set is shared by every route. Keep both original styles and
+        // optical-size/weight axes, while removing unused glyphs from the bytes.
+        const latinCharacters = new Set(Array.from({ length: 95 }, (_, i) => String.fromCodePoint(i + 32)))
+        for (const page of pages) for (const character of page.characters) {
+          if (latin.some(face => contains(face['unicode-range'], character.codePointAt(0)))) latinCharacters.add(character)
+        }
+        const latinText = [...latinCharacters].sort((a, b) => a.codePointAt(0) - b.codePointAt(0)).join('')
+        const latinAlias = 'OnPaper Latin ' + hash(latinText)
+        async function subset(face, text, alias, prefix) {
+          if (!buffers.has(face.url.href)) buffers.set(face.url.href, await readFile(face.url))
+          const source = buffers.get(face.url.href)
+          const key = hash(Buffer.concat([source, Buffer.from(text), Buffer.from('subset-v1')]))
+          const filename = prefix + '-' + key + '.woff2'
+          if (!subsets.has(key)) {
+            let buffer
+            try { buffer = await readFile(new URL(filename, cache)) }
+            catch (error) {
+              if (error.code !== 'ENOENT') throw error
+              buffer = await subsetFont(source, text, { targetFormat: 'woff2' })
+              await writeFile(new URL(filename, cache), buffer)
+            }
+            await writeFile(join(destination, filename), buffer)
+            subsets.set(key, true)
+          }
+          const href = '/fonts/pages/' + filename
+          const range = [...text].map(character => 'U+' + character.codePointAt(0).toString(16)).join(',')
+          return {
+            text,
+            rule: '@font-face{font-family:"' + alias + '";src:url("' + href + '") format("woff2");font-style:' + (face['font-style'] || 'normal') + ';font-weight:' + (face['font-weight'] || 'normal') + ';font-display:block;unicode-range:' + range + '}',
+            link: '<link rel="preload" as="font" type="font/woff2" crossorigin href="' + href + '" data-onpaper-font>',
+          }
+        }
+        const shared = []
+        for (const face of latin) {
+          const text = [...latinText].filter(character => contains(face['unicode-range'], character.codePointAt(0))).join('')
+          if (text) shared.push(await subset(face, text, latinAlias, 'newsreader'))
+        }
+        let count = 0
+        for (const { path, html, characters: allCharacters } of pages) {
+          const characters = allCharacters.filter(character => !latinFirst || !latin.some(face => contains(face['unicode-range'], character.codePointAt(0))))
           const alias = 'OnPaper Page ' + hash(characters.join(''))
-          const rules = [], links = [], covered = []
+          const pageSubsets = [...shared]
           for (const face of noto) {
             const text = characters.filter(character => contains(face['unicode-range'], character.codePointAt(0))).join('')
-            if (!text) continue
-            if (!buffers.has(face.url.href)) buffers.set(face.url.href, await readFile(face.url))
-            const source = buffers.get(face.url.href)
-            // Keep every variation axis, layout feature and hint from the source.
-            const key = hash(Buffer.concat([source, Buffer.from(text), Buffer.from('subset-v1')]))
-            const filename = 'noto-serif-sc-' + key + '.woff2'
-            if (!subsets.has(key)) {
-              let buffer
-              try { buffer = await readFile(new URL(filename, cache)) }
-              catch (error) {
-                if (error.code !== 'ENOENT') throw error
-                buffer = await subsetFont(source, text, { targetFormat: 'woff2' })
-                await writeFile(new URL(filename, cache), buffer)
-              }
-              await writeFile(join(destination, filename), buffer)
-              subsets.set(key, true)
-            }
-            const href = '/fonts/pages/' + filename
-            const range = [...text].map(character => 'U+' + character.codePointAt(0).toString(16)).join(',')
-            rules.push('@font-face{font-family:"' + alias + '";src:url("' + href + '") format("woff2");font-style:' + (face['font-style'] || 'normal') + ';font-weight:' + (face['font-weight'] || 'normal') + ';font-display:block;unicode-range:' + range + '}')
-            links.push('<link rel="preload" as="font" type="font/woff2" crossorigin href="' + href + '" data-onpaper-font>')
-            covered.push(text)
+            if (text) pageSubsets.push(await subset(face, text, alias, 'noto-serif-sc'))
           }
-          if (!rules.length) continue
+          if (!pageSubsets.length) continue
+          const rules = pageSubsets.map(subset => subset.rule)
           for (const [property, value] of [['body', fonts.body], ['display', fonts.display]]) {
-            const families = familyNames(value).flatMap(family => family === FAMILY ? [alias, family] : [family]).map(family => genericFamilies.has(family) ? family : JSON.stringify(family)).join(',')
+            const families = familyNames(value).flatMap(family => family === FAMILY ? [alias, family] : family === 'Newsreader' && shared.length ? [latinAlias, family] : [family]).map(family => genericFamilies.has(family) ? family : JSON.stringify(family)).join(',')
             rules.push(':root{--font-' + property + '-web:' + families + '}')
           }
-          const style = '<style data-onpaper-page-fonts data-characters="' + escapeAttribute(covered.join('')) + '">' + rules.join('') + '</style>'
-          // The preload scanner can start these requests directly from the head.
-          // Font definitions stay after theme tokens so the page family wins.
+          const style = '<style data-onpaper-page-fonts data-characters="' + escapeAttribute(pageSubsets.map(subset => subset.text).join('')) + '">' + rules.join('') + '</style>'
           const updated = html.replace(/<link\b[^>]*data-onpaper-legacy-font[^>]*>/g, '')
-            .replace(/(<meta[^>]+name="viewport"[^>]*>)/, '$1' + links.join(''))
+            .replace(/(<meta[^>]+name="viewport"[^>]*>)/, '$1' + pageSubsets.map(subset => subset.link).join(''))
             .replace('</head>', style + '</head>')
           await writeFile(path, updated)
           count++

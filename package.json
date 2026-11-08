@@ -20,7 +20,8 @@
     "test:font-email": "npm run build && node tests/font-email-regression.mjs",
     "test:theme-controls": "npm run build && node tests/theme-controls-regression.mjs",
     "test:page-fonts": "npm run build && node tests/page-fonts-regression.mjs",
-    "test:performance": "npm run build && node tests/performance-regression.mjs"
+    "test:performance": "npm run build && node tests/performance-regression.mjs",
+    "test:responsiveness": "npm run build && node tests/navigation-responsiveness.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.5",
@@ -42,6 +43,7 @@
     "parse5": "^8.1.1",
     "playwright": "^1.59.1",
     "postcss": "^8.5.32",
+    "rolldown": "1.3.0",
     "subset-font": "^2.9.0"
   },
   "overrides": {

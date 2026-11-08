@@ -13,9 +13,10 @@ for (const filename of await readdir(resolve(dist, '_astro'))) {
   if (!filename.endsWith('.css')) continue
   postcss.parse(await readFile(resolve(dist, '_astro', filename), 'utf8')).walkAtRules('font-face', rule => {
     const props = Object.fromEntries(rule.nodes.filter(n => n.type === 'decl').map(n => [n.prop, n.value]))
-    if (!props['font-family']?.includes('Noto Serif SC Variable')) return
+    const family = props['font-family']?.replaceAll(/["']/g, '')
+    if (!['Noto Serif SC Variable', 'Newsreader'].includes(family)) return
     const path = props.src.match(/url\(['"]?([^'"\)]+)/)[1]
-    original.push({ range: props['unicode-range'], path: resolve(dist, '.' + path) })
+    original.push({ family, style: props['font-style'], range: props['unicode-range'], path: resolve(dist, '.' + path) })
   })
 }
 const fonts = new Map(), verified = new Set()
@@ -57,20 +58,24 @@ for await (const page of pages(dist)) {
     if (verified.has(url)) continue
     verified.add(url)
     const codes = rule['unicode-range'].split(',').map(range => parseInt(range.slice(2), 16))
-    const source = original.find(face => codes.every(code => includes(face.range, code)))
+    const latin = rule['font-family'].includes('OnPaper Latin ')
+    const source = original.find(face => face.family === (latin ? 'Newsreader' : 'Noto Serif SC Variable')
+      && face.style === rule['font-style'] && codes.every(code => includes(face.range, code)))
     assert.ok(source, url)
     const full = await font(source.path), subset = await font(resolve(dist, '.' + url))
     assert.deepEqual(subset.variationAxes, full.variationAxes, url + ': variable weights changed')
     for (const key of ['unitsPerEm', 'ascent', 'descent', 'lineGap']) assert.equal(subset[key], full[key], key)
-    for (const weight of [200, 400, 600, 900]) {
-      const a = full.getVariation({ wght: weight }), b = subset.getVariation({ wght: weight })
-      for (const code of codes) {
-        assert.equal(b.hasGlyphForCodePoint(code), a.hasGlyphForCodePoint(code))
-        if (!a.hasGlyphForCodePoint(code)) continue
-        const x = a.glyphForCodePoint(code), y = b.glyphForCodePoint(code)
-        assert.equal(y.advanceWidth, x.advanceWidth, url + ': width changed at ' + weight)
-        assert.deepEqual(y.path.commands, x.path.commands, url + ': outline changed at ' + weight)
-        glyphCount++
+    for (const weight of (latin ? [200, 400, 600, 800] : [200, 400, 600, 900])) {
+      for (const opsz of (latin ? [6, 18, 72] : [undefined])) {
+        const a = full.getVariation({ wght: weight, ...(opsz ? { opsz } : {}) }), b = subset.getVariation({ wght: weight, ...(opsz ? { opsz } : {}) })
+        for (const code of codes) {
+          assert.equal(b.hasGlyphForCodePoint(code), a.hasGlyphForCodePoint(code))
+          if (!a.hasGlyphForCodePoint(code)) continue
+          const x = a.glyphForCodePoint(code), y = b.glyphForCodePoint(code)
+          assert.equal(y.advanceWidth, x.advanceWidth, url + ': width changed at ' + weight)
+          assert.deepEqual(y.path.commands, x.path.commands, url + ': outline changed at ' + weight)
+          glyphCount++
+        }
       }
     }
   }
