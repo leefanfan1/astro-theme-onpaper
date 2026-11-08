@@ -1,5 +1,5 @@
 import type { TransitionBeforePreparationEvent } from 'astro:transitions/client'
-import { preloadPageFonts } from '@/utils/fonts'
+import { prepareNavigationFonts } from '@/utils/fonts'
 
 interface Page {
   document: Document
@@ -39,7 +39,7 @@ function cached(url: string) {
 }
 
 function fontsFor(page: Page, signal: AbortSignal) {
-  return preloadPageFonts(page.document.body, { signal, priority: 'high' })
+  return prepareNavigationFonts(page.document.body, { signal, priority: 'high' })
 }
 
 function cancelSpeculation(href: string, controller: AbortController) {
@@ -48,9 +48,11 @@ function cancelSpeculation(href: string, controller: AbortController) {
   pages.delete(href)
 }
 
-function cancelSpeculations() {
+function cancelSpeculations(destination?: string) {
   ++prefetchVersion
-  for (const [href, controller] of speculations) cancelSpeculation(href, controller)
+  for (const [href, controller] of speculations) {
+    if (href !== destination) cancelSpeculation(href, controller)
+  }
 }
 
 function prefetch(href: string) {
@@ -124,7 +126,7 @@ export function installNavigation() {
 
   document.addEventListener('astro:before-preparation', (event: TransitionBeforePreparationEvent) => {
     if (event.formData || !pageUrl(event.to.href)) return
-    cancelSpeculations()
+    cancelSpeculations(event.to.href.split('#')[0])
     window.clearTimeout(hoverTimer)
     window.clearTimeout(idle)
     navigating = true
@@ -154,8 +156,24 @@ export function installNavigation() {
       let onAbort: () => void = () => {}
       const aborted = new Promise<void>(resolve => { onAbort = resolve })
       event.signal.addEventListener('abort', onAbort, { once: true })
-      try { await Promise.race([fontsFor(page, event.signal), aborted]) }
-      catch { /* The inline loader retries failed requests after the swap. */ }
+      try {
+        let delay = 500
+        while (!event.signal.aborted) {
+          try {
+            await Promise.race([fontsFor({ document: event.newDocument, url: page.url }, event.signal), aborted])
+            break
+          } catch {
+            // Retry without swapping to an unreadable page. Another click aborts
+            // this wait and starts its own navigation immediately.
+            await new Promise<void>(resolve => {
+              const finish = () => { window.clearTimeout(timer); event.signal.removeEventListener('abort', finish); resolve() }
+              const timer = window.setTimeout(finish, delay)
+              event.signal.addEventListener('abort', finish, { once: true })
+            })
+            delay = Math.min(delay * 2, 10000)
+          }
+        }
+      }
       finally { event.signal.removeEventListener('abort', onAbort) }
     }
   })
@@ -214,7 +232,13 @@ export function installNavigation() {
     }
     void worker()
   }
-  document.addEventListener('astro:page-load', () => { navigating = false })
+  document.addEventListener('astro:page-load', () => {
+    navigating = false
+    if (document.documentElement.dataset.fontState === 'ready') {
+      window.clearTimeout(idle)
+      idle = window.setTimeout(warmVisibleLinks, 250)
+    }
+  })
   let idle: number | undefined
   document.addEventListener('onpaper:content-ready', () => {
     window.clearTimeout(idle)

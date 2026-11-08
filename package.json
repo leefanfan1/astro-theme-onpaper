@@ -21,7 +21,7 @@
     "test:theme-controls": "npm run build && node tests/theme-controls-regression.mjs",
     "test:page-fonts": "npm run build && node tests/page-fonts-regression.mjs",
     "test:performance": "npm run build && node tests/performance-regression.mjs",
-    "test:responsiveness": "npm run build && node tests/navigation-responsiveness.mjs"
+    "test:responsiveness": "npm run build && node tests/navigation-responsiveness.mjs && node tests/emoji-fonts-regression.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.5",

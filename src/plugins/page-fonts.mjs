@@ -5,6 +5,8 @@ import { join } from 'node:path'
 import { parse } from 'parse5'
 import postcss from 'postcss'
 import subsetFont from 'subset-font'
+import { create } from 'fontkitten'
+import fontverter from 'fontverter'
 
 const FAMILY = 'Noto Serif SC Variable'
 const genericFamilies = new Set(['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui', 'ui-serif', 'ui-sans-serif', 'ui-monospace', 'ui-rounded', 'math', 'fangsong'])
@@ -28,7 +30,11 @@ function contains(range, code) {
 
 function pageText(html) {
   const characters = new Set()
-  const add = text => { for (const character of text) characters.add(character) }
+  const add = text => {
+    for (const character of text) {
+      if (!/[\p{Default_Ignorable_Code_Point}\p{Cc}\p{Zl}\p{Zp}]/u.test(character)) characters.add(character)
+    }
+  }
   function walk(node, inBody = false) {
     if (['script', 'style', 'noscript'].includes(node.tagName)) return
     inBody ||= node.tagName === 'body'
@@ -58,9 +64,16 @@ export function pageFontIntegration(fonts) {
         if (![fonts.body, fonts.display].some(value => familyNames(value).includes(FAMILY))) return
         const output = fileURLToPath(dir)
         const faces = []
+        const generatedCharacters = new Set()
         for (const entry of await readdir(join(output, '_astro'))) {
           if (!entry.endsWith('.css')) continue
           const css = postcss.parse(await readFile(join(output, '_astro', entry), 'utf8'))
+          css.walkDecls('content', declaration => {
+            for (const match of declaration.value.matchAll(/(['"])(.*?)\1/g)) {
+              const text = match[2].replace(/\\([0-9a-f]{1,6})\s?/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))
+              for (const character of text) generatedCharacters.add(character)
+            }
+          })
           css.walkAtRules('font-face', rule => {
             const properties = Object.fromEntries(rule.nodes.filter(node => node.type === 'decl').map(node => [node.prop, node.value]))
             const family = familyNames(properties['font-family'] ?? '')[0]
@@ -80,22 +93,42 @@ export function pageFontIntegration(fonts) {
         await Promise.all([mkdir(destination, { recursive: true }), mkdir(cache, { recursive: true })])
         const buffers = new Map()
         const subsets = new Map()
+        // unicode-range is an advertised interval, not proof of a real glyph.
+        // Some source shards advertise emoji/selectors absent from their cmap;
+        // subsetting only such characters produces a font browsers reject.
+        for (const face of [...noto, ...latin]) {
+          if (!buffers.has(face.url.href)) buffers.set(face.url.href, face.url.protocol === 'data:'
+            ? Buffer.from(await (await fetch(face.url)).arrayBuffer()) : await readFile(face.url))
+          const source = buffers.get(face.url.href)
+          const filename = hash(source) + '.glyphs-v1.json'
+          let codes
+          try { codes = JSON.parse(await readFile(new URL(filename, cache), 'utf8')) }
+          catch (error) {
+            if (error.code !== 'ENOENT') throw error
+            const original = create(await fontverter.convert(source, 'sfnt'))
+            codes = original.characterSet.filter(code => original.hasGlyphForCodePoint(code))
+            await writeFile(new URL(filename, cache), JSON.stringify(codes))
+          }
+          face.glyphs = new Set(codes)
+        }
+        const supports = (face, character) => contains(face['unicode-range'], character.codePointAt(0)) && face.glyphs.has(character.codePointAt(0))
         const pages = []
         for await (const path of files(output)) {
           if (!path.endsWith('.html')) continue
           const html = await readFile(path, 'utf8')
-          pages.push({ path, html, characters: pageText(html) })
+          pages.push({ path, html, characters: [...new Set([...pageText(html), ...generatedCharacters])].sort((a, b) => a.codePointAt(0) - b.codePointAt(0)) })
         }
         // One Latin set is shared by every route. Keep both original styles and
         // optical-size/weight axes, while removing unused glyphs from the bytes.
         const latinCharacters = new Set(Array.from({ length: 95 }, (_, i) => String.fromCodePoint(i + 32)))
         for (const page of pages) for (const character of page.characters) {
-          if (latin.some(face => contains(face['unicode-range'], character.codePointAt(0)))) latinCharacters.add(character)
+          if (latin.some(face => supports(face, character))) latinCharacters.add(character)
         }
         const latinText = [...latinCharacters].sort((a, b) => a.codePointAt(0) - b.codePointAt(0)).join('')
         const latinAlias = 'OnPaper Latin ' + hash(latinText)
         async function subset(face, text, alias, prefix) {
-          if (!buffers.has(face.url.href)) buffers.set(face.url.href, await readFile(face.url))
+          if (!buffers.has(face.url.href)) buffers.set(face.url.href, face.url.protocol === 'data:'
+            ? Buffer.from(await (await fetch(face.url)).arrayBuffer()) : await readFile(face.url))
           const source = buffers.get(face.url.href)
           const key = hash(Buffer.concat([source, Buffer.from(text), Buffer.from('subset-v1')]))
           const filename = prefix + '-' + key + '.woff2'
@@ -120,16 +153,16 @@ export function pageFontIntegration(fonts) {
         }
         const shared = []
         for (const face of latin) {
-          const text = [...latinText].filter(character => contains(face['unicode-range'], character.codePointAt(0))).join('')
+          const text = [...latinText].filter(character => supports(face, character)).join('')
           if (text) shared.push(await subset(face, text, latinAlias, 'newsreader'))
         }
         let count = 0
         for (const { path, html, characters: allCharacters } of pages) {
-          const characters = allCharacters.filter(character => !latinFirst || !latin.some(face => contains(face['unicode-range'], character.codePointAt(0))))
+          const characters = allCharacters.filter(character => !latinFirst || !latin.some(face => supports(face, character)))
           const alias = 'OnPaper Page ' + hash(characters.join(''))
           const pageSubsets = [...shared]
           for (const face of noto) {
-            const text = characters.filter(character => contains(face['unicode-range'], character.codePointAt(0))).join('')
+            const text = characters.filter(character => supports(face, character)).join('')
             if (text) pageSubsets.push(await subset(face, text, alias, 'noto-serif-sc'))
           }
           if (!pageSubsets.length) continue
@@ -138,7 +171,8 @@ export function pageFontIntegration(fonts) {
             const families = familyNames(value).flatMap(family => family === FAMILY ? [alias, family] : family === 'Newsreader' && shared.length ? [latinAlias, family] : [family]).map(family => genericFamilies.has(family) ? family : JSON.stringify(family)).join(',')
             rules.push(':root{--font-' + property + '-web:' + families + '}')
           }
-          const style = '<style data-onpaper-page-fonts data-characters="' + escapeAttribute(pageSubsets.map(subset => subset.text).join('')) + '">' + rules.join('') + '</style>'
+          const unavailable = allCharacters.filter(character => ![...noto, ...latin].some(face => supports(face, character))).join('')
+          const style = '<style data-onpaper-page-fonts data-unavailable="' + escapeAttribute(unavailable) + '" data-characters="' + escapeAttribute(pageSubsets.map(subset => subset.text).join('')) + '">' + rules.join('') + '</style>'
           const updated = html.replace(/<link\b[^>]*data-onpaper-legacy-font[^>]*>/g, '')
             .replace(/(<meta[^>]+name="viewport"[^>]*>)/, '$1' + pageSubsets.map(subset => subset.link).join(''))
             .replace('</head>', style + '</head>')

@@ -143,6 +143,151 @@ try {
         } finally { release(); await context.close() }
         console.log('PASS ' + engine.name() + ': a newer click cancels stalled font downloads and controls stay responsive')
       }
+      {
+        const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
+        await instrument(context)
+        const page = await context.newPage()
+        page.on('pageerror', error => errors.push(error.message))
+        let release
+        const gate = new Promise(resolve => { release = resolve })
+        let requests = 0
+        await context.route('**/page/2/', async route => { requests++; await gate; await route.continue().catch(() => {}) })
+        try {
+          await page.goto(base + '/')
+          await ready(page)
+          const next = page.locator('.pagination__side--next a')
+          const html = page.waitForRequest(request => new URL(request.url()).pathname === '/page/2/')
+          await next.hover()
+          await html
+          await next.click()
+          await page.waitForTimeout(100)
+          assert.equal(requests, 1, 'click must reuse the HTML request started on hover')
+          assert.equal(await page.evaluate(() => window.__fetchLog.find(entry => entry.path === '/page/2/').aborted), false)
+          release()
+          await page.waitForURL(base + '/page/2/')
+          await ready(page)
+          assert.equal(requests, 1)
+        } finally { release(); await context.close() }
+        console.log('PASS ' + engine.name() + ': clicking next page reuses in-flight target HTML')
+      }
+      {
+        const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
+        await instrument(context, { saveData: true, effectiveType: '3g' })
+        await context.addInitScript(() => {
+          window.__hiddenNavigationFrames = []
+          document.addEventListener('astro:after-swap', () => {
+            if (document.documentElement.dataset.fontState !== 'ready') window.__hiddenNavigationFrames.push(location.pathname + ': swap')
+          })
+          const inspect = () => {
+            if (document.documentElement.hasAttribute('data-font-navigation') && getComputedStyle(document.body).opacity === '0') {
+              window.__hiddenNavigationFrames.push(location.pathname + ': frame')
+            }
+            requestAnimationFrame(inspect)
+          }
+          requestAnimationFrame(inspect)
+        })
+        const page = await context.newPage()
+        page.on('pageerror', error => errors.push(error.message))
+        const duplicates = []
+        let release
+        const gate = new Promise(resolve => { release = resolve })
+        try {
+          await page.goto(base + '/')
+          await ready(page)
+          // Byte downloads may proceed. Hold any second CSS/native font request
+          // indefinitely: the incoming page must already have decoded faces.
+          await context.route('**/*.woff2*', async route => {
+            if (route.request().resourceType() === 'font' && new URL(route.request().url()).pathname.startsWith('/fonts/pages/')) {
+              duplicates.push(route.request().url())
+              await gate
+            }
+            await route.continue().catch(() => {})
+          })
+          for (const target of ['/page/2/', '/', '/posts/toc-stress-test/', '/about/', '/page/2/']) {
+            await page.evaluate(target => {
+              const a = document.createElement('a'); a.href = target; document.body.append(a); a.click(); a.remove()
+            }, target)
+            await page.waitForURL(base + target)
+            await ready(page)
+            assert.equal(await page.evaluate(() => getComputedStyle(document.body).opacity), '1')
+            if (engine === chromium) {
+              const cdp = await context.newCDPSession(page)
+              try {
+                await cdp.send('DOM.enable'); await cdp.send('CSS.enable')
+                const { root } = await cdp.send('DOM.getDocument')
+                const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: '#main h1' })
+                const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
+                assert.ok(fonts.length && fonts.every(font => font.isCustomFont), target + ': ' + JSON.stringify(fonts))
+              } finally { await cdp.detach() }
+            }
+          }
+          assert.deepEqual(duplicates, [], 'navigation must not download fonts again through CSS after fetching their bytes')
+          assert.deepEqual(await page.evaluate(() => window.__hiddenNavigationFrames), [], 'pagination and article navigation must not hide the body after swapping')
+          await page.goBack()
+          await page.waitForURL(base + '/about/')
+          await ready(page)
+          assert.deepEqual(await page.evaluate(() => window.__hiddenNavigationFrames), [])
+        } finally { release(); await context.close() }
+        console.log('PASS ' + engine.name() + ': pagination, articles and history have no hidden frames or duplicate CSS font downloads')
+      }
+      {
+        const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', colorScheme: 'light' })
+        await instrument(context, { saveData: true })
+        const page = await context.newPage()
+        page.on('pageerror', error => errors.push(error.message))
+        try {
+          await page.goto(base + '/')
+          await ready(page)
+          let failures = 0
+          let broken = true
+          await context.route('**/fonts/pages/*.woff2', async route => {
+            if (broken) { failures++; await route.fulfill({ contentType: 'font/woff2', body: 'invalid font bytes' }) }
+            else await route.continue()
+          })
+          await page.locator('.rail-nav a[href="/about/"]').click()
+          await page.waitForTimeout(200)
+          assert.ok(failures > 0)
+          assert.equal(new URL(page.url()).pathname, '/')
+          assert.equal(await page.evaluate(() => document.documentElement.dataset.fontState), 'ready')
+          await page.locator('.rail-actions [data-theme-toggle]').click()
+          assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark')
+          broken = false
+          await page.waitForURL(base + '/about/')
+          await ready(page)
+          assert.equal(await page.evaluate(() => getComputedStyle(document.body).opacity), '1')
+        } finally { await context.close() }
+        console.log('PASS ' + engine.name() + ': invalid font bytes retry before swapping while the current page stays usable')
+      }
+      {
+        const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference', colorScheme: 'light' })
+        await instrument(context, { saveData: true })
+        const page = await context.newPage()
+        page.on('pageerror', error => errors.push(error.message))
+        let release
+        const gate = new Promise(resolve => { release = resolve })
+        try {
+          await page.goto(base + '/')
+          await ready(page)
+          await page.evaluate(() => {
+            window.__articleReady = false; window.__articleModulesReady = false
+            document.addEventListener('onpaper:content-ready', () => { window.__articleReady = true }, { once: true })
+            document.addEventListener('astro:page-load', () => { window.__articleModulesReady = true }, { once: true })
+          })
+          await context.route('**/ArticleEnhancements*.js', async route => { await gate; await route.continue().catch(() => {}) })
+          const module = page.waitForRequest(request => request.url().includes('/ArticleEnhancements') && request.url().endsWith('.js'))
+          await page.evaluate(() => {
+            const a = document.createElement('a'); a.href = '/posts/toc-stress-test/'; document.body.append(a); a.click(); a.remove()
+          })
+          await module
+          await page.waitForURL(base + '/posts/toc-stress-test/')
+          assert.equal(await page.evaluate(() => window.__articleReady), true, 'readable content and entrance must start before article modules finish')
+          assert.equal(await page.evaluate(() => window.__articleModulesReady), false)
+          assert.equal(await page.evaluate(() => document.documentElement.dataset.fontState), 'ready')
+          await page.locator('.rail-actions [data-theme-toggle]').click()
+          await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark')
+        } finally { release(); await context.close() }
+        console.log('PASS ' + engine.name() + ': article text, entrance and theme controls do not wait for article modules')
+      }
     } finally { await browser.close() }
   }
   assert.deepEqual(errors, [])

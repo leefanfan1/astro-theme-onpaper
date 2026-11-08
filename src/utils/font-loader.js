@@ -10,6 +10,10 @@
   const recoveredRules = new Map()
   const stableCallbacks = new Set()
   const bodyLoads = new WeakMap()
+  const preparedPages = new WeakSet()
+  const activatedFaces = new Map()
+  // These code points affect shaping but have no standalone visible glyph.
+  const invisibleCodePoint = /[\p{Default_Ignorable_Code_Point}\p{Cc}\p{Zl}\p{Zp}]/u
   let recoveryStyle
   let fontWork = Promise.resolve()
   let nativeLoads = Promise.resolve()
@@ -44,19 +48,23 @@
       style.getPropertyValue(property).split(',').map(familyName)
         .filter(family => !originalFamilies || !family.startsWith('OnPaper ')))
     const batches = new Map()
-    for (const face of document.fonts) batches.set(faceKey(face), face)
+    for (const face of document.fonts) {
+      const key = faceKey(face)
+      if (batches.get(key)?.status !== 'loaded') batches.set(key, face)
+    }
     const faces = [...batches.values()].reverse()
     if (!faces.length) throw new Error('Theme font definitions are unavailable')
 
     const text = new Set()
+    const unavailable = new Set(content.ownerDocument?.querySelector('style[data-onpaper-page-fonts]')?.dataset.unavailable ?? '')
     const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT)
     while (walker.nextNode()) {
       if (walker.currentNode.parentElement?.closest('script, style, noscript')) continue
-      for (const character of walker.currentNode.textContent ?? '') if (!exclude.has(character)) text.add(character)
+      for (const character of walker.currentNode.textContent ?? '') if (!exclude.has(character) && !unavailable.has(character) && !invisibleCodePoint.test(character)) text.add(character)
     }
     content.querySelectorAll('input, textarea, [title], [alt]').forEach(element => {
       for (const character of (element.getAttribute('placeholder') ?? '') + (element.getAttribute('title') ?? '') + (element.getAttribute('alt') ?? '')) {
-        if (!exclude.has(character)) text.add(character)
+        if (!exclude.has(character) && !unavailable.has(character) && !invisibleCodePoint.test(character)) text.add(character)
       }
     })
     const characters = [...text].map(character => character.codePointAt(0))
@@ -189,21 +197,96 @@
     await Promise.all([...urls].map(url => {
       const existing = preloads.get(url)
       if (existing && !existing.signal?.aborted) return existing.promise
-      // Bytes only: activation belongs to the incoming stylesheet. A newer
-      // navigation can cancel these requests without touching live font faces.
+      // Fetch abortable bytes first; decode off-document before activation.
+      // A newer click can cancel without touching the live page's fonts.
       const entry = { signal: options.signal, promise: null }
       entry.promise = fetch(url, { mode: 'cors', credentials: 'same-origin', priority: options.priority ?? 'low', signal: options.signal })
         .then(async response => {
           if (!response.ok) throw new Error('Font preload interrupted')
-          await response.arrayBuffer()
+          const bytes = await response.arrayBuffer()
           entry.signal = undefined
+          return bytes
         }).catch(error => { if (preloads.get(url) === entry) preloads.delete(url); throw error })
       preloads.set(url, entry)
       return entry.promise
     }))
   }
 
-  window.__onpaperFonts = { preloadPageFonts, prepareTextFonts: content => preparePageFonts(content, true, true), start: () => initFonts() }
+  async function prepareNavigationFonts(content, options = {}) {
+    await preloadPageFonts(content, options)
+    if (options.signal?.aborted) return
+    const style = content.ownerDocument.querySelector('style[data-onpaper-page-fonts]')
+    if (!style) return
+    // Parse in an inert document: incoming family variables must not change the
+    // outgoing page. Decode the fetched bytes before the router swaps anything.
+    const parsed = document.implementation.createHTMLDocument('')
+    const definitions = parsed.createElement('style')
+    definitions.textContent = style.textContent
+    parsed.head.append(definitions)
+    const faces = []
+    for (const rule of definitions.sheet.cssRules) {
+      if (rule.type !== CSSRule.FONT_FACE_RULE) continue
+      const css = rule.style
+      const range = css.getPropertyValue('unicode-range') || 'U+0-10FFFF'
+      const descriptor = {
+        style: css.getPropertyValue('font-style') || 'normal',
+        weight: css.getPropertyValue('font-weight') || 'normal',
+        stretch: css.getPropertyValue('font-stretch') || 'normal',
+        unicodeRange: range,
+      }
+      const family = familyName(css.getPropertyValue('font-family'))
+      const key = faceKey({ family, ...descriptor })
+      let face = activatedFaces.get(key)
+      if (!face) {
+        const path = css.getPropertyValue('src').match(/url\(\s*['"]?([^'"\)\s]+)['"]?\s*\)/i)?.[1]
+        const bytes = await preloads.get(new URL(path, location.href).href)?.promise
+        if (!bytes || options.signal?.aborted) return
+        face = new FontFace(family, bytes, descriptor)
+      }
+      faces.push({ key, face })
+    }
+    const exclude = new Set(style.dataset.characters ?? '')
+    const extraFaces = requiredFaces(content, exclude, true).filter(face => face.status !== 'loaded')
+    if (extraFaces.length) {
+      recoverFaces(extraFaces)
+      nativeLoads = Promise.allSettled(requiredFaces(content, exclude, true).map(face => face.load()))
+      const results = await nativeLoads
+      const failure = results.find(result => result.status === 'rejected')
+      if (failure) throw failure.reason
+    }
+    await Promise.all(faces.map(async ({ face }) => {
+      try { await face.load() }
+      catch (error) {
+        // A successful HTTP response can still contain an invalid font.
+        // Do not keep corrupted bytes in the retry cache.
+        for (const link of content.ownerDocument.querySelectorAll('link[data-onpaper-font]')) preloads.delete(link.href)
+        throw error
+      }
+    }))
+    await nativeLoads
+    if (options.signal?.aborted) return
+    for (const { key, face } of faces) {
+      if (!document.fonts.has(face)) {
+        document.fonts.add(face)
+        activatedFaces.set(key, face)
+      }
+    }
+    // Keep one authoritative loaded face per definition. Reintroducing the CSS
+    // faces here would start a second load and discard shared CSS-connected
+    // faces when the outgoing page's style element is removed.
+    for (const rule of definitions.sheet.cssRules) {
+      if (rule.type !== CSSRule.STYLE_RULE || rule.selectorText !== ':root') continue
+      for (const property of ['--font-body-web', '--font-display-web']) {
+        const value = rule.style.getPropertyValue(property)
+        if (value) content.ownerDocument.documentElement.style.setProperty(property, value)
+      }
+    }
+    style.textContent = [...definitions.sheet.cssRules].filter(rule => rule.type !== CSSRule.FONT_FACE_RULE).map(rule => rule.cssText).join('\n')
+    content.ownerDocument.querySelectorAll('link[data-onpaper-font]').forEach(link => link.remove())
+    preparedPages.add(content)
+  }
+
+  window.__onpaperFonts = { preloadPageFonts, prepareNavigationFonts, prepareTextFonts: content => preparePageFonts(content, true, true), start: () => initFonts() }
 
   let content = null
   let version = 0
@@ -216,6 +299,15 @@
     document.documentElement.dataset.fontState = 'ready'
     document.dispatchEvent(new Event('onpaper:fonts-ready'))
     if (!contentReady) {
+      const used = new Set(requiredFaces(document.body).map(faceKey))
+      for (const [key, face] of activatedFaces) {
+        if (!used.has(key)) { document.fonts.delete(face); activatedFaces.delete(key) }
+      }
+      // Byte buffers supplement the browser HTTP cache; keep them bounded.
+      for (const [url, entry] of preloads) {
+        if (preloads.size <= 256) break
+        if (!entry.signal) preloads.delete(url)
+      }
       contentReady = true
       document.dispatchEvent(new Event('onpaper:content-ready'))
     }
@@ -265,9 +357,8 @@
     const load = event.loader
     const outgoingLoads = nativeLoads
     event.loader = async () => {
-      await outgoingLoads
-      await document.fonts.ready
-      if (!event.signal.aborted) await load()
+      if (event.signal.aborted) return
+      await Promise.all([outgoingLoads, load()])
     }
     ++version
     window.clearTimeout(retryTimer)
@@ -286,10 +377,15 @@
     const incomingFonts = event.newDocument.querySelector('style[data-onpaper-page-fonts]')
     const currentFonts = document.querySelector('style[data-onpaper-page-fonts]')
     const sameDefinitions = incomingFonts?.textContent === currentFonts?.textContent
-    root.dataset.fontState = sameDefinitions && arePageFontsLoaded(event.newDocument.body) ? 'ready' : 'loading'
+    root.dataset.fontState = preparedPages.has(event.newDocument.body) || (sameDefinitions && arePageFontsLoaded(event.newDocument.body)) ? 'ready' : 'loading'
     root.setAttribute('data-font-navigation', '')
   })
-  // Wait for the router to finish installing styles before retrying failed faces.
+  // Prepared navigation faces are already active at the swap. Reveal and run
+  // the existing entrance animation now, without waiting for article modules.
+  document.addEventListener('astro:after-swap', () => {
+    if (preparedPages.has(document.body)) resumeFonts()
+  })
+  // Unprepared pages still wait for the router to install their styles.
   document.addEventListener('astro:page-load', () => {
     const current = transition
     window.setTimeout(() => { if (current === transition) resumeFonts() }, 0)
