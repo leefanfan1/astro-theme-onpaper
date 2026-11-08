@@ -1,4 +1,5 @@
 import type { TransitionBeforePreparationEvent } from 'astro:transitions/client'
+import { preloadPageFonts } from '@/utils/fonts'
 
 interface Page {
   document: Document
@@ -7,7 +8,6 @@ interface Page {
 }
 
 const pages = new Map<string, { expires: number, page: Promise<Page | null> }>()
-const prepared = new WeakSet<Document>()
 const MAX_PAGES = 16
 const CACHE_MS = 5 * 60 * 1000
 let installed = false
@@ -37,23 +37,8 @@ function cached(url: string) {
 }
 
 async function fontsFor(page: Page) {
-  if (!document.fonts) return
   if (!page.fonts) {
-    const root = getComputedStyle(document.documentElement)
-    const families = new Set([root.getPropertyValue('--font-body'), root.getPropertyValue('--font-display')].map(v => v.trim()).filter(Boolean))
-    const content = page.document.querySelector('main') ?? page.document.body
-    // No style/layout reads per text node. These are the theme's body/display
-    // families, including all article glyphs and variable font weights.
-    const text = [...new Set(content.textContent ?? '')].join('')
-    const loads: Promise<FontFace[]>[] = []
-    for (const family of families) {
-      for (const style of ['normal 400', 'normal 600', 'normal 700', 'italic 400']) {
-        const font = `${style} 16px ${family}`
-        if (!document.fonts.check(font, text)) loads.push(document.fonts.load(font, text))
-      }
-    }
-    page.fonts = Promise.all(loads).then(() => {})
-    // A failed speculative load must be retryable by a real navigation.
+    page.fonts = preloadPageFonts(page.document.body)
     page.fonts.catch(() => { page.fonts = undefined })
   }
   await page.fonts
@@ -72,7 +57,8 @@ function prefetch(href: string) {
     if (!next.querySelector('[name="astro-view-transitions-enabled"]')) return null
     next.querySelectorAll('noscript').forEach(node => node.remove())
     const page: Page = { document: next, url: finalUrl.href }
-    await fontsFor(page)
+    // Keep fetched HTML usable while speculative font requests are pending.
+    void fontsFor(page).catch(() => {})
     return page
   }).catch(() => null)
   store(url.href, pending)
@@ -94,10 +80,6 @@ async function stylesFor(next: Document, base: string) {
       document.head.append(hint)
     })
   }))
-}
-
-export function isPreparedNavigation(next: Document) {
-  return prepared.has(next)
 }
 
 export function installNavigation() {
@@ -124,12 +106,15 @@ export function installNavigation() {
         page = { document: event.newDocument.cloneNode(true) as Document, url: event.to.href }
         store(event.to.href.split('#')[0], Promise.resolve(page))
       }
-      try {
-        await fontsFor(page)
-        if (!event.signal.aborted) prepared.add(event.newDocument)
-      } catch {
-        // Initial font gating remains available if the speculative warm-up fails.
-      }
+      // Keep the current page visible while the incoming page's glyphs load.
+      // Cancellation must release the router even if a font request stalls.
+      if (event.signal.aborted) return
+      let onAbort: () => void = () => {}
+      const aborted = new Promise<void>(resolve => { onAbort = resolve })
+      event.signal.addEventListener('abort', onAbort, { once: true })
+      try { await Promise.race([fontsFor(page), aborted]) }
+      catch { /* The inline loader retries failed requests after the swap. */ }
+      finally { event.signal.removeEventListener('abort', onAbort) }
     }
   })
 

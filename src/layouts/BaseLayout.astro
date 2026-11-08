@@ -75,7 +75,7 @@ function tokensToCss(tokens: typeof light) {
 }
 
 const themeCSS = `
-:root{${tokensToCss(light)}--font-display:${siteConfig.fonts.display};--font-body:${siteConfig.fonts.body};--font-mono:${siteConfig.fonts.mono};color-scheme:light}
+:root{${tokensToCss(light)}--font-display-web:${siteConfig.fonts.display};--font-body-web:${siteConfig.fonts.body};--font-display:var(--font-display-web);--font-body:var(--font-body-web);--font-mono:${siteConfig.fonts.mono};color-scheme:light}
 html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 @media (prefers-color-scheme: dark){html:not([data-theme="light"]){${tokensToCss(dark)}color-scheme:dark}}
 `
@@ -100,6 +100,8 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate" type="application/rss+xml" title={`${siteConfig.title} RSS`} href="/rss.xml" />
+    <link rel="preload" href="/fonts/newsreader-latin-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/newsreader-latin-italic.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={notoMastheadYu} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={notoMastheadBai} as="font" type="font/woff2" crossorigin />
 
@@ -197,6 +199,8 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
   </head>
 
   <body>
+    <!-- Keep email links readable when Cloudflare decoding scripts are unavailable. -->
+    <Fragment set:html="<!--email_off-->" />
     <a class="skip-link" href="#main">跳到正文</a>
 
     <MobileBar />
@@ -231,6 +235,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
       })
 
       function initReveal() {
+        if (document.documentElement.dataset.fontState === 'loading') return
         revealObserver?.disconnect()
         revealObserver = undefined
         const elements = [...document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-visible)')]
@@ -313,7 +318,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
       }
 
       function restoreListScroll() {
-        if (document.fonts && document.documentElement.dataset.fontState !== 'ready') return
+        if (document.documentElement.dataset.fontState === 'loading') return
         try {
           const raw = sessionStorage.getItem('onpaper:restore-scroll')
           if (!raw) return
@@ -331,7 +336,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 
       function initPage() {
         document.documentElement.classList.add('js')
-        if (!document.fonts || document.documentElement.dataset.fontState === 'ready') initReveal()
+        initReveal()
         initCodeCopy()
         restoreListScroll()
       }
@@ -351,5 +356,6 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
         initPage()
       }
     </script>
+    <Fragment set:html="<!--/email_off-->" />
   </body>
 </html>

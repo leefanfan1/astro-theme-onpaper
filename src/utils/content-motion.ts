@@ -18,9 +18,8 @@ export function animateContent(kind: 'navigation' | 'theme' = 'navigation') {
       return false
     })
   }
-  const state = document.documentElement.dataset.fontState
-  if (!content || state === 'loading' || state === 'error'
-    || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  if (document.documentElement.dataset.fontState === 'loading') return
+  if (!content || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
   const navigation = kind === 'navigation'
   const timing: KeyframeAnimationOptions = {

@@ -45,6 +45,7 @@ npm run dev
 | `npm run dev` | 启动开发服务器 |
 | `npm run new 网址` | 新建文章（可带 `title` / `tags` / `pin` / `draft` 参数） |
 | `npm run build` | 生成静态站点到 `dist/` |
+| `npm run test:font-email` | 构建并验证弱网字体加载与邮箱链接（需安装 Playwright Chromium、WebKit） |
 | `npm run build:clean` | 清理 Astro 内容缓存后再构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
 | `npm run preview` | 预览生产构建 |
@@ -211,7 +212,7 @@ export const siteConfig = {
 - 英文：自托管 **Newsreader**（SIL OFL）
 - 代码：等宽字体；数学与 Mermaid 使用各自的专用字体
 
-正文和标题会在当前页面使用的网页字体加载完成后显示，慢网时先显示加载指示，不先显示系统宋体；加载失败或等待过久时可点击重试。字体按字形分片加载，后续访问复用浏览器缓存。
+页面文字首次显示前会准备好本页所需的站点字体，避免首屏使用系统字体或中文分片混用。关键字体加载逻辑直接内联在页面中，不依赖额外模块下载；站内换页先准备下一页的字体，等待时保留当前页面。字体使用同源文件、预加载和浏览器缓存；首次访问且网络较慢时，文字显示前仍需等待下载。临时请求失败会在后台持续自动重试（间隔逐步增加，最长 30 秒），网络恢复时也会重新检查，不显示失败提示或重试按钮。请勿将字体改为 `font-display: optional`，该策略可能让整次访问都停留在系统字体。禁用 JavaScript 时保留浏览器原生字体加载与邮件链接。
 
 ### 友链
 
@@ -356,6 +357,8 @@ Mermaid 只在页面出现图表时动态加载；KaTeX 的 CSS 也只在文章�
 ---
 
 ## 部署到 Cloudflare Pages
+
+页面输出包含 Cloudflare 的 `email_off` 排除标记，邮箱地址和 `mailto:` 链接直接保留在 HTML 中，避免 Email Address Obfuscation 将地址改写为依赖解码脚本的 `[email protected]`。页脚与关于页在脚本未加载时也可使用邮箱链接。
 
 站点是纯静态的，只有阅读计数通过一个 Pages Function 访问 KV。
 
