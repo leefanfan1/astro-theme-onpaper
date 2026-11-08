@@ -17,7 +17,8 @@
     "shots": "node scripts/screenshots.mjs",
     "og": "node scripts/generate-og.mjs",
     "music": "node scripts/resolve-music.mjs",
-    "test:font-email": "npm run build && node tests/font-email-regression.mjs"
+    "test:font-email": "npm run build && node tests/font-email-regression.mjs",
+    "test:theme-controls": "npm run build && node tests/theme-controls-regression.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.5",

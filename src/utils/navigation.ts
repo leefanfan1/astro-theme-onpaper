@@ -86,6 +86,26 @@ export function installNavigation() {
   if (installed) return
   installed = true
 
+  // Navigation animates the live DOM. Only theme changes need native snapshots;
+  // even an immediately skipped native capture can retain WebKit font renderers.
+  if (document.startViewTransition) {
+    const start = document.startViewTransition.bind(document)
+    document.startViewTransition = (update) => {
+      if (document.documentElement.classList.contains('theme-changing')) return start(update)
+      const callback = typeof update === 'function' ? update : update?.update
+      const done = Promise.resolve().then(() => callback?.()).then(() => {})
+      const ready = done.then(() => { throw new DOMException('Navigation uses live content', 'AbortError') })
+      void ready.catch(() => {})
+      return {
+        ready,
+        updateCallbackDone: done,
+        finished: done,
+        skipTransition() {},
+        types: new Set(typeof update === 'object' ? update.types : []),
+      } as ViewTransition
+    }
+  }
+
   document.addEventListener('astro:before-preparation', (event: TransitionBeforePreparationEvent) => {
     if (event.formData || !pageUrl(event.to.href)) return
     const load = event.loader

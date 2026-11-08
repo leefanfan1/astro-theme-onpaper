@@ -356,6 +356,8 @@ pre {
 
 .text-button__label {
   line-height: 1;
+  /* Noto CJK ink sits above Newsreader’s line-box center. */
+  transform: translateY(0.16em);
 }
 
 .theme-toggle {
@@ -383,6 +385,11 @@ pre {
   flex: none;
   width: 1rem;
   height: 1rem;
+}
+
+/* The crescent carries more ink below center than the search icon. */
+.theme-toggle .moon {
+  transform: translateY(-6.25%);
 }
 
 .theme-toggle .sun {
@@ -1618,6 +1625,34 @@ html[data-theme="dark"] .theme-toggle .moon {
   line-height: 1;
   /* Center Newsreader's capital letters optically with the arrow. */
   transform: translateY(0.1em);
+}
+
+/* Use live colors when native snapshots cannot safely retain site fonts. */
+html.theme-color-changing,
+html.theme-color-changing body,
+html.theme-color-changing .mobile-bar,
+html.theme-color-changing .back-to-top {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Capture the whole viewport only for an explicit theme change. */
+html.theme-changing {
+  view-transition-name: root;
+}
+
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  z-index: 1;
 }
 
 /* ---------------------------------------------------------
