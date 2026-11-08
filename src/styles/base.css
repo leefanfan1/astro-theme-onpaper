@@ -137,7 +137,7 @@ pre {
    --------------------------------------------------------- */
 
 .site-shell {
-  width: min(100% - 3rem, 68rem);
+  width: min(100% - 3rem, 62rem);
   margin-inline: auto;
   padding-block: 4.5rem 3rem;
   display: grid;
@@ -166,8 +166,8 @@ pre {
 .site-rail {
   position: fixed;
   top: 4.5rem;
-  /* Match the shell's left edge, 44rem content column and 5rem gap. */
-  left: calc(max(1.5rem, (100% - 68rem) / 2) + 49rem);
+  /* Match the centered 62rem shell, 44rem content and 5rem gap. */
+  left: calc(max(1.5rem, (100% - 62rem) / 2) + 49rem);
   width: calc(13rem + 0.45rem);
   align-self: start;
   display: flex;
@@ -349,16 +349,24 @@ pre {
 }
 
 .text-button__icon {
-  width: 0.95rem;
-  height: 0.95rem;
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+.text-button__label {
+  line-height: 1;
 }
 
 .theme-toggle {
   position: relative;
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
   width: 2.75rem;
   height: 2.75rem;
+  line-height: 1;
   color: var(--ink-soft);
   transition: color 0.2s ease;
 }
@@ -372,8 +380,9 @@ pre {
 }
 
 .theme-toggle svg {
-  width: 1.05rem;
-  height: 1.05rem;
+  flex: none;
+  width: 1rem;
+  height: 1rem;
 }
 
 .theme-toggle .sun {
@@ -1205,6 +1214,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .article-header {
+  margin-bottom: 2rem;
   padding-bottom: 2rem;
   border-bottom: 1px solid var(--line);
 }
@@ -1562,24 +1572,26 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .back-to-top {
   position: fixed;
-  left: 1.25rem;
-  right: auto;
+  left: auto;
+  right: max(1.25rem, env(safe-area-inset-right, 0px));
   bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   z-index: 80;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  min-height: 2.75rem;
-  padding: 0.4rem 0.8rem;
-  border: 1px solid var(--line);
+  gap: 0.45rem;
+  min-height: 3rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--accent-strong);
   border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink-soft);
-  font-size: 0.68rem;
+  background: var(--accent-strong);
+  color: var(--paper);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 12%, transparent);
+  font-size: 0.72rem;
+  font-weight: 600;
   letter-spacing: 0.06em;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.22s ease, visibility 0.22s, color 0.2s ease, border-color 0.2s ease;
+  transition: opacity 0.22s ease, visibility 0.22s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .back-to-top.is-visible {
@@ -1588,13 +1600,13 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .back-to-top:hover {
-  color: var(--accent-strong);
-  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent-strong) 90%, var(--ink));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
 .back-to-top svg {
-  width: 0.85rem;
-  height: 0.85rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 /* ---------------------------------------------------------

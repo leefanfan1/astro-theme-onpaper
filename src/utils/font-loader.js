@@ -4,19 +4,25 @@
   document.documentElement.dataset.fontState = 'loading'
 
   const ranges = new WeakMap()
-  const replacements = new WeakMap()
-  const retries = new WeakMap()
-  const attempts = new WeakMap()
   const sources = new Map()
   const scannedSheets = new WeakSet()
+  const attempts = new Map()
+  const recoveredRules = new Map()
+  const stableCallbacks = new Set()
+  const bodyLoads = new WeakMap()
+  let recoveryStyle
+  let fontWork = Promise.resolve()
+  let nativeLoads = Promise.resolve()
+  let changingPage = false
+  let transition = 0
+
+  function whenPageStable() {
+    if (!changingPage) return Promise.resolve()
+    return new Promise(resolve => stableCallbacks.add(resolve))
+  }
 
   function familyName(family) {
     return family.trim().replace(/^['"]|['"]$/g, '')
-  }
-
-  function currentFace(face) {
-    while (replacements.has(face)) face = replacements.get(face)
-    return face
   }
 
   function covers(face, characters) {
@@ -36,7 +42,11 @@
     const style = getComputedStyle(document.documentElement)
     const families = new Set(['--font-body-web', '--font-display-web'].flatMap(property =>
       style.getPropertyValue(property).split(',').map(familyName)))
-    const faces = [...new Set([...document.fonts].map(currentFace))].filter(face => families.has(familyName(face.family)))
+    const batches = new Map()
+    for (const face of document.fonts) {
+      if (families.has(familyName(face.family))) batches.set(faceKey(face), face)
+    }
+    const faces = [...batches.values()]
     if (!faces.length) throw new Error('Theme font definitions are unavailable')
 
     const text = new Set()
@@ -54,10 +64,6 @@
 
   function faceKey(face) {
     return [familyName(face.family), face.style, face.weight, face.stretch, face.unicodeRange.replace(/\s/g, '').toLowerCase()].join('|')
-  }
-
-  function descriptors(face) {
-    return { style: face.style, weight: face.weight, stretch: face.stretch, unicodeRange: face.unicodeRange, display: 'block' }
   }
 
   function scanSources(sheet) {
@@ -88,44 +94,61 @@
     } catch { /* A cross-origin stylesheet cannot supply a retry source. */ }
   }
 
-  async function loadFace(face, retryFailed) {
-    if (!retryFailed || face.status !== 'error') return face.load()
-    const existing = retries.get(face)
-    if (existing) return existing
+  function recoverFaces(faces) {
     for (const sheet of document.styleSheets) scanSources(sheet)
-    const source = sources.get(faceKey(face))
-    if (!source) return face.load()
-    // A failed face retains its rejected promise. Stage a fresh request, then
-    // register only the successfully decoded face so a retry cannot affect paint.
-    const attempt = (attempts.get(face) ?? 0) + 1
-    attempts.set(face, attempt)
-    // WebKit can retain a failed font resource by URL. Each retry bypasses
-    // that failed entry while normal visits keep the immutable URL.
-    const retrySource = source.replace(/url\(\s*(['"]?)(.*?)\1\s*\)/gi, (_, _quote, value) => {
-      const url = new URL(value, document.baseURI)
-      if (url.protocol === 'http:' || url.protocol === 'https:') url.searchParams.set('__onpaper_font_retry', String(attempt))
-      return 'url("' + url.href + '")'
-    })
-    const fresh = new FontFace(face.family, retrySource, descriptors(face))
-    const pending = fresh.load().then(loaded => {
-      replacements.set(face, loaded)
-      document.fonts.add(loaded)
-      return loaded
-    }).finally(() => { retries.delete(face) })
-    retries.set(face, pending)
-    return pending
+    let changed = false
+    for (const face of faces) {
+      const key = faceKey(face)
+      if (face.status !== 'error' && !(recoveredRules.has(key) && face.status === 'unloaded')) continue
+      const source = sources.get(key)
+      if (!source) continue
+      const attempt = (attempts.get(key) ?? 0) + 1
+      attempts.set(key, attempt)
+      const retrySource = source.replace(/url\(\s*(['"]?)(.*?)\1\s*\)/gi, (_, _quote, value) => {
+        const url = new URL(value, document.baseURI)
+        if (url.protocol === 'http:' || url.protocol === 'https:') url.searchParams.set('__onpaper_font_retry', String(attempt))
+        return 'url("' + url.href + '")'
+      })
+      recoveredRules.set(key, '@font-face{font-family:' + JSON.stringify(familyName(face.family))
+        + ';src:' + retrySource + ';font-style:' + face.style + ';font-weight:' + face.weight
+        + ';font-stretch:' + face.stretch + ';unicode-range:' + face.unicodeRange + ';font-display:block}')
+      changed = true
+    }
+    if (!changed) return
+    if (!recoveryStyle) {
+      recoveryStyle = document.createElement('style')
+      recoveryStyle.setAttribute('data-astro-transition-persist', 'onpaper-font-recovery')
+    }
+    // Update one sheet atomically, before starting any font loads. WebKit can
+    // invalidate CSS face handles if separate sheets change during a batch.
+    recoveryStyle.textContent = [...recoveredRules.values()].join('\n')
+    if (!recoveryStyle.isConnected) document.head.append(recoveryStyle)
+    getComputedStyle(document.body).fontFamily
   }
 
   function arePageFontsLoaded(content) {
-    if (!document.fonts) return false
     try { return requiredFaces(content).every(face => face.status === 'loaded') }
     catch { return false }
   }
 
-  async function preparePageFonts(content, retryFailed = false) {
-    if (!document.fonts) return
-    const faces = requiredFaces(content)
-    await Promise.all(faces.map(face => loadFace(face, retryFailed)))
+  function preparePageFonts(content, retryFailed = false) {
+    const existing = bodyLoads.get(content)
+    if (existing) return existing
+    const pending = fontWork.catch(() => {}).then(async () => {
+      await whenPageStable()
+      if (!content.isConnected) return
+      if (retryFailed) recoverFaces(requiredFaces(content))
+      // Finish the complete batch before changing recovery CSS again.
+      nativeLoads = Promise.allSettled(requiredFaces(content).map(face => face.load()))
+      const results = await nativeLoads
+      const failure = results.find(result => result.status === 'rejected')
+      if (failure) throw failure.reason
+    })
+    fontWork = pending
+    bodyLoads.set(content, pending)
+    const clear = () => { if (bodyLoads.get(content) === pending) bodyLoads.delete(content) }
+    pending.then(clear, clear)
+    return pending
   }
 
   const preloads = new Map()
@@ -197,17 +220,45 @@
     void loadFonts(true)
   }
 
+  function resumeFonts() {
+    changingPage = false
+    for (const resolve of stableCallbacks) resolve()
+    stableCallbacks.clear()
+    initFonts()
+  }
+
+  document.addEventListener('astro:before-preparation', event => {
+    const current = ++transition
+    changingPage = true
+    const load = event.loader
+    const outgoingLoads = nativeLoads
+    event.loader = async () => {
+      await outgoingLoads
+      await document.fonts.ready
+      if (!event.signal.aborted) await load()
+    }
+    ++version
+    window.clearTimeout(retryTimer)
+    event.signal.addEventListener('abort', () => {
+      window.setTimeout(() => { if (current === transition) resumeFonts() }, 0)
+    }, { once: true })
+  })
+
   document.addEventListener('astro:before-swap', event => {
     ++version
     window.clearTimeout(retryTimer)
     contentReady = false
     const root = event.newDocument.documentElement
+    if (recoveryStyle?.isConnected) event.newDocument.head.append(recoveryStyle.cloneNode(true))
     // Reuse complete batches; never paint a partially prepared incoming page.
     root.dataset.fontState = arePageFontsLoaded(event.newDocument.body) ? 'ready' : 'loading'
     root.setAttribute('data-font-navigation', '')
   })
   // Wait for the router to finish installing styles before retrying failed faces.
-  document.addEventListener('astro:page-load', () => { window.setTimeout(initFonts, 0) })
+  document.addEventListener('astro:page-load', () => {
+    const current = transition
+    window.setTimeout(() => { if (current === transition) resumeFonts() }, 0)
+  })
   window.addEventListener('online', () => { failures = 0; void loadFonts(true) })
   window.addEventListener('pageshow', event => { if (event.persisted) { failures = 0; void loadFonts(true) } })
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initFonts, { once: true })

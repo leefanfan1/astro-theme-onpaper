@@ -209,6 +209,9 @@ try {
       if (recovery === 'navigation') await navigate(page, '/friends/')
       if (recovery === 'online') await page.evaluate(() => { window.__fontTestOnline = true; dispatchEvent(new Event('online')) })
       await ready(page)
+      // Recovered faces must remain usable through the next client-side swap.
+      await navigate(page, recovery === 'navigation' ? '/about/' : '/friends/')
+      await ready(page)
       assert.equal(await page.evaluate(() => window.__fontRecoveryProbe), true, 'font recovery must not reload the page')
       assertReadable(await state(page))
       if (name === 'chromium') {
@@ -217,7 +220,7 @@ try {
       }
       await assertNoFallbackPaint(page)
       await context.close()
-      console.log('PASS ' + name + ': partial failure recovers through ' + recovery + ' without a reload or error UI')
+      console.log('PASS ' + name + ': partial failure recovers through ' + recovery + ' and survives the next navigation without a reload or error UI')
     }
     {
       const { context, page } = await newPage(browser)
