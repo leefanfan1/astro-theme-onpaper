@@ -18,7 +18,9 @@
     "og": "node scripts/generate-og.mjs",
     "music": "node scripts/resolve-music.mjs",
     "test:font-email": "npm run build && node tests/font-email-regression.mjs",
-    "test:theme-controls": "npm run build && node tests/theme-controls-regression.mjs"
+    "test:theme-controls": "npm run build && node tests/theme-controls-regression.mjs",
+    "test:page-fonts": "npm run build && node tests/page-fonts-regression.mjs",
+    "test:performance": "npm run build && node tests/performance-regression.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.5",
@@ -35,7 +37,12 @@
     "remark-math": "^6.0.0"
   },
   "devDependencies": {
-    "playwright": "^1.59.1"
+    "fontkitten": "^1.0.3",
+    "fontverter": "^2.0.0",
+    "parse5": "^8.1.1",
+    "playwright": "^1.59.1",
+    "postcss": "^8.5.32",
+    "subset-font": "^2.9.0"
   },
   "overrides": {
     "katex": "^0.19.1"

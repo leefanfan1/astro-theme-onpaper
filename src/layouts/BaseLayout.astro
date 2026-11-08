@@ -102,8 +102,8 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
     <link rel="alternate" type="application/rss+xml" title={`${siteConfig.title} RSS`} href="/rss.xml" />
     <link rel="preload" href="/fonts/newsreader-latin-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/newsreader-latin-italic.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={notoMastheadYu} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={notoMastheadBai} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={notoMastheadYu} data-onpaper-legacy-font as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={notoMastheadBai} data-onpaper-legacy-font as="font" type="font/woff2" crossorigin />
 
     <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:site_name" content={siteConfig.title} />
@@ -213,6 +213,8 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
       <SiteRail />
     </div>
 
+    <!-- Labels inserted by copy controls must be ready before their first paint. -->
+    <span hidden aria-hidden="true" data-font-ui-text>复制已失败</span>
     <Search />
     <BackToTop />
     <ImageZoom />
@@ -356,6 +358,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
         initPage()
       }
     </script>
+    <script is:inline>window.__onpaperFonts?.start()</script>
     <Fragment set:html="<!--/email_off-->" />
   </body>
 </html>

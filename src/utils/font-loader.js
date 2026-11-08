@@ -38,28 +38,51 @@
     return intervals.some(([start, end]) => characters.some(code => code >= start && code <= end))
   }
 
-  function requiredFaces(content) {
+  function requiredFaces(content, exclude = new Set(), originalFamilies = false) {
     const style = getComputedStyle(document.documentElement)
-    const families = new Set(['--font-body-web', '--font-display-web'].flatMap(property =>
-      style.getPropertyValue(property).split(',').map(familyName)))
+    const stacks = ['--font-body-web', '--font-display-web'].map(property =>
+      style.getPropertyValue(property).split(',').map(familyName)
+        .filter(family => !originalFamilies || !family.startsWith('OnPaper Page ')))
     const batches = new Map()
-    for (const face of document.fonts) {
-      if (families.has(familyName(face.family))) batches.set(faceKey(face), face)
-    }
-    const faces = [...batches.values()]
+    for (const face of document.fonts) batches.set(faceKey(face), face)
+    const faces = [...batches.values()].reverse()
     if (!faces.length) throw new Error('Theme font definitions are unavailable')
 
     const text = new Set()
     const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT)
     while (walker.nextNode()) {
       if (walker.currentNode.parentElement?.closest('script, style, noscript')) continue
-      for (const character of walker.currentNode.textContent ?? '') text.add(character)
+      for (const character of walker.currentNode.textContent ?? '') if (!exclude.has(character)) text.add(character)
     }
-    content.querySelectorAll('input, textarea, [title]').forEach(element => {
-      for (const character of (element.getAttribute('placeholder') ?? '') + (element.getAttribute('title') ?? '')) text.add(character)
+    content.querySelectorAll('input, textarea, [title], [alt]').forEach(element => {
+      for (const character of (element.getAttribute('placeholder') ?? '') + (element.getAttribute('title') ?? '') + (element.getAttribute('alt') ?? '')) {
+        if (!exclude.has(character)) text.add(character)
+      }
     })
     const characters = [...text].map(character => character.codePointAt(0))
-    return faces.filter(face => covers(face, characters))
+    const required = new Set()
+    for (const stack of stacks) {
+      let remaining = characters
+      for (const family of stack) {
+        if (!remaining.length) break
+        const variants = new Map()
+        for (const face of faces) {
+          if (familyName(face.family) !== family) continue
+          const key = [face.style, face.weight, face.stretch].join('|')
+          if (!variants.has(key)) variants.set(key, [])
+          variants.get(key).push(face)
+        }
+        const covered = new Set()
+        for (const candidates of variants.values()) {
+          for (const code of remaining) {
+            const face = candidates.find(face => covers(face, [code]))
+            if (face) { required.add(face); covered.add(code) }
+          }
+        }
+        remaining = remaining.filter(code => !covered.has(code))
+      }
+    }
+    return [...required]
   }
 
   function faceKey(face) {
@@ -131,12 +154,12 @@
     catch { return false }
   }
 
-  function preparePageFonts(content, retryFailed = false) {
+  function preparePageFonts(content, retryFailed = false, detached = false) {
     const existing = bodyLoads.get(content)
     if (existing) return existing
     const pending = fontWork.catch(() => {}).then(async () => {
       await whenPageStable()
-      if (!content.isConnected) return
+      if (!detached && !content.isConnected) return
       if (retryFailed) recoverFaces(requiredFaces(content))
       // Finish the complete batch before changing recovery CSS again.
       nativeLoads = Promise.allSettled(requiredFaces(content).map(face => face.load()))
@@ -155,12 +178,17 @@
 
   async function preloadPageFonts(content) {
     for (const sheet of document.styleSheets) scanSources(sheet)
-    await Promise.all(requiredFaces(content).filter(face => face.status !== 'loaded').map(face => {
+    const pageFonts = content.ownerDocument.querySelector('style[data-onpaper-page-fonts]')
+    const exclude = new Set(pageFonts?.dataset.characters ?? '')
+    const urls = new Set([...content.ownerDocument.querySelectorAll('link[data-onpaper-font]')].map(link => link.href))
+    for (const face of requiredFaces(content, exclude, Boolean(pageFonts))) {
+      if (face.status === 'loaded') continue
       const url = sources.get(faceKey(face))?.match(/url\(\s*['"]?([^'"\)\s]+)['"]?\s*\)/i)?.[1]
-      if (!url) return
+      if (url) urls.add(url)
+    }
+    await Promise.all([...urls].map(url => {
       if (preloads.has(url)) return preloads.get(url)
-      // Fetch the bytes without activating a font on the outgoing document.
-      // Decoding and registration happen after the router installs the new DOM.
+      // Warm bytes only; the incoming stylesheet activates its own page faces.
       const pending = fetch(url, { mode: 'cors', credentials: 'same-origin', priority: 'low' })
         .then(async response => {
           if (!response.ok) throw new Error('Font preload interrupted')
@@ -171,14 +199,14 @@
     }))
   }
 
-  window.__onpaperFonts = { preloadPageFonts }
+  window.__onpaperFonts = { preloadPageFonts, prepareTextFonts: content => preparePageFonts(content, true, true), start: () => initFonts() }
 
   let content = null
   let version = 0
   let retryTimer
   let failures = 0
   let contentReady = false
-  const retryDelays = [1000, 2500, 5000, 15000, 30000]
+  const retryDelays = [500, 1000, 2000, 5000, 10000]
 
   function activateFonts() {
     document.documentElement.dataset.fontState = 'ready'
@@ -251,7 +279,10 @@
     const root = event.newDocument.documentElement
     if (recoveryStyle?.isConnected) event.newDocument.head.append(recoveryStyle.cloneNode(true))
     // Reuse complete batches; never paint a partially prepared incoming page.
-    root.dataset.fontState = arePageFontsLoaded(event.newDocument.body) ? 'ready' : 'loading'
+    const incomingFonts = event.newDocument.querySelector('style[data-onpaper-page-fonts]')
+    const currentFonts = document.querySelector('style[data-onpaper-page-fonts]')
+    const sameDefinitions = incomingFonts?.textContent === currentFonts?.textContent
+    root.dataset.fontState = sameDefinitions && arePageFontsLoaded(event.newDocument.body) ? 'ready' : 'loading'
     root.setAttribute('data-font-navigation', '')
   })
   // Wait for the router to finish installing styles before retrying failed faces.

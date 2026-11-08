@@ -184,7 +184,7 @@ export function installNavigation() {
       const rect = link.getBoundingClientRect()
       if (rect.bottom > 0 && rect.top < innerHeight) urls.add(link.href.split('#')[0])
     })
-    const queue = [...urls]
+    const queue = [...urls].filter(url => url !== location.href.split('#')[0])
     const worker = async () => { for (let href; (href = queue.shift());) await prefetch(href) }
     void worker()
     void worker()

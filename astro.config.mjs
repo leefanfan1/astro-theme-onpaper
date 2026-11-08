@@ -6,6 +6,7 @@ import rehypeSlug from 'rehype-slug'
 import remarkDirective from 'remark-directive'
 import remarkMath from 'remark-math'
 import { siteConfig } from './src/config.ts'
+import { pageFontIntegration } from './src/plugins/page-fonts.mjs'
 import { devViewsIntegration } from './src/plugins/dev-views.mjs'
 import { rehypeExternalLinks } from './src/plugins/rehype-external-links.mjs'
 import { rehypeMermaid } from './src/plugins/rehype-mermaid.mjs'
@@ -27,7 +28,7 @@ export default defineConfig({
     prefetchAll: false,
     defaultStrategy: 'hover',
   },
-  integrations: [sitemap(), devViewsIntegration()],
+  integrations: [sitemap(), devViewsIntegration(), pageFontIntegration(siteConfig.fonts)],
   markdown: {
     processor: unified({
       remarkPlugins: [
