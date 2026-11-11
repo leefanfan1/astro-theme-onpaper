@@ -2,16 +2,16 @@ import { createHash } from 'node:crypto'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parse } from 'parse5'
 import postcss from 'postcss'
 import { create } from 'fontkitten'
 import fontverter from 'fontverter'
 import { writeNavigationPackets } from './navigation-packets.mjs'
+import { fetchHostedBytes, parseHostedCSS, serializeHostedCSS, validateDefinitions } from './hosted-font-source.mjs'
+import { analyzeFontText } from './font-text.mjs'
 
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 20)
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;')
 const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
-const invisible = /[\p{Default_Ignorable_Code_Point}\p{Cc}\p{Zl}\p{Zp}]/u
 
 async function* files(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -19,22 +19,6 @@ async function* files(dir) {
     if (entry.isDirectory()) yield* files(path)
     else yield path
   }
-}
-
-function pageText(html) {
-  const characters = new Set()
-  const add = text => { for (const c of text) if (!invisible.test(c)) characters.add(c) }
-  function walk(node, inBody = false) {
-    if (['script', 'style', 'noscript'].includes(node.tagName)) return
-    inBody ||= node.tagName === 'body'
-    if (inBody) {
-      if (node.nodeName === '#text') add(node.value)
-      for (const attr of node.attrs ?? []) if (['placeholder', 'title', 'alt'].includes(attr.name)) add(attr.value)
-    }
-    for (const child of node.childNodes ?? []) walk(child, inBody)
-  }
-  walk(parse(html))
-  return [...characters]
 }
 
 function advertisedRanges(css) {
@@ -55,14 +39,18 @@ function advertisedRanges(css) {
 export async function hostedFontCSS(cache = new URL('../../node_modules/.cache/onpaper-google-cn/', import.meta.url)) {
   await mkdir(cache, { recursive: true })
   const key = hash('google-cn-full-v3-native-family-names') + '.css'
-  try { return await readFile(new URL(key, cache), 'utf8') }
+  try {
+    const definitions = parseHostedCSS(await readFile(new URL(key, cache), 'utf8'))
+    if (!definitions.some(face => face.family === 'Newsreader') || !definitions.some(face => face.family === 'Noto Serif SC') || definitions.some(face => !face.range)) throw new Error('Incomplete cached font CSS')
+    return serializeHostedCSS(definitions)
+  }
   catch (error) { if (error.code !== 'ENOENT') throw error }
   const query = new URLSearchParams({ family: 'Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700', display: 'block' })
   query.append('family', 'Noto Serif SC:wght@200..900')
-  const response = await fetch('https://fonts.googleapis.cn/css2?' + query, { headers: { 'User-Agent': ua }, signal: AbortSignal.timeout(20000) })
-  if (!response.ok) throw new Error('Google Fonts China dynamic CSS failed: ' + response.status)
-  const css = await response.text()
-  if (!css.includes("'Newsreader'") || !css.includes("'Noto Serif SC'") || !css.includes('https://fonts.gstatic.cn/')) throw new Error('Invalid dynamic font CSS: both theme families must be present')
+  const bytes = await fetchHostedBytes('https://fonts.googleapis.cn/css2?' + query, 'css', { 'User-Agent': ua })
+  const definitions = parseHostedCSS(bytes.toString('utf8'))
+  if (!definitions.some(face => face.family === 'Newsreader') || !definitions.some(face => face.family === 'Noto Serif SC') || definitions.some(face => !face.range)) throw new Error('Incomplete hosted font CSS')
+  const css = serializeHostedCSS(definitions)
   await writeFile(new URL(key, cache), css)
   return css
 }
@@ -72,8 +60,8 @@ export function hostedFontDevelopment(server) {
     if (new URL(req.url, 'http://localhost').pathname !== '/fonts/hosted-dev.css') return next()
     try {
       const css = (await hostedFontCSS())
-        .replaceAll("'Newsreader'", "'OnPaper Hosted Newsreader'")
-        .replaceAll("'Noto Serif SC'", "'OnPaper Hosted Noto'")
+        .replaceAll('"Newsreader"', '"OnPaper Hosted Newsreader"')
+        .replaceAll('"Noto Serif SC"', '"OnPaper Hosted Noto"')
       res.writeHead(200, { 'Content-Type': 'text/css; charset=utf-8' }).end(css)
     } catch (error) { next(error) }
   })
@@ -86,10 +74,10 @@ async function writeHostedPageFonts({ output, fonts, pages, logger }) {
   const destination = join(output, 'fonts', 'pages')
   await Promise.all([mkdir(cache, { recursive: true }), mkdir(destination, { recursive: true })])
   const requests = new Map()
-  async function request(family, text) {
+  async function request(family, text, style = 'normal') {
     if (!text) return []
     const query = new URLSearchParams({
-      family: family === 'Newsreader' ? 'Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700' : 'Noto Serif SC:wght@200..900',
+      family: family === 'Newsreader' ? (style === 'italic' ? 'Newsreader:ital,opsz,wght@1,6..72,400..700' : 'Newsreader:opsz,wght@6..72,400..700') : 'Noto Serif SC:wght@200..900',
       display: 'block', text,
     })
     const endpoint = 'https://fonts.googleapis.cn/css2?' + query
@@ -100,18 +88,10 @@ async function writeHostedPageFonts({ output, fonts, pages, logger }) {
       try { definitions = JSON.parse(await readFile(new URL(key + '.json', cache), 'utf8')) }
       catch (error) {
         if (error.code !== 'ENOENT') throw error
-        const response = await fetch(endpoint, { headers: { 'User-Agent': ua }, signal: AbortSignal.timeout(20000) })
-        if (!response.ok) throw new Error('Google Fonts China CSS failed: ' + response.status + ' (' + family + ')')
-        definitions = []
-        postcss.parse(await response.text()).walkAtRules('font-face', rule => {
-          const props = Object.fromEntries(rule.nodes.filter(node => node.type === 'decl').map(node => [node.prop, node.value]))
-          const url = props.src?.match(/url\(['"]?([^'"\)]+)/)?.[1]
-          if (!url || new URL(url).origin !== 'https://fonts.gstatic.cn' || !props.src.includes('woff2')) throw new Error('Unexpected hosted font source')
-          definitions.push({ url, style: props['font-style'], weight: props['font-weight'] })
-        })
-        const expected = family === 'Newsreader' ? 2 : 1
-        if (definitions.length !== expected) throw new Error('Expected ' + expected + ' hosted text subsets for ' + family)
+        definitions = parseHostedCSS((await fetchHostedBytes(endpoint, 'css', { 'User-Agent': ua })).toString('utf8'), family)
       }
+      definitions = validateDefinitions(definitions, family)
+      if (definitions.length !== 1 || definitions[0].style !== style) throw new Error('Unexpected hosted font style set for ' + family)
       const result = []
       for (const definition of definitions) {
         const filename = 'google-cn-' + hash(definition.url) + '.woff2'
@@ -119,9 +99,7 @@ async function writeHostedPageFonts({ output, fonts, pages, logger }) {
         try { bytes = await readFile(new URL(filename, cache)) }
         catch (error) {
           if (error.code !== 'ENOENT') throw error
-          const response = await fetch(definition.url, { signal: AbortSignal.timeout(20000) })
-          if (!response.ok) throw new Error('Google Fonts China WOFF2 failed: ' + response.status)
-          bytes = Buffer.from(await response.arrayBuffer())
+          bytes = await fetchHostedBytes(definition.url, 'font')
           await writeFile(new URL(filename, cache), bytes)
         }
         const font = create(await fontverter.convert(bytes, 'sfnt'))
@@ -151,11 +129,13 @@ async function writeHostedPageFonts({ output, fonts, pages, logger }) {
   let index = 0
   async function worker() {
     while (index < pages.length) {
-      const { path, html, characters } = pages[index++]
+      const { path, html, characters, italicCharacters } = pages[index++]
       const chinese = characters.filter(c => !latinCoverage.has(c) && supports('Noto Serif SC', c)).join('')
       const body = await request('Noto Serif SC', chinese)
+      const italicText = italicCharacters === null ? latinText : italicCharacters.filter(c => latinCoverage.has(c)).join('')
+      const italic = await request('Newsreader', italicText, 'italic')
       const bodyAlias = 'OnPaper Page Google ' + hash(chinese)
-      const definitions = [...shared.map(face => ({ ...face, alias: latinAlias })), ...body.map(face => ({ ...face, alias: bodyAlias }))]
+      const definitions = [...shared.map(face => ({ ...face, alias: latinAlias })), ...italic.map(face => ({ ...face, alias: latinAlias })), ...body.map(face => ({ ...face, alias: bodyAlias }))]
       const covered = new Set(definitions.flatMap(face => face.characters))
       const unavailable = characters.filter(c => !covered.has(c)).join('')
       const rules = definitions.map(face => '@font-face{font-family:"' + face.alias + '";src:url("' + face.url + '") format("woff2");font-style:' + face.style + ';font-weight:' + face.weight + ';font-display:block;unicode-range:' + face.characters.map(c => 'U+' + c.codePointAt(0).toString(16)).join(',') + '}')
@@ -179,20 +159,15 @@ export function hostedFontIntegration(fonts) {
     hooks: {
       'astro:server:setup': ({ server }) => hostedFontDevelopment(server),
       'astro:build:generated': async ({ dir, logger }) => {
-        const output = fileURLToPath(dir), generated = new Set(), pages = []
+        const output = fileURLToPath(dir), cssSources = new Map(), pages = []
         for (const entry of await readdir(join(output, '_astro'))) {
           if (!entry.endsWith('.css')) continue
-          postcss.parse(await readFile(join(output, '_astro', entry), 'utf8')).walkDecls('content', declaration => {
-            for (const match of declaration.value.matchAll(/(['"])(.*?)\1/g)) {
-              for (const c of match[2].replace(/\\([0-9a-f]{1,6})\s?/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)))) if (!invisible.test(c)) generated.add(c)
-            }
-          })
+          cssSources.set('/_astro/' + entry, await readFile(join(output, '_astro', entry), 'utf8'))
         }
         for await (const path of files(output)) {
           if (!path.endsWith('.html')) continue
           const html = await readFile(path, 'utf8')
-          const characters = [...new Set([...pageText(html), ...generated])].sort((a, b) => a.codePointAt(0) - b.codePointAt(0))
-          pages.push({ path, html, characters })
+          pages.push({ path, html, ...analyzeFontText(html, cssSources) })
         }
         await writeHostedPageFonts({ output, fonts, pages, logger })
         await writeNavigationPackets(output, pages.map(page => page.path))

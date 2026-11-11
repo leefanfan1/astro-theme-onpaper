@@ -165,17 +165,18 @@
   function preparePageFonts(content, retryFailed = false, detached = false) {
     const existing = bodyLoads.get(content)
     if (existing) return existing
-    const pending = fontWork.catch(() => {}).then(async () => {
+    const pending = (detached ? Promise.resolve() : fontWork.catch(() => {})).then(async () => {
       await whenPageStable()
       if (!detached && !content.isConnected) return
       if (retryFailed) recoverFaces(requiredFaces(content))
       // Finish the complete batch before changing recovery CSS again.
-      nativeLoads = Promise.allSettled(requiredFaces(content).map(face => face.load()))
-      const results = await nativeLoads
+      const loads = Promise.allSettled(requiredFaces(content).map(face => face.load()))
+      if (!detached) nativeLoads = loads
+      const results = await loads
       const failure = results.find(result => result.status === 'rejected')
       if (failure) throw failure.reason
     })
-    fontWork = pending
+    if (!detached) fontWork = pending
     bodyLoads.set(content, pending)
     const clear = () => { if (bodyLoads.get(content) === pending) bodyLoads.delete(content) }
     pending.then(clear, clear)

@@ -214,7 +214,14 @@ function setTriggerState(open: boolean) {
   })
 }
 
+function invalidateRender() {
+  ++renderVersion
+  window.clearTimeout(renderTimer)
+  renderTimer = undefined
+}
+
 function finishClose() {
+  invalidateRender()
   if (closeTimer) {
     window.clearTimeout(closeTimer)
     closeTimer = undefined
@@ -251,6 +258,7 @@ function openSearch() {
 }
 
 function closeSearch() {
+  invalidateRender()
   refreshElements()
   if (!dialog?.open || dialog.classList.contains('is-closing')) return
 
@@ -356,6 +364,7 @@ function bindSearchTriggers() {
 
 bindSearchTriggers()
 document.addEventListener('astro:after-swap', bindSearchTriggers)
+document.addEventListener('astro:before-swap', invalidateRender)
 document.addEventListener('astro:page-load', bindSearchTriggers)
 
 document.addEventListener('keydown', (event) => {

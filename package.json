@@ -18,7 +18,8 @@
     "og": "node scripts/generate-og.mjs",
     "music": "node scripts/resolve-music.mjs",
     "test:theme-controls": "npm run build && node tests/theme-controls-regression.mjs",
-    "test:hosted-fonts": "npm run build && node tests/hosted-fonts-regression.mjs",
+    "test:font-source": "node tests/hosted-font-security.mjs && node tests/font-text.mjs",
+    "test:hosted-fonts": "npm run build && npm run test:font-source && node tests/hosted-fonts-regression.mjs && node tests/search-font-isolation.mjs",
     "test:performance": "npm run build && node tests/performance-regression.mjs",
     "test:responsiveness": "npm run build && node tests/navigation-responsiveness.mjs"
   },

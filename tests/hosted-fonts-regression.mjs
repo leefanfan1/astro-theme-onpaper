@@ -105,6 +105,10 @@ try {
         if (engine === chromium) {
           const cdp = await context.newCDPSession(page)
           await cdp.send('DOM.enable'); await cdp.send('CSS.enable')
+          const { root: initialDoc } = await cdp.send('DOM.getDocument')
+          const { nodeId: dateNode } = await cdp.send('DOM.querySelector', { nodeId: initialDoc.nodeId, selector: '.post-meta time' })
+          const { fonts: dateFonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId: dateNode })
+          assert.ok(dateFonts.length && dateFonts.every(font => font.isCustomFont && /italic/i.test(font.postScriptName)), 'dates must use the actual Newsreader italic face: ' + JSON.stringify(dateFonts))
           await page.evaluate(() => { const el = document.createElement('p'); el.id = 'hosted-glyph-probe'; el.textContent = '纸上留白 ABC123'; document.querySelector('#main').append(el) })
           await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
           const { root: doc } = await cdp.send('DOM.getDocument')
