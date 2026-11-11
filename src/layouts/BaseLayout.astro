@@ -9,10 +9,6 @@ import MobileBar from '@/components/MobileBar.astro'
 import Search from '@/components/Search.astro'
 import SiteRail from '@/components/SiteRail.astro'
 import { siteConfig } from '@/config'
-import notoMastheadBai from '@fontsource-variable/noto-serif-sc/files/noto-serif-sc-116-wght-normal.woff2?url'
-import notoMastheadYu from '@fontsource-variable/noto-serif-sc/files/noto-serif-sc-114-wght-normal.woff2?url'
-import '@fontsource-variable/noto-serif-sc'
-import '@/styles/fonts.css'
 import '@/styles/base.css'
 import '@/styles/prose.css'
 import '@/styles/extensions.css'
@@ -75,8 +71,10 @@ function tokensToCss(tokens: typeof light) {
     .join('')
 }
 
+const hostedDevelopment = import.meta.env.DEV
+const developmentStack = (value: string) => hostedDevelopment ? value.replaceAll('"Newsreader"', '"OnPaper Hosted Newsreader"').replaceAll('"Noto Serif SC"', '"OnPaper Hosted Noto"') : value
 const themeCSS = `
-:root{${tokensToCss(light)}--font-display-web:${siteConfig.fonts.display};--font-body-web:${siteConfig.fonts.body};--font-display:var(--font-display-web);--font-body:var(--font-body-web);--font-mono:${siteConfig.fonts.mono};color-scheme:light}
+:root{${tokensToCss(light)}--font-display-web:${developmentStack(siteConfig.fonts.display)};--font-body-web:${developmentStack(siteConfig.fonts.body)};--font-display:var(--font-display-web);--font-body:var(--font-body-web);--font-mono:${siteConfig.fonts.mono};color-scheme:light}
 html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 @media (prefers-color-scheme: dark){html:not([data-theme="light"]){${tokensToCss(dark)}color-scheme:dark}}
 `
@@ -101,10 +99,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate" type="application/rss+xml" title={`${siteConfig.title} RSS`} href="/rss.xml" />
-    <link rel="preload" href="/fonts/newsreader-latin-normal.woff2" data-onpaper-legacy-font as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/newsreader-latin-italic.woff2" data-onpaper-legacy-font as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={notoMastheadYu} data-onpaper-legacy-font as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={notoMastheadBai} data-onpaper-legacy-font as="font" type="font/woff2" crossorigin />
+    {hostedDevelopment && <><link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin /><link rel="stylesheet" href="/fonts/hosted-dev.css" /></>}
 
     <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:site_name" content={siteConfig.title} />

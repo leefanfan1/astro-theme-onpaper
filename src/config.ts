@@ -102,10 +102,11 @@ export const siteConfig = {
   },
 
   fonts: {
-    // 中文统一使用自托管的 Noto Serif SC Variable；英文使用 Newsreader。
+    // 测试分支：构建时向 Google Fonts 中国接口请求按页裁剪的字体。
+    // 正文、换页和动态文字的字体均由 fonts.gstatic.cn 托管。
     // 代码、数学和图表保留各自专用字体。
-    display: '"Newsreader", "Noto Serif SC Variable", "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", serif',
-    body: '"Newsreader", "Noto Serif SC Variable", "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", serif',
+    display: '"Newsreader", "Noto Serif SC", "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", serif',
+    body: '"Newsreader", "Noto Serif SC", "Songti SC", "STSong", "Noto Serif CJK SC", "Source Han Serif SC", serif',
     mono: '"SFMono-Regular", "Cascadia Code", Consolas, "Liberation Mono", monospace',
   },
 

@@ -193,7 +193,7 @@ async function render(rawQuery: string) {
   }
   try {
     // Results can contain letters outside the current page's small font set.
-    // Prepare the original fallback faces before exposing the new text.
+    // Prepare the additional hosted glyphs before exposing the new text.
     await prepareTextFonts(results)
   }
   catch {
@@ -273,12 +273,15 @@ function closeSearch() {
   }, 240)
 }
 
+const boundSearchDialogs = new WeakSet<HTMLDialogElement>()
+const boundSearchTriggers = new WeakSet<HTMLElement>()
+
 function bindSearchDialog() {
   refreshElements()
   const currentDialog = dialog
   const currentInput = input
-  if (!currentDialog || currentDialog.dataset.searchDialogBound === 'true') return
-  currentDialog.dataset.searchDialogBound = 'true'
+  if (!currentDialog || boundSearchDialogs.has(currentDialog)) return
+  boundSearchDialogs.add(currentDialog)
 
   currentDialog.addEventListener('click', (event) => {
     if (event.target === currentDialog) closeSearch()
@@ -341,8 +344,8 @@ function bindSearchTriggers() {
   refreshElements()
   bindSearchDialog()
   document.querySelectorAll<HTMLElement>('[data-search-trigger]').forEach((trigger) => {
-    if (trigger.dataset.searchBound === 'true') return
-    trigger.dataset.searchBound = 'true'
+    if (boundSearchTriggers.has(trigger)) return
+    boundSearchTriggers.add(trigger)
     trigger.addEventListener('click', (event) => {
       event.preventDefault()
       openSearch()

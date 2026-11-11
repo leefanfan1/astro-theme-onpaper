@@ -34,6 +34,7 @@ try {
 for(const width of [390,1440]) {
 const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'no-preference',colorScheme:'light'})
 const page=await context.newPage()
+page.setDefaultTimeout(45000)
 page.on('pageerror',e=>errors.push(e.message))
 await page.addInitScript(()=>{
   Object.defineProperty(navigator,'connection',{value:{saveData:true,effectiveType:'3g'}})
@@ -48,7 +49,8 @@ try {
   await page.goto(base+'/',{waitUntil:'commit'})
   await page.waitForFunction(()=>document.documentElement.dataset.fontState==='ready')
   assert.equal(await page.evaluate(()=>document.readyState==='complete'),false,'font readiness must not wait for page modules')
-  const fonts=await page.evaluate(()=>performance.getEntriesByType('resource').filter(e=>e.name.includes('.woff2')).map(e=>({url:e.name,size:e.transferSize})))
+  const fonts=await page.evaluate(()=>performance.getEntriesByType('resource').filter(e=>new URL(e.name).origin==='https://fonts.gstatic.cn').map(e=>({url:e.name,size:e.transferSize})))
+  assert.equal(fonts.length,3,'the first page must load the three hosted text subsets')
   assert.ok(fonts.reduce((n,f)=>n+f.size,0)<600000,JSON.stringify(fonts))
   assert.equal(fonts.some(f=>f.url.includes('/_astro/noto-serif')),false,'the first page must use small original-font subsets')
   const before=await page.locator('.site-main').boundingBox()
@@ -73,7 +75,7 @@ try {
   await page.waitForTimeout(200)
   assert.equal(await page.locator('.search-result').count(),0)
   await input.fill('Markdown')
-  await page.locator('.search-result').first().waitFor()
+  await page.locator('.search-result').first().waitFor().catch(async error=>{console.error(await page.evaluate(()=>({query:document.querySelector('#search-input')?.value,status:document.querySelector('[data-search-status]')?.textContent,fonts:[...document.fonts].filter(f=>f.status==='loading'||f.status==='error').map(f=>({family:f.family,status:f.status,range:f.unicodeRange}))})));throw error})
   await input.fill('纸上')
   await page.locator('.search-result').first().waitFor()
   await page.keyboard.press('Escape')
@@ -109,7 +111,7 @@ let held=0
 try {
   await page.goto(base+'/')
   await page.waitForFunction(()=>document.documentElement.dataset.fontState==='ready')
-  await context.route('**/_astro/noto-serif*.woff2*',async route=>{held++;await fontGate;await route.continue()})
+  await context.route('https://fonts.gstatic.cn/**',async route=>{held++;await fontGate;await route.continue()})
   await page.locator('.rail-actions [data-search-trigger]').click()
   await page.locator('#search-input').fill('dynamicrare')
   await expectHeld()

@@ -2,7 +2,7 @@
 interface FontPreloadOptions { signal?: AbortSignal, priority?: 'high' | 'low' | 'auto' }
 declare global {
   interface Window {
-    __onpaperFonts?: { preloadPageFonts(content: ParentNode, options?: FontPreloadOptions): Promise<void>, prepareNavigationFonts(content: ParentNode, options?: FontPreloadOptions): Promise<void>, prepareTextFonts(content: ParentNode): Promise<void>, start(): void }
+    __onpaperFonts?: { warmPageFonts(content: ParentNode, options?: FontPreloadOptions): Promise<void>, preloadPageFonts(content: ParentNode, options?: FontPreloadOptions): Promise<void>, prepareNavigationFonts(content: ParentNode, options?: FontPreloadOptions): Promise<void>, prepareTextFonts(content: ParentNode): Promise<void>, start(): void }
   }
 }
 
@@ -16,4 +16,8 @@ export function prepareTextFonts(content: ParentNode) {
 
 export function prepareNavigationFonts(content: ParentNode, options?: FontPreloadOptions) {
   return window.__onpaperFonts?.prepareNavigationFonts(content, options) ?? Promise.resolve()
+}
+
+export function warmPageFonts(content: ParentNode, options?: FontPreloadOptions) {
+  return window.__onpaperFonts?.warmPageFonts(content, options) ?? Promise.resolve()
 }

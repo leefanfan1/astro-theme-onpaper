@@ -22,7 +22,7 @@
 
 | | |
 | :--- | :--- |
-| **✦ 排版优先**<br>中文正文使用自托管 Noto Serif SC，英文标题使用 Newsreader；代码、数学与图表各用专用字体。 | **◐ 阅读体验**<br>文章目录、阅读进度、图片灯箱（滚轮 / 双指缩放、拖动）、回到顶部与分享栏。 |
+| **✦ 排版优先**<br>中文正文使用 Noto Serif SC，英文使用 Newsreader；本测试分支在线托管字体。代码、数学与图表各用专用字体。 | **◐ 阅读体验**<br>文章目录、阅读进度、图片灯箱（滚轮 / 双指缩放、拖动）、回到顶部与分享栏。 |
 | **▯ 移动端**<br>文章页顶栏随滚动压缩，给正文让出空间；44px 触控热区。 | **◯ 搜索**<br><kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>K</kbd> 或 <kbd>/</kbd> 唤起，构建期索引覆盖标题、标签与正文。 |
 | **◑ 主题**<br>浅色 / 深色 / 跟随系统，圆形揭示切换，可持久化。 | **✎ Markdown 扩展**<br>KaTeX 公式、Mermaid 图表、音乐卡片、GitHub 卡片与视频嵌入。 |
 | **◎ 可选能力**<br>Google Analytics 4，以及基于 Cloudflare KV 的阅读计数。 | **⌘ 无障碍**<br>跳转正文、可见焦点、语义化标题、`aria-current`、可键盘操作的弹窗。 |
@@ -47,9 +47,8 @@ npm run dev
 | `npm run build` | 生成静态站点到 `dist/` |
 | `npm run test:responsiveness` | 构建并验证脚本延迟下的关键控件、后台请求让路与连续换页取消 |
 | `npm run test:performance` | 构建并验证首屏字体体积、页面稳定性与搜索恢复 |
-| `npm run test:page-fonts` | 构建并验证字体子集的原字形、度量和可变字重 |
+| `npm run test:hosted-fonts` | 构建并验证在线字体来源、动态字形、搜索、跨页复用和 Chrome / WebKit 表现 |
 | `npm run test:theme-controls` | 构建并验证主题动画、控件对齐及换页 |
-| `npm run test:font-email` | 构建并验证弱网字体加载与邮箱链接（需安装 Playwright Chromium、WebKit） |
 | `npm run build:clean` | 清理 Astro 内容缓存后再构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
 | `npm run preview` | 预览生产构建 |
@@ -173,8 +172,8 @@ export const siteConfig = {
   },
 
   fonts: {
-    display: '"Newsreader", "Noto Serif SC Variable", "Songti SC", …',
-    body: '"Newsreader", "Noto Serif SC Variable", "Songti SC", …',
+    display: '"Newsreader", "Noto Serif SC", "Songti SC", …',
+    body: '"Newsreader", "Noto Serif SC", "Songti SC", …',
     mono: '"SFMono-Regular", Consolas, …',
   },
 
@@ -212,13 +211,15 @@ export const siteConfig = {
 
 `siteConfig.fonts` 控制三套字体栈：
 
-- 中文：自托管 **Noto Serif SC Variable**，按 `unicode-range` 分片，浏览器只加载实际用到的字形
-- 英文：自托管 **Newsreader**（SIL OFL）
+- 中文：**Noto Serif SC**，保留可变字重
+- 英文：**Newsreader**（SIL OFL），保留正体、斜体和光学尺寸轴
 - 代码：等宽字体；数学与 Mermaid 使用各自的专用字体
 
-页面文字首次显示前会准备好本页所需的站点字体，避免首屏使用系统字体或中文分片混用。关键字体加载逻辑直接内联在页面中，不依赖额外模块下载；站内换页先准备下一页的字体，等待时保留当前页面。字体使用同源文件、预加载和浏览器缓存；首次访问且网络较慢时，文字显示前仍需等待下载。临时请求失败会在后台持续自动重试（间隔逐步增加，最长 10 秒），网络恢复时也会重新检查，不显示失败提示或重试按钮。请勿将字体改为 `font-display: optional`，该策略可能让整次访问都停留在系统字体。禁用 JavaScript 时保留浏览器原生字体加载与邮件链接。
+构建时从 `https://fonts.googleapis.cn/css2` 获取字体定义，访问者直接从 `https://fonts.gstatic.cn` 下载 WOFF2 字体。首页、站内换页和搜索结果中的动态文字都使用在线字体，不加载本地字体文件作为兜底。原自托管字体文件、打包依赖、构建分支和导航包的 Base64 字体传输代码已移除。
 
-生产构建会按每页文字生成 Noto Serif SC 的 WOFF2 子集，并为 Newsreader 正体、斜体生成全站共用的精简字体，从 HTML 头部预加载。字形轮廓、度量、可变字重、英文光学尺寸和排版特性保持原样；完整原字体仍保留，供搜索结果等动态文字及其他页面补充字形。子集在构建时生成，不需要访问外部字体服务，生成结果使用内容哈希文件名。开发服务器使用原始字体；检查实际加载速度请运行 `npm run build` 后使用 `npm run preview`。构建缓存保存在 `node_modules/.cache/onpaper-fonts/`，首次构建比缓存后的构建耗时更长。
+生产构建为每页中文请求一个按文字裁剪的在线子集，Newsreader 正体、斜体的两个子集在页面之间共用，通常共 3 个字体请求。HTML 提前连接字体域名并预加载确切的字体 URL，无须先下载远程 CSS 再发现字体。动态文字所需的通用字体声明在首次搜索时才加载，其字体文件也全部来自在线源；导航 JSON 只包含文档，不再内嵌字体字节。构建期缓存位于 `node_modules/.cache/onpaper-google-cn/`，其中下载的字体只用于核验真实字形，不作为网站字体后备。开发服务器也使用在线字体，但使用通用分片；比较实际访问速度请使用 `npm run build` 和 `npm run preview`。
+
+页面文字首次显示前会等待本页所需字体全部就绪，保持字体一致；站内换页等待期间保留当前页面。临时请求失败仍自动重试，不切换到本地字体或系统字体；首次访问且没有缓存时，字体源无法访问会延长内容显示前的等待。禁用 JavaScript 时使用浏览器原生字体加载策略。运行 `npm run test:hosted-fonts` 验证在线字形、邮箱链接、动态文字、跨页复用与等待期间的一致性。
 
 关键交互（主题、搜索、目录、移动顶栏与 TOP）在构建期编译为内联脚本，放在完整页面内容之后、字体就绪检查之前；正文首次可见时无需再等待这些控件的外部模块。脚本在站内换页时只初始化一次，原有动画参数与交互保持不变。后台预取只缓存少量 HTML，最多两个并发请求；自动预热最多两个链接、逐个执行。实际点击会取消未完成的后台预取，下一页字体使用高优先级，继续点击其他页面时会取消过时的字体下载。
 

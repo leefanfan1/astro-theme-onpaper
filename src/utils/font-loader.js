@@ -212,13 +212,20 @@
     }))
   }
 
-  async function prepareNavigationFonts(content, options = {}) {
+  const decodedFaces = new Map()
+  function discardPreloadedFonts(content) {
+    for (const link of content.ownerDocument.querySelectorAll('link[data-onpaper-font]')) {
+      preloads.delete(link.href)
+    }
+  }
+
+  async function decodeNavigationFonts(content, options = {}) {
     await preloadPageFonts(content, options)
     if (options.signal?.aborted) return
     const style = content.ownerDocument.querySelector('style[data-onpaper-page-fonts]')
     if (!style) return
-    // Parse in an inert document: incoming family variables must not change the
-    // outgoing page. Decode the fetched bytes before the router swaps anything.
+    // Decode outside document.fonts. Preparing another route must never change
+    // the currently visible page's family, metrics or font readiness.
     const parsed = document.implementation.createHTMLDocument('')
     const definitions = parsed.createElement('style')
     definitions.textContent = style.textContent
@@ -227,24 +234,44 @@
     for (const rule of definitions.sheet.cssRules) {
       if (rule.type !== CSSRule.FONT_FACE_RULE) continue
       const css = rule.style
-      const range = css.getPropertyValue('unicode-range') || 'U+0-10FFFF'
       const descriptor = {
         style: css.getPropertyValue('font-style') || 'normal',
         weight: css.getPropertyValue('font-weight') || 'normal',
         stretch: css.getPropertyValue('font-stretch') || 'normal',
-        unicodeRange: range,
+        unicodeRange: css.getPropertyValue('unicode-range') || 'U+0-10FFFF',
       }
       const family = familyName(css.getPropertyValue('font-family'))
       const key = faceKey({ family, ...descriptor })
-      let face = activatedFaces.get(key)
+      let face = activatedFaces.get(key) ?? decodedFaces.get(key)
       if (!face) {
         const path = css.getPropertyValue('src').match(/url\(\s*['"]?([^'"\)\s]+)['"]?\s*\)/i)?.[1]
         const bytes = await preloads.get(new URL(path, location.href).href)?.promise
         if (!bytes || options.signal?.aborted) return
         face = new FontFace(family, bytes, descriptor)
+        decodedFaces.set(key, face)
       }
       faces.push({ key, face })
     }
+    await Promise.all(faces.map(async ({ key, face }) => {
+      try { await face.load() }
+      catch (error) {
+        decodedFaces.delete(key)
+        discardPreloadedFonts(content)
+        throw error
+      }
+    }))
+    while (decodedFaces.size > 128) decodedFaces.delete(decodedFaces.keys().next().value)
+    return { style, definitions, faces }
+  }
+
+  async function warmPageFonts(content, options = {}) {
+    await decodeNavigationFonts(content, options)
+  }
+
+  async function prepareNavigationFonts(content, options = {}) {
+    const decoded = await decodeNavigationFonts(content, options)
+    if (!decoded || options.signal?.aborted) return
+    const { style, definitions, faces } = decoded
     const exclude = new Set(style.dataset.characters ?? '')
     const extraFaces = requiredFaces(content, exclude, true).filter(face => face.status !== 'loaded')
     if (extraFaces.length) {
@@ -254,15 +281,6 @@
       const failure = results.find(result => result.status === 'rejected')
       if (failure) throw failure.reason
     }
-    await Promise.all(faces.map(async ({ face }) => {
-      try { await face.load() }
-      catch (error) {
-        // A successful HTTP response can still contain an invalid font.
-        // Do not keep corrupted bytes in the retry cache.
-        for (const link of content.ownerDocument.querySelectorAll('link[data-onpaper-font]')) preloads.delete(link.href)
-        throw error
-      }
-    }))
     await nativeLoads
     if (options.signal?.aborted) return
     for (const { key, face } of faces) {
@@ -286,7 +304,26 @@
     preparedPages.add(content)
   }
 
-  window.__onpaperFonts = { preloadPageFonts, prepareNavigationFonts, prepareTextFonts: content => preparePageFonts(content, true, true), start: () => initFonts() }
+  let dynamicFonts
+  let dynamicLink
+  function ensureDynamicFonts() {
+    const href = document.querySelector('style[data-onpaper-page-fonts]')?.dataset.dynamicCss
+    if (!href) return Promise.resolve()
+    if (dynamicFonts && dynamicLink?.isConnected) return dynamicFonts
+    const link = document.createElement('link')
+    dynamicLink = link
+    link.rel = 'stylesheet'
+    link.href = href
+    link.setAttribute('data-astro-transition-persist', 'onpaper-dynamic-fonts')
+    dynamicFonts = new Promise((resolve, reject) => {
+      link.onload = resolve
+      link.onerror = () => { dynamicFonts = null; link.remove(); reject(new Error('Dynamic font definitions unavailable')) }
+      document.head.append(link)
+    })
+    return dynamicFonts
+  }
+
+  window.__onpaperFonts = { warmPageFonts, preloadPageFonts, prepareNavigationFonts, prepareTextFonts: async content => { await ensureDynamicFonts(); await preparePageFonts(content, true, true) }, start: () => initFonts() }
 
   let content = null
   let version = 0
@@ -372,6 +409,7 @@
     window.clearTimeout(retryTimer)
     contentReady = false
     const root = event.newDocument.documentElement
+    if (dynamicLink?.isConnected) event.newDocument.head.append(dynamicLink.cloneNode(true))
     if (recoveryStyle?.isConnected) event.newDocument.head.append(recoveryStyle.cloneNode(true))
     // Reuse complete batches; never paint a partially prepared incoming page.
     const incomingFonts = event.newDocument.querySelector('style[data-onpaper-page-fonts]')

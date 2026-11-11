@@ -7,6 +7,8 @@ dist/
 
 # local tooling and audit artifacts
 _analysis/
+docs/google-cn-font-test.md
+docs/online-font-audit.md
 _preflight/
 screenshots/
 scratch/

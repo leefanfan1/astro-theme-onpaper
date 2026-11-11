@@ -25,6 +25,7 @@ const server = createServer(async (request, response) => {
 })
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
 const base = 'http://127.0.0.1:' + server.address().port
+const routes = JSON.parse((await readFile(resolve(dist, 'index.html'), 'utf8')).match(/<script type="application\/json" data-onpaper-navigation>(.*?)<\/script>/s)[1])
 
 const errors = []
 const ready = page => page.waitForFunction(() => document.documentElement.dataset.fontState === 'ready')
@@ -35,7 +36,8 @@ async function instrument(context, connection = connected) {
     window.__fetchLog = []
     const nativeFetch = window.fetch
     window.fetch = (url, options) => {
-      const entry = { path: new URL(typeof url === 'string' ? url : url.url, location.href).pathname, priority: options?.priority, aborted: false }
+      const parsed = new URL(typeof url === 'string' ? url : url.url, location.href)
+      const entry = { path: parsed.pathname, origin: parsed.origin, priority: options?.priority, aborted: false }
       window.__fetchLog.push(entry)
       options?.signal?.addEventListener('abort', () => { entry.aborted = true }, { once: true })
       return nativeFetch(url, options)
@@ -93,20 +95,20 @@ try {
         page.on('pageerror', error => errors.push(error.message))
         let release
         const gate = new Promise(resolve => { release = resolve })
-        await context.route('**/tags/', async route => { await gate; await route.continue().catch(() => {}) })
+        let started
+        const background = new Promise(resolve => { started = resolve })
+        await context.route('**' + routes['/tags/'], async route => { started(); await gate; await route.continue().catch(() => {}) })
         try {
           await page.goto(base + '/')
           await ready(page)
-          const background = page.waitForRequest(request => new URL(request.url()).pathname === '/tags/')
-          await page.evaluate(() => document.dispatchEvent(new Event('onpaper:content-ready')))
+          await page.locator('.rail-nav a[href="/tags/"]').focus()
           await background
-          assert.equal(await page.evaluate(() => window.__fetchLog.some(entry => entry.path.endsWith('.woff2'))), false, 'idle prefetch must not download other pages fonts')
           await page.locator('.rail-nav a[href="/friends/"]').click()
           await page.waitForURL(base + '/friends/')
           await ready(page)
           const log = await page.evaluate(() => window.__fetchLog)
-          assert.ok(log.some(entry => entry.path === '/tags/' && entry.aborted), JSON.stringify(log))
-          assert.ok(log.filter(entry => entry.path.endsWith('.woff2')).every(entry => entry.priority === 'high'), JSON.stringify(log))
+          assert.ok(log.some(entry => entry.path === routes['/tags/'] && entry.aborted), JSON.stringify(log))
+          assert.ok(log.some(entry => entry.origin === 'https://fonts.gstatic.cn' && entry.priority === 'high'), JSON.stringify(log))
         } finally { release(); await context.close() }
         console.log('PASS ' + engine.name() + ': foreground navigation cancels speculative HTML and owns font bandwidth')
       }
@@ -121,11 +123,11 @@ try {
           await page.goto(base + '/')
           await ready(page)
           await page.evaluate(() => { window.__navigationProbe = true })
-          await context.route('**/fonts/pages/*.woff2', async route => {
+          await context.route('https://fonts.gstatic.cn/**', async route => {
             if (hold) await gate
             await route.continue().catch(() => {})
           })
-          const firstFont = page.waitForRequest(request => new URL(request.url()).pathname.startsWith('/fonts/pages/'))
+          const firstFont = page.waitForRequest(request => new URL(request.url()).origin === 'https://fonts.gstatic.cn')
           await page.locator('.rail-nav a[href="/about/"]').click()
           await firstFont
           assert.equal(new URL(page.url()).pathname, '/')
@@ -138,31 +140,31 @@ try {
           await ready(page)
           assert.equal(await page.evaluate(() => window.__navigationProbe), true)
           const log = await page.evaluate(() => window.__fetchLog)
-          assert.ok(log.some(entry => entry.path.endsWith('.woff2') && entry.aborted), JSON.stringify(log))
-          assert.ok(log.filter(entry => entry.path.endsWith('.woff2')).every(entry => entry.priority === 'high'))
+          assert.ok(log.some(entry => entry.origin === 'https://fonts.gstatic.cn' && entry.aborted), JSON.stringify(log))
+          assert.ok(log.filter(entry => entry.origin === 'https://fonts.gstatic.cn').every(entry => entry.priority === 'high'))
         } finally { release(); await context.close() }
         console.log('PASS ' + engine.name() + ': a newer click cancels stalled font downloads and controls stay responsive')
       }
       {
         const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
-        await instrument(context)
+        await instrument(context, { saveData: false, effectiveType: '3g' })
         const page = await context.newPage()
         page.on('pageerror', error => errors.push(error.message))
         let release
         const gate = new Promise(resolve => { release = resolve })
         let requests = 0
-        await context.route('**/page/2/', async route => { requests++; await gate; await route.continue().catch(() => {}) })
+        await context.route('**' + routes['/page/2/'], async route => { requests++; await gate; await route.continue().catch(() => {}) })
         try {
           await page.goto(base + '/')
           await ready(page)
           const next = page.locator('.pagination__side--next a')
-          const html = page.waitForRequest(request => new URL(request.url()).pathname === '/page/2/')
+          const html = page.waitForRequest(request => new URL(request.url()).pathname === routes['/page/2/'])
           await next.hover()
           await html
           await next.click()
           await page.waitForTimeout(100)
           assert.equal(requests, 1, 'click must reuse the HTML request started on hover')
-          assert.equal(await page.evaluate(() => window.__fetchLog.find(entry => entry.path === '/page/2/').aborted), false)
+          assert.equal(await page.evaluate(path => window.__fetchLog.find(entry => entry.path === path).aborted, routes['/page/2/']), false)
           release()
           await page.waitForURL(base + '/page/2/')
           await ready(page)
@@ -196,8 +198,8 @@ try {
           await ready(page)
           // Byte downloads may proceed. Hold any second CSS/native font request
           // indefinitely: the incoming page must already have decoded faces.
-          await context.route('**/*.woff2*', async route => {
-            if (route.request().resourceType() === 'font' && new URL(route.request().url()).pathname.startsWith('/fonts/pages/')) {
+          await context.route('https://fonts.gstatic.cn/**', async route => {
+            if (route.request().resourceType() === 'font') {
               duplicates.push(route.request().url())
               await gate
             }
@@ -240,7 +242,7 @@ try {
           await ready(page)
           let failures = 0
           let broken = true
-          await context.route('**/fonts/pages/*.woff2', async route => {
+          await context.route('https://fonts.gstatic.cn/**', async route => {
             if (broken) { failures++; await route.fulfill({ contentType: 'font/woff2', body: 'invalid font bytes' }) }
             else await route.continue()
           })

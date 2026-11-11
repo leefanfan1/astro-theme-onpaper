@@ -4,9 +4,9 @@
   <circle cx="180" cy="540" r="150" fill="#788C5D" opacity="0.08"/>
   <path d="M100 112h64" stroke="#A94E33" stroke-width="3"/>
   <text x="100" y="168" fill="#A94E33" font-family="'Newsreader', Georgia, serif" font-size="22" letter-spacing="6">ONPAPER</text>
-  <text x="96" y="330" fill="#141413" font-family="'Noto Serif SC Variable', 'Songti SC', 'STSong', Georgia, serif" font-size="156" font-weight="600">纸上留白</text>
-  <text x="100" y="400" fill="#5E5D59" font-family="'Noto Serif SC Variable', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="28" letter-spacing="3">在字与字之间，留一点呼吸。</text>
+  <text x="96" y="330" fill="#141413" font-family="'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif" font-size="156" font-weight="600">纸上留白</text>
+  <text x="100" y="400" fill="#5E5D59" font-family="'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="28" letter-spacing="3">在字与字之间，留一点呼吸。</text>
   <path d="M100 470h110" stroke="#141413" stroke-width="2" opacity="0.25"/>
-  <text x="100" y="520" fill="#6F6D65" font-family="'Noto Serif SC Variable', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="20" letter-spacing="2">随笔 · 音乐 · 城市夜色</text>
+  <text x="100" y="520" fill="#6F6D65" font-family="'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="20" letter-spacing="2">随笔 · 音乐 · 城市夜色</text>
   <text x="100" y="580" fill="#6F6D65" font-family="'Newsreader', Georgia, serif" font-size="18" letter-spacing="2">onpaper.example.com</text>
 </svg>
