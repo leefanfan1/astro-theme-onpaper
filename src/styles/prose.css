@@ -1,23 +1,26 @@
 /* =========================================================
    Article prose
+   Running text is sans; headings and quotations change to the
+   display serif, following Chinese book convention where a
+   quotation is set in a different face rather than boxed.
    ========================================================= */
 
 .prose {
-  max-width: 42rem;
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 1.06rem;
-  line-height: 2;
-  letter-spacing: 0.005em;
+  font-size: var(--text-base);
+  line-height: var(--leading-text);
+  letter-spacing: 0.01em;
   hanging-punctuation: allow-end;
 }
 
-.prose-card .prose {
-  max-width: 48rem;
-}
-
-.article .prose {
-  max-width: 100%;
+/* Justified CJK gives the column a clean right edge, but on a phone a long
+   Latin word can stretch a line into gaps, so justify only with room. */
+@media (min-width: 720px) {
+  .prose {
+    text-align: justify;
+    text-justify: inter-character;
+  }
 }
 
 .prose > *:first-child {
@@ -25,8 +28,8 @@
 }
 
 .prose p {
-  margin: 0 0 1.5em;
-  text-wrap: wrap;
+  margin: 0 0 1.25em;
+  text-wrap: pretty;
 }
 
 .prose h2,
@@ -34,13 +37,40 @@
 .prose h4,
 .prose h5,
 .prose h6 {
-  font-family: var(--font-display);
-  font-weight: 500;
-  line-height: 1.28;
-  letter-spacing: -0.015em;
   color: var(--ink);
-  scroll-margin-top: 6rem;
+  line-height: 1.4;
+  text-align: left;
   text-wrap: balance;
+  scroll-margin-top: var(--space-6);
+}
+
+.prose h2 {
+  margin: 2.4em 0 0.8em;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.prose h3 {
+  margin: 2em 0 0.6em;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.prose h4 {
+  margin: 1.8em 0 0.5em;
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+
+.prose h5,
+.prose h6 {
+  margin: 1.6em 0 0.5em;
+  color: var(--ink-soft);
+  font-size: var(--text-md);
+  font-weight: 700;
 }
 
 @media (max-width: 1100px) {
@@ -49,79 +79,78 @@
   .prose h4,
   .prose h5,
   .prose h6 {
-    scroll-margin-top: calc(var(--mobile-bar-height, 9rem) + 1rem);
+    scroll-margin-top: calc(var(--mobile-bar-height, 6.5rem) + 1rem);
+  }
+
+  .prose h2 {
+    margin-top: 2em;
   }
 }
 
-.prose h2 {
-  margin: 2.6em 0 0.8em;
-  font-size: 1.72rem;
-}
-
-.prose h3 {
-  margin: 2.1em 0 0.65em;
-  font-size: 1.32rem;
-}
-
-.prose h4 {
-  margin: 1.8em 0 0.55em;
-  font-size: 1.12rem;
-}
-
-.prose h5,
-.prose h6 {
-  margin: 1.6em 0 0.5em;
-  font-size: 1rem;
-}
-
 .prose a {
-  color: var(--accent-strong);
+  color: var(--accent);
   text-decoration: underline;
-  text-decoration-thickness: 0.06em;
-  text-underline-offset: 0.18em;
-  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  text-underline-offset: 0.24em;
+  transition:
+    color var(--dur-hover) ease,
+    text-decoration-color var(--dur-hover) ease;
 }
 
-.prose a:hover {
-  color: var(--ink);
-  text-decoration-color: var(--ink);
+@media (hover: hover) and (pointer: fine) {
+  .prose a:hover {
+    color: var(--accent-strong);
+    text-decoration-color: currentColor;
+  }
 }
 
 .prose strong,
 .prose b {
-  font-weight: 650;
+  font-weight: 700;
 }
 
+/* Chinese emphasis marks (着重号) instead of a slanted Latin face. */
 .prose em {
-  font-style: italic;
+  font-style: normal;
+  -webkit-text-emphasis: filled dot;
+  text-emphasis: filled dot;
+  -webkit-text-emphasis-position: under right;
+  text-emphasis-position: under right;
+  -webkit-text-emphasis-color: var(--accent);
+  text-emphasis-color: var(--accent);
 }
 
 .prose mark {
-  padding: 0.05em 0.18em;
-  background: var(--accent-soft);
+  padding: 0.05em 0.15em;
+  border-radius: 2px;
+  background: var(--mark);
   color: inherit;
 }
 
 .prose u {
   text-decoration-color: var(--accent);
-  text-decoration-thickness: 0.07em;
-  text-underline-offset: 0.16em;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+.prose del,
+.prose s {
+  color: var(--ink-faint);
 }
 
 .prose blockquote {
   margin: 1.8em 0;
-  padding: 1rem 1.2rem;
-  border-left: 2px solid var(--accent);
-  border-radius: 0 8px 8px 0;
-  background: var(--surface);
+  padding-left: 2em;
   color: var(--ink-soft);
   font-family: var(--font-display);
-  font-size: 1.15rem;
-  line-height: 1.75;
+  font-size: 1.0625em;
+  font-weight: 500;
+  line-height: 1.95;
 }
 
 .prose blockquote p {
-  margin-bottom: 0.7em;
+  margin-bottom: 0.8em;
 }
 
 .prose blockquote p:last-child {
@@ -130,51 +159,54 @@
 
 .prose ul,
 .prose ol {
-  margin: 0 0 1.35em;
-  padding-left: 1.4em;
+  margin: 0 0 1.25em;
+  padding-left: 1.5em;
 }
 
 .prose li {
-  margin: 0.22em 0;
-  padding-left: 0.1em;
+  margin: 0.3em 0;
+  padding-left: 0.2em;
 }
 
 .prose li::marker {
-  color: var(--accent);
+  color: var(--ink-faint);
+}
+
+.prose ol > li::marker {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .prose ul ul,
 .prose ol ol,
 .prose ul ol,
 .prose ol ul {
-  margin-top: 0.25em;
-  margin-bottom: 0.25em;
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+}
+
+.prose li > input[type="checkbox"] {
+  margin-right: 0.45em;
+  accent-color: var(--accent);
 }
 
 .prose hr {
-  margin: 2.8em auto;
-  width: fit-content;
+  width: 2.5rem;
+  height: 0;
+  margin: 3em auto;
   border: 0;
-  color: var(--ink-faint);
-  font-family: var(--font-display);
-  font-size: 1rem;
-  letter-spacing: 0.7em;
-  text-align: center;
-}
-
-.prose hr::before {
-  content: "· · ·";
+  border-top: 2px solid var(--line);
 }
 
 .prose img {
   width: 100%;
   height: auto;
-  margin: 1.8em auto;
-  border-radius: 8px;
+  margin: 2em auto;
+  border-radius: var(--radius-md);
 }
 
 .prose figure {
-  margin: 1.8em 0;
+  margin: 2em 0;
 }
 
 .prose figure img {
@@ -182,41 +214,41 @@
 }
 
 .prose figcaption {
-  margin-top: 0.55em;
+  margin-top: 0.7em;
   color: var(--ink-faint);
-  font-size: 0.76rem;
+  font-size: var(--text-xs);
   line-height: 1.6;
   text-align: center;
 }
 
 .prose code {
-  padding: 0.12em 0.32em;
-  border: 1px solid var(--line);
-  border-radius: 4px;
+  padding: 0.12em 0.36em;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   font-family: var(--font-mono);
-  font-size: 0.85em;
+  font-size: 0.86em;
   letter-spacing: 0;
 }
 
 .prose pre {
   position: relative;
   margin: 1.8em 0;
-  padding: 1.15rem 1.25rem;
+  padding: 1.1rem 1.25rem;
   overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--paper-raised) !important;
+  box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.83rem;
+  font-size: 0.84rem;
   line-height: 1.75;
+  text-align: left;
   scrollbar-width: thin;
 }
 
 .prose pre code {
   padding: 0;
-  border: 0;
+  border-radius: 0;
   background: transparent;
   font-size: inherit;
   line-height: inherit;
@@ -230,35 +262,62 @@ html[data-theme="dark"] .prose pre {
   background: var(--surface) !important;
 }
 
+/* Copy: the button itself confirms, in place. */
 .prose .code-copy {
   position: absolute;
-  top: 0.55rem;
-  right: 0.55rem;
+  top: 0.5rem;
+  right: 0.5rem;
   z-index: 2;
-  display: inline-grid;
-  place-items: center;
-  min-width: 2.4rem;
-  min-height: 2.4rem;
-  padding: 0.25rem 0.55rem;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--paper) 86%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 3.6rem;
+  min-height: 2.25rem;
+  padding: 0 0.6rem;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--paper-raised) 88%, transparent);
+  box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink-faint);
   font-family: var(--font-body);
-  font-size: 0.64rem;
-  letter-spacing: 0.05em;
+  font-size: var(--text-2xs);
+  letter-spacing: 0.08em;
   opacity: 0;
-  transition: opacity 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  transition:
+    opacity var(--dur-hover) ease,
+    color var(--dur-hover) ease,
+    transform var(--dur-hover) var(--ease-out);
+}
+
+html[data-theme="dark"] .prose .code-copy {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
 }
 
 .prose pre:hover .code-copy,
-.prose .code-copy:focus-visible {
+.prose pre:focus-within .code-copy,
+.prose .code-copy:focus-visible,
+.prose .code-copy[data-state] {
   opacity: 1;
 }
 
-.prose .code-copy:hover {
+.prose .code-copy:active {
+  transform: scale(0.96);
+  transition-duration: 0s;
+}
+
+.prose .code-copy[data-state="copied"] {
   color: var(--accent);
-  border-color: var(--accent);
+}
+
+.prose .code-copy__check {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .prose .code-copy:hover {
+    color: var(--ink);
+  }
 }
 
 @media (pointer: coarse) {
@@ -273,25 +332,33 @@ html[data-theme="dark"] .prose pre {
   margin: 1.8em 0;
   overflow-x: auto;
   border-collapse: collapse;
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   line-height: 1.65;
+  text-align: left;
 }
 
 .prose th,
 .prose td {
-  padding: 0.55em 0.8em;
-  border-bottom: 1px solid var(--line);
+  padding: 0.6em 0.9em;
+  border-bottom: var(--border);
   text-align: left;
   white-space: nowrap;
 }
 
+.prose th:first-child,
+.prose td:first-child {
+  padding-left: 0;
+}
+
 .prose th {
+  border-bottom: 1.5px solid var(--ink-soft);
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .prose td {
   color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
 }
 
 .prose abbr[title] {
@@ -302,22 +369,21 @@ html[data-theme="dark"] .prose pre {
 
 .prose kbd {
   display: inline-block;
-  padding: 0.1em 0.4em;
-  border: 1px solid var(--line);
-  border-bottom-width: 2px;
-  border-radius: 3px;
+  padding: 0.08em 0.42em;
+  border-radius: var(--radius-sm);
   background: var(--paper-raised);
+  box-shadow: inset 0 0 0 1px var(--line), inset 0 -2px 0 var(--line);
   font-family: var(--font-mono);
-  font-size: 0.78em;
+  font-size: 0.8em;
   line-height: 1.5;
 }
 
 .prose .footnotes {
-  margin-top: 3em;
+  margin-top: 3.5em;
   padding-top: 1.2em;
-  border-top: 1px solid var(--line);
+  border-top: var(--border);
   color: var(--ink-soft);
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
 }
 
 .prose .footnotes ol {
@@ -334,6 +400,7 @@ html[data-theme="dark"] .prose pre {
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 0.2rem;
+  text-align: center;
 }
 
 .prose .katex {
@@ -354,6 +421,11 @@ html[data-theme="dark"] .prose pre {
   background: var(--paper-raised) !important;
 }
 
+html[data-theme="dark"] .prose pre.mermaid,
+html[data-theme="dark"] .prose pre.mermaid[data-processed] {
+  background: var(--surface) !important;
+}
+
 .prose pre.mermaid svg {
   width: 100%;
   min-width: 34rem;
@@ -362,17 +434,14 @@ html[data-theme="dark"] .prose pre {
 
 .prose .editorial-note {
   padding: 0.8rem 1rem;
-  border-left: 2px solid var(--accent);
+  border-radius: var(--radius-md);
   background: var(--accent-soft);
   color: var(--ink-soft);
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
+  text-align: left;
 }
-@media (max-width: 1100px) {
-  .prose h2 {
-    margin-top: 2em;
-  }
 
-  .prose h3 {
-    margin-top: 1.7em;
-  }
+/* Standalone pages (about) use the same prose without the article grid. */
+.page-prose {
+  max-width: var(--measure);
 }

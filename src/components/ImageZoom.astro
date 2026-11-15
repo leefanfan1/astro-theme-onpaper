@@ -50,9 +50,41 @@
   }
 
   .image-zoom::backdrop {
-    background: rgb(20 20 19 / 0.9);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgb(11 15 23 / 0);
+    transition: background-color var(--dur-exit) ease;
+  }
+
+  .image-zoom[open]:not([data-closing])::backdrop {
+    background: rgb(11 15 23 / 0.92);
+    transition: background-color 300ms var(--ease-out);
+  }
+
+  @starting-style {
+    .image-zoom[open]:not([data-closing])::backdrop {
+      background: rgb(11 15 23 / 0);
+    }
+  }
+
+  /* Caption and tools arrive after the picture and leave before it. */
+  .image-zoom__caption,
+  .image-zoom__tools,
+  .image-zoom__close {
+    transition: opacity var(--dur-exit) ease;
+  }
+
+  .image-zoom[open]:not([data-closing]) :is(.image-zoom__caption, .image-zoom__tools, .image-zoom__close) {
+    opacity: 1;
+    transition: opacity var(--dur-pop) var(--ease-out) 160ms;
+  }
+
+  @starting-style {
+    .image-zoom[open]:not([data-closing]) :is(.image-zoom__caption, .image-zoom__tools, .image-zoom__close) {
+      opacity: 0;
+    }
+  }
+
+  .image-zoom[data-closing] :is(.image-zoom__caption, .image-zoom__tools, .image-zoom__close) {
+    opacity: 0;
   }
 
   .image-zoom__stage {
@@ -68,15 +100,6 @@
     user-select: none;
   }
 
-  .image-zoom[open] .image-zoom__stage {
-    animation: image-zoom-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  @keyframes image-zoom-in {
-    from {
-      opacity: 0;
-    }
-  }
 
   .image-zoom__stage.is-zoomed {
     cursor: grab;
@@ -92,9 +115,9 @@
     height: auto;
     max-width: 100%;
     max-height: 100%;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--paper);
-    box-shadow: 0 24px 80px rgb(0 0 0 / 0.4);
+    box-shadow: 0 24px 60px -20px rgb(0 0 0 / 0.5);
     transform-origin: center center;
     will-change: transform;
     -webkit-user-drag: none;
@@ -103,7 +126,7 @@
   .image-zoom__caption {
     max-width: 42rem;
     margin: 0;
-    color: rgb(250 249 245 / 0.75);
+    color: rgb(227 230 237 / 0.78);
     font-size: 0.78rem;
     line-height: 1.6;
     text-align: center;
@@ -122,16 +145,16 @@
     place-items: center;
     width: 2.75rem;
     height: 2.75rem;
-    border: 1px solid rgb(250 249 245 / 0.25);
+    border: 1px solid rgb(227 230 237 / 0.22);
     border-radius: 999px;
-    background: rgb(20 20 19 / 0.55);
-    color: #faf9f5;
+    background: rgb(11 15 23 / 0.6);
+    color: #e3e6ed;
     font-size: 1.2rem;
     line-height: 1;
   }
 
   .image-zoom__close:hover {
-    background: rgb(20 20 19 / 0.8);
+    background: rgb(11 15 23 / 0.85);
   }
 
   .image-zoom__tools {
@@ -141,10 +164,10 @@
     align-items: center;
     gap: 0.2rem;
     padding: 0.3rem 0.4rem;
-    border: 1px solid rgb(250 249 245 / 0.18);
+    border: 1px solid rgb(227 230 237 / 0.16);
     border-radius: 999px;
-    background: rgb(20 20 19 / 0.78);
-    color: #faf9f5;
+    background: rgb(11 15 23 / 0.8);
+    color: #e3e6ed;
   }
 
   .image-zoom__tools button {
@@ -163,7 +186,7 @@
   }
 
   .image-zoom__tools button:hover {
-    background: rgb(250 249 245 / 0.12);
+    background: rgb(227 230 237 / 0.12);
   }
 
   .image-zoom__tools button:focus-visible {
@@ -178,7 +201,7 @@
 
   .image-zoom__level {
     min-width: 3.2rem;
-    color: rgb(250 249 245 / 0.78);
+    color: rgb(227 230 237 / 0.78);
     font-size: 0.65rem;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.06em;
@@ -200,11 +223,6 @@
     }
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .image-zoom[open] .image-zoom__stage {
-      animation: none;
-    }
-  }
 </style>
 
 <script>
@@ -306,6 +324,34 @@
     applyTransform(parts)
   }
 
+  // The enlarged image grows out of the picture you pressed and returns to
+  // it on close, so the photo never jumps between two unrelated places.
+  let source: HTMLImageElement | null = null
+  let flight: Animation | null = null
+  let closing = false
+  const SPATIAL = 'cubic-bezier(0.32, 0.72, 0, 1)'
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  function onScreen(img: HTMLImageElement | null) {
+    if (!img?.isConnected) return null
+    const rect = img.getBoundingClientRect()
+    if (!rect.width || !rect.height || rect.bottom < 0 || rect.top > window.innerHeight) return null
+    return rect
+  }
+
+  function offsetTo(parts: ZoomParts, rect: DOMRect) {
+    const current = parts.image.getBoundingClientRect()
+    if (!current.width) return null
+    const dx = rect.left + rect.width / 2 - (current.left + current.width / 2)
+    const dy = rect.top + rect.height / 2 - (current.top + current.height / 2)
+    return `translate3d(${dx}px, ${dy}px, 0) scale(${rect.width / current.width})`
+  }
+
+  function settleFlight() {
+    flight?.cancel()
+    flight = null
+  }
+
   function finishZoomClose() {
     document.body.classList.remove('image-zoom-open')
     pointers.clear()
@@ -313,37 +359,67 @@
     dragStart = null
     dragged = false
     pointerStartedOnStage = false
+    closing = false
+    settleFlight()
     const parts = getParts()
+    parts?.dialog.removeAttribute('data-closing')
     if (parts) resetTransform(parts)
+    source?.style.removeProperty('opacity')
+    source = null
   }
 
-  function closeZoom() {
+  async function closeZoom() {
     const parts = getParts()
-    if (!parts?.dialog.open) return
-    if (typeof parts.dialog.close === 'function') {
-      parts.dialog.close()
-    }
-    else {
+    if (!parts?.dialog.open || closing) return
+    if (typeof parts.dialog.close !== 'function') {
       parts.dialog.removeAttribute('open')
       finishZoomClose()
+      return
     }
+    if (reduceMotion()) {
+      parts.dialog.close()
+      return
+    }
+    closing = true
+    parts.dialog.setAttribute('data-closing', '')
+    const home = state.scale <= 1.01 ? onScreen(source) : null
+    const to = home && offsetTo(parts, home)
+    settleFlight()
+    flight = to
+      ? parts.image.animate([{ transform: 'none' }, { transform: to }], { duration: 280, easing: SPATIAL, fill: 'forwards' })
+      : parts.image.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: 'ease-out', fill: 'forwards' })
+    // Hand the picture back to the page the instant the flight lands.
+    if (to) flight.finished.then(() => source?.style.removeProperty('opacity'), () => {})
+    try { await flight.finished } catch {}
+    if (parts.dialog.open) parts.dialog.close()
   }
 
-  function openZoom(img: HTMLImageElement) {
+  async function openZoom(img: HTMLImageElement) {
     const parts = getParts()
-    if (!parts) return
+    if (!parts || closing) return
 
+    settleFlight()
+    source?.style.removeProperty('opacity')
+    source = img
     parts.image.src = img.currentSrc || img.src
     parts.image.alt = img.alt || ''
     if (parts.caption) parts.caption.textContent = img.alt || ''
     resetTransform(parts)
 
+    const from = onScreen(img)
     if (!parts.dialog.open) {
       if (typeof parts.dialog.showModal === 'function') parts.dialog.showModal()
       else parts.dialog.setAttribute('open', '')
     }
     document.body.classList.add('image-zoom-open')
-    requestAnimationFrame(() => resetTransform(parts))
+    if (!from || reduceMotion()) return
+    try { await parts.image.decode() } catch {}
+    if (source !== img || !parts.dialog.open) return
+    const start = offsetTo(parts, from)
+    if (!start) return
+    img.style.opacity = '0'
+    flight = parts.image.animate([{ transform: start }, { transform: 'none' }], { duration: 420, easing: SPATIAL })
+    flight.finished.then(() => { flight = null }, () => {})
   }
 
   function bindZoomDialog() {
@@ -354,6 +430,15 @@
     const { dialog, stage } = parts
 
     dialog.addEventListener('close', finishZoomClose)
+    // Route Esc through the same animated close as the close button.
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault()
+      void closeZoom()
+    })
+    // Any direct manipulation takes over from the opening flight at once.
+    for (const type of ['pointerdown', 'wheel'] as const) {
+      stage.addEventListener(type, () => { if (!closing) settleFlight() }, { passive: true })
+    }
 
     stage.addEventListener('wheel', (event) => {
       event.preventDefault()

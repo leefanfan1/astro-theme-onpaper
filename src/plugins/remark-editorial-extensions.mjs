@@ -86,9 +86,12 @@ function musicCardHtml({ title, artist, type, cover, lyric, links }) {
     })
     .join('')
 
+  // The cover is a record sleeve with the disc tucked behind it; the disc's
+  // label repeats the cover. The disc slides out and turns on hover (CSS).
+  const discHtml = `<span class="mc-disc" aria-hidden="true">${hasCover ? `<img src="${esc(coverUrl)}" alt="" width="600" height="600" loading="lazy" decoding="async">` : ''}</span>`
   return `
 <div class="mc-card"><div class="mc-inner">
-  <div class="${coverClass}">${coverHtml}</div>
+  <div class="mc-art">${discHtml}<div class="${coverClass}">${coverHtml}</div></div>
   <div class="mc-info">
     <span class="mc-type-badge">${typeLabel}</span>
     <p class="mc-title">${esc(title || '未命名')}</p>
@@ -189,13 +192,12 @@ function renderGithub(attrs) {
 
   return html(`
 <a class="github-card" href="https://github.com/${esc(repo)}" target="_blank" rel="noopener noreferrer" data-github-card data-repo="${esc(repo)}">
-  <span class="github-card__icon" aria-hidden="true">${githubIcon}</span>
-  <span class="github-card__body">
-    <span class="github-card__head">
-      <span class="github-card__eyebrow">GitHub</span>
-      <span class="github-card__open" aria-hidden="true">↗</span>
-    </span>
+  <span class="github-card__head">
+    <span class="github-card__icon" aria-hidden="true">${githubIcon}</span>
     <span class="github-card__repo"><span class="github-card__owner">${esc(owner)}</span><span class="github-card__slash">/</span><span class="github-card__name">${esc(name)}</span></span>
+    <span class="github-card__open" aria-hidden="true">↗</span>
+  </span>
+  <span class="github-card__body">
     <span class="github-card__desc" data-gh-desc>${esc(description)}</span>
     <span class="github-card__meta">
       <span class="github-card__stat">${starIcon}<span class="sr-only">Stars</span><b data-gh-stars>${esc(stars)}</b></span>

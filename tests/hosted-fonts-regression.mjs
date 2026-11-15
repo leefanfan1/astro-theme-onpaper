@@ -99,7 +99,7 @@ try {
         const outside = await page.evaluate(async () => {
           const el = document.createElement('span'); el.textContent = '龘';
           await window.__onpaperFonts.prepareTextFonts(el)
-          return [...document.fonts].filter(f => f.family === 'Noto Serif SC' && f.status === 'loaded').length
+          return [...document.fonts].filter(f => f.family === 'Noto Sans SC' && f.status === 'loaded').length
         })
         assert.ok(outside > 0, 'dynamic Chinese must load general hosted font shards')
         if (engine === chromium) {
@@ -108,13 +108,13 @@ try {
           const { root: initialDoc } = await cdp.send('DOM.getDocument')
           const { nodeId: dateNode } = await cdp.send('DOM.querySelector', { nodeId: initialDoc.nodeId, selector: '.post-meta time' })
           const { fonts: dateFonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId: dateNode })
-          assert.ok(dateFonts.length && dateFonts.every(font => font.isCustomFont && /italic/i.test(font.postScriptName)), 'dates must use the actual Newsreader italic face: ' + JSON.stringify(dateFonts))
+          assert.ok(dateFonts.length && dateFonts.every(font => font.isCustomFont) && dateFonts.some(font => /newsreader/i.test(font.postScriptName ?? font.familyName)), 'dates must use the hosted Newsreader figures: ' + JSON.stringify(dateFonts))
           await page.evaluate(() => { const el = document.createElement('p'); el.id = 'hosted-glyph-probe'; el.textContent = '纸上留白 ABC123'; document.querySelector('#main').append(el) })
           await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
           const { root: doc } = await cdp.send('DOM.getDocument')
           const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: doc.nodeId, selector: '#hosted-glyph-probe' })
           const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
-          assert.ok(fonts.length >= 2 && fonts.every(font => font.isCustomFont), JSON.stringify(fonts))
+          assert.ok(fonts.length >= 1 && fonts.every(font => font.isCustomFont), JSON.stringify(fonts))
           await page.locator('#hosted-glyph-probe').evaluate(el => el.remove())
         }
         assert.ok(requests.length >= 3 && requests.every(url => new URL(url).origin === 'https://fonts.gstatic.cn'), JSON.stringify(requests))

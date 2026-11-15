@@ -22,7 +22,7 @@
 
 | | |
 | :--- | :--- |
-| **✦ 排版优先**<br>中文正文使用 Noto Serif SC，英文使用 Newsreader；本测试分支在线托管字体。代码、数学与图表各用专用字体。 | **◐ 阅读体验**<br>文章目录、阅读进度、图片灯箱（滚轮 / 双指缩放、拖动）、回到顶部与分享栏。 |
+| **✦ 排版优先**<br>正文与界面使用 Noto Sans SC，标题、站名与引文使用 Noto Serif SC 粗字重，西文标题与数字使用 Newsreader；字体在线托管。代码、数学与图表各用专用字体。 | **◐ 阅读体验**<br>文章目录、阅读进度、图片灯箱（滚轮 / 双指缩放、拖动）、回到顶部与分享栏。 |
 | **▯ 移动端**<br>文章页顶栏随滚动压缩，给正文让出空间；44px 触控热区。 | **◯ 搜索**<br><kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>K</kbd> 或 <kbd>/</kbd> 唤起，构建期索引覆盖标题、标签与正文。 |
 | **◑ 主题**<br>浅色 / 深色 / 跟随系统，圆形揭示切换，可持久化。 | **✎ Markdown 扩展**<br>KaTeX 公式、Mermaid 图表、音乐卡片、GitHub 卡片与视频嵌入。 |
 | **◎ 可选能力**<br>Google Analytics 4，以及基于 Cloudflare KV 的阅读计数。 | **⌘ 无障碍**<br>跳转正文、可见焦点、语义化标题、`aria-current`、可键盘操作的弹窗。 |
@@ -48,7 +48,7 @@ npm run dev
 | `npm run test:responsiveness` | 构建并验证脚本延迟下的关键控件、后台请求让路与连续换页取消 |
 | `npm run test:performance` | 构建并验证首屏字体体积、页面稳定性与搜索恢复 |
 | `npm run test:hosted-fonts` | 构建并验证在线字体来源、动态字形、搜索、跨页复用和 Chrome / WebKit 表现 |
-| `npm run test:font-source` | 验证字体源安全边界和斜体文字收集，不访问 CDN |
+| `npm run test:font-source` | 验证字体源安全边界、斜体与显示字体文字收集，不访问 CDN |
 | `npm run test:theme-controls` | 构建并验证主题动画、控件对齐及换页 |
 | `npm run build:clean` | 清理 Astro 内容缓存后再构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
@@ -168,13 +168,13 @@ export const siteConfig = {
 
   theme: {
     defaultMode: 'auto', // auto | light | dark
-    light: { paper: '#FAF9F5', ink: '#141413', accent: '#D97757' },
-    dark: { paper: '#141413', ink: '#FAF9F5', accent: '#D97757' },
+    light: { paper: '#F4F5F7', ink: '#182134', accent: '#2A47C9' },
+    dark: { paper: '#10141C', ink: '#E3E6ED', accent: '#93A6FF' },
   },
 
   fonts: {
     display: '"Newsreader", "Noto Serif SC", "Songti SC", …',
-    body: '"Newsreader", "Noto Serif SC", "Songti SC", …',
+    body: '"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", …',
     mono: '"SFMono-Regular", Consolas, …',
   },
 
@@ -192,6 +192,14 @@ export const siteConfig = {
 
 </details>
 
+### 改书单
+
+`/shelf/` 页面「书单 · 片单 · 歌单」的内容在 `src/config.ts` 的 `shelf` 里：`shelf.books` / `shelf.films` / `shelf.music`，每项写 `title`、`creator`，可选 `year`、`note`、`url`、`cover`。页面是一面封面墙：`cover` 填封面图（推荐放进 `public/shelf/` 写成 `/shelf/xxx.jpg`，外链请选国内可访问的图床）；音乐条目不填时沿用音乐卡片缓存里的专辑封面；都没有时按书名/片名排一张文字封面。某一类留空数组，那一栏就不显示；三类都空时，首页右栏也不显示入口。
+
+首页右栏「这个站」里的篇数、字数和天数都由文章自动统计，不需要维护。
+
+文章末尾除了分享按钮，还有「复制引用」「分享卡片」（把标题和选中的一段话生成图片）和「打印 / 存成 PDF」。
+
 ### 改配色
 
 只改 `theme.light` / `theme.dark` 即可，主题会把它们注入成 CSS 变量：
@@ -203,22 +211,26 @@ export const siteConfig = {
 | `surface` | 浅一层的表面 | `inkFaint` | 日期 / 说明文字 |
 | `surfaceAlt` | 更深的表面 | `line` | 分隔线 |
 | `accent` | 链接、当前导航 | `accentStrong` | 强调文字的深色版 |
-| `accentSoft` | 强调的浅底 | `peach` | 辅助暖色 |
-| `moss` | 辅助橄榄绿 | | |
+| `accentSoft` | 强调的浅底 | `mark` | 搜索命中与 `<mark>` 底色 |
+| `selection` | 选区颜色 | | |
 
-默认配色：`#FAF9F5` 纸色、`#141413` 墨色、`#D97757` 赤陶橙、`#788C5D` 橄榄绿。
+默认配色是“冷白纸面上的蓝黑墨水”：`#F4F5F7` 纸色、`#182134` 蓝黑墨色（正文本身就是这个颜色）、`#2A47C9` 钢笔蓝。深色模式用 `#10141C` 深蓝墨底和 `#93A6FF` 灯下的蓝，而不是中性纯黑。
+
+尺寸、间距、圆角、阴影和动效时长曲线是主题的一部分，统一定义在 `src/styles/base.css` 顶部的 `:root` 中，不放进站点配置。
 
 ### 改字体
 
 `siteConfig.fonts` 控制三套字体栈：
 
-- 中文：**Noto Serif SC**，保留可变字重
-- 英文：**Newsreader**（SIL OFL），保留正体、斜体和光学尺寸轴
-- 代码：等宽字体；数学与 Mermaid 使用各自的专用字体
+- `body`（正文、导航、界面、搜索结果）：**Noto Sans SC** 400–700，中英文同一套笔画
+- `display`（站名、标题、引文、日期数字）：中文 **Noto Serif SC** 500–900，西文与数字 **Newsreader**（光学尺寸轴）
+- `mono`：代码等宽字体；数学与 Mermaid 使用各自的专用字体
+
+强调（`<em>`）使用中文着重号而不是斜体，因此不再请求斜体字形。
 
 构建时从 `https://fonts.googleapis.cn/css2` 获取字体定义，访问者直接从 `https://fonts.gstatic.cn` 下载 WOFF2 字体。首页、站内换页和搜索结果中的动态文字都使用在线字体，不加载本地字体文件作为兜底。原自托管字体文件、打包依赖、构建分支和导航包的 Base64 字体传输代码已移除。
 
-生产构建为每页中文请求一个按文字裁剪的在线子集；Newsreader 正体在全站共用，斜体只请求该页实际使用的文字，通常共 3 个字体请求。斜体收集覆盖日期、语义标签、内联样式和主题组件；遇到未知样式时保守使用完整 Latin 斜体字集，不猜测 CSS 层叠。字重、光学尺寸和字形保持不变。HTML 提前连接字体域名并预加载确切的字体 URL，无须先下载远程 CSS 再发现字体。动态文字所需的通用字体声明在首次搜索时才加载，其字体文件也全部来自在线源；导航 JSON 只包含文档，不再内嵌字体字节。构建期缓存位于 `node_modules/.cache/onpaper-google-cn/`，其中下载的字体只用于核验真实字形，不作为网站字体后备。开发服务器也使用在线字体，但使用通用分片；比较实际访问速度请使用 `npm run build` 和 `npm run preview`。
+生产构建每页固定 3 个字体请求：全站共用的 Newsreader 西文子集、该页正文用到的 Noto Sans SC 子集，以及只包含“显示字体”文字的 Noto Serif SC 子集。构建时会读取 CSS 中使用 `var(--font-display)` 的选择器，只收集这些元素里的文字；遇到无法匹配的写法（嵌套规则、别名变量等）时保守地把整页文字都算作显示文字，不猜测 CSS 层叠。字重、光学尺寸和字形保持不变。HTML 提前连接字体域名并预加载确切的字体 URL，无须先下载远程 CSS 再发现字体。动态文字所需的通用字体声明在首次搜索时才加载，其字体文件也全部来自在线源；导航 JSON 只包含文档，不再内嵌字体字节。构建期缓存位于 `node_modules/.cache/onpaper-google-cn/`，其中下载的字体只用于核验真实字形，不作为网站字体后备。开发服务器也使用在线字体，但使用通用分片；比较实际访问速度请使用 `npm run build` 和 `npm run preview`。
 
 第三方字体 CSS 与缓存数据都经过同一套校验，并只序列化允许的字体描述符；只接受指定 HTTPS 字体源，不跟随重定向，限制 CSS 和字体响应体大小。搜索中的额外字体准备不阻塞后续查询或换页，关闭搜索及换页会使旧结果失效。
 
@@ -419,14 +431,17 @@ slug 只接受小写字母、数字和连字符，最长 96 字符。KV 未绑�
 
 ## 设计说明
 
-- **布局**：正文列 + 右侧固定窄栏（刊头、导航、搜索、主题、页脚）；移动端折叠为顶部导航和单列列表
-- **刊头**：只保留大号「纸上留白」和副标题，去掉卷号与英文小字
-- **首页**：文章列表 + 分页，不做营销式 hero；列表标题、描述和分隔线与内容列同宽
-- **文章页**：宽屏桌面左侧固定层级目录，窄屏回退顶部目录面板；宽屏标题左侧固定「← 返回」，较窄宽度放在标题上方
-- **归档**：按年份分组的纵向时间线 + 标签索引
-- **颜色**：平涂背景，没有渐变和装饰光效
-- **动效**：页面过渡、滚动渐入、主题圆形揭示；优先使用透明度与 transform，全部尊重 `prefers-reduced-motion`
-- **图标**：全部为内联 SVG 或 CSS 形状
+整个主题围绕一个想法：**页边也是页面的一部分**。
+
+- **书脊**：桌面端左侧是一条窄栏，「纸上留白」竖排站立，像书脊上的题签；下面是副标题、导航与搜索 / 主题按钮。平板和手机改为顶部横排，向下阅读时自动让出空间，向上滚动立即回来
+- **页边注**：页面网格是「页边列 · 正文列 · 右侧栏」。日期、年份、阅读时长和标签写在正文左侧的页边，像读书时的铅笔批注；窄屏时折回正文上方
+- **首页**：站点简介按句分行作为开篇，文章列表像账本一样只在年份变化处写一次年份；置顶文章更大、写全日期
+- **文章页**：标题与正文之间没有装饰；页边注随阅读停留在视线旁；宽屏右侧是目录，较窄时回到正文上方的折叠目录；文末是分享、上一篇 / 下一篇和同标签文章
+- **归档**：大号年份挂在页边，标签像书后的索引一样排成一行，篇数写成上标
+- **友链**：通讯录式的一行一位，不做卡片网格
+- **字体**：正文无衬线，标题与引文换成宋体粗字重——沿用中文书籍“引文换字体”的习惯，不用左边框和底色框
+- **动效**：首次访问时站名逐字“洇”出（每次会话一次）；导航当前位置的短竖线 / 下划线在换页时滑到新位置；翻页时内容沿翻页方向轻移；图片灯箱从原图位置放大并回到原处；主题切换从按钮处圆形揭示；复制代码在按钮本身确认。全部只动 transform 与 opacity，按组件分别处理 `prefers-reduced-motion`
+- **图标**：全部为内联 SVG
 
 ---
 
@@ -441,6 +456,13 @@ slug 只接受小写字母、数字和连字符，最长 96 字符。KV 未绑�
 
 ## 许可
 
-[MIT](LICENSE) · 字体 Newsreader 与 Noto Serif SC 使用 SIL Open Font License 1.1，见 `public/fonts/` 下的授权文件。
+[MIT](LICENSE) · 字体 Newsreader、Noto Serif SC 与 Noto Sans SC 使用 SIL Open Font License 1.1，见 `public/fonts/` 下的授权文件。
 
 *纸上留白 · 在字与字之间，留一点呼吸。*
+
+## 分享图与站点地图
+
+- 每篇文章在构建时生成自己的分享图 `/og/<slug>.png`（1200×630）：左侧竖排站名，右侧日期、标题和摘要前 60 个字。字体来自 Google Fonts 中国镜像，只按图里用到的字取子集，缓存在 `node_modules/.cache/onpaper-og/`。其余页面仍用 `public/og.png`。
+- 文章页的「分享卡片」带二维码，扫码打开当前文章；二维码在浏览器里本地生成（npm 包 `uqr`），不请求任何外部服务。
+- 构建会生成 `sitemap-index.xml` 和同内容的 `sitemap.xml`，文章条目带 `lastmod`（取 `updated`，没有则取 `published`）。**上线前务必把 `src/config.ts` 的 `url` 改成你的真实域名**，否则 sitemap、robots.txt、canonical 和分享图地址都会指向示例域名。
+- 404 页面是 `src/pages/404.astro`，构建为 `dist/404.html`，Cloudflare Pages 会自动用它响应不存在的地址。

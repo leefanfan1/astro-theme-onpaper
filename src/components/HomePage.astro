@@ -3,6 +3,8 @@ import Pagination from '@/components/Pagination.astro'
 import PostList from '@/components/PostList.astro'
 import { siteConfig } from '@/config'
 import type { Post } from '@/utils/posts'
+import musicCache from '@/data/music-cache.json'
+import { formatDate, getAllPosts, stripMarkdown } from '@/utils/posts'
 
 interface Props {
   posts: Post[]
@@ -19,18 +21,225 @@ const {
 } = Astro.props
 
 const isFirst = page === 1
+const allPosts = await getAllPosts()
+
+// 这个站: counted from the posts themselves at build time. The day count is
+// refreshed in the browser so it stays right between builds.
+const firstPost = allPosts.at(-1)?.data.published
+const characters = allPosts.reduce((sum, post) => sum + (stripMarkdown(post.body ?? '').match(/\p{Script=Han}/gu)?.length ?? 0), 0)
+const words = characters >= 10000
+  ? { value: Number((characters / 10000).toFixed(1)), decimals: 1, suffix: '万' }
+  : { value: Math.round(characters / 100) * 100, decimals: 0, suffix: '' }
+const days = firstPost ? Math.max(1, Math.floor((Date.now() - firstPost.getTime()) / 86400000)) : 0
+const facts = [
+  { label: '文章', value: allPosts.length, decimals: 0, suffix: '', unit: '篇' },
+  { label: '约计字数', ...words, unit: '字' },
+  ...(firstPost ? [{ label: '写了', value: days, decimals: 0, suffix: '', unit: '天', since: firstPost.toISOString() }] : []),
+]
+const hasShelf = Object.values(siteConfig.shelf).some(list => list.length > 0)
+
+// 最近: in config. The music entry borrows title, artist and cover from the
+// music card cache when that link has been resolved before.
+const now = siteConfig.now as {
+  listening?: { url?: string, title?: string }
+  reading?: { title?: string, creator?: string }
+  watching?: { title?: string, creator?: string }
+}
+type CachedMusic = { title?: string, artist?: string, cover?: string }
+const cached = now.listening?.url ? (musicCache as Record<string, CachedMusic>)[now.listening.url] : undefined
+const coverUrl = (() => {
+  try {
+    const cover = cached?.cover ? new URL(cached.cover) : null
+    if (!cover || cover.protocol !== 'https:') return ''
+    if (/^p\d+\.music\.126\.net$/.test(cover.hostname)) cover.searchParams.set('param', '120y120')
+    return cover.href
+  }
+  catch { return '' }
+})()
+const listening = now.listening && (cached?.title || now.listening.title)
+  ? { title: cached?.title || now.listening.title!, artist: cached?.artist, url: now.listening.url, cover: coverUrl }
+  : null
+const reading = now.reading?.title ? now.reading : null
+const watching = now.watching?.title ? now.watching : null
 ---
 
 {isFirst
-  ? <h1 class="sr-only">{siteConfig.title} — {siteConfig.subtitle}</h1>
-  : <h1 class="sr-only">第 {page} 页 · 文章</h1>}
+  ? <h1 class="sr-only">{siteConfig.title}：{siteConfig.subtitle}</h1>
+  : <h1 class="sr-only">文章，第 {page} 页</h1>}
 
-<section class="home-list" aria-label={isFirst ? '文章列表' : `第 ${page} 页文章`}>
-  <PostList posts={posts} />
+<section class="post-list-section" aria-label={isFirst ? '文章列表' : `第 ${page} 页文章`}>
+  <PostList posts={posts} featurePinned={isFirst} />
 </section>
 
 <div class="home-pager">
   <Pagination currentPage={page} totalPages={totalPages} />
 </div>
 
+<aside class="home-aside" aria-label="最近与这个站">
+  {(listening || reading || watching) && (
+    <section class="aside-block now" aria-labelledby="now-title">
+      <h2 class="home-aside__title" id="now-title">最近</h2>
+      <dl class="now__list">
+        {listening && (
+          <div class="now__item now__item--music">
+            <dt>在听</dt>
+            <dd>
+              {listening.url
+                ? (
+                    <a class="now__music" href={listening.url} target="_blank" rel="noopener noreferrer">
+                      {listening.cover && <span class="now__disc"><img src={listening.cover} alt="" width="48" height="48" loading="lazy" decoding="async" /></span>}
+                      <span class="now__text"><span class="now__title">《{listening.title}》</span>{listening.artist && <span class="now__creator">{listening.artist}</span>}</span>
+                    </a>
+                  )
+                : <span class="now__title">《{listening.title}》</span>}
+            </dd>
+          </div>
+        )}
+        {reading && (
+          <div class="now__item">
+            <dt>在读</dt>
+            <dd><span class="now__title">《{reading.title}》</span>{reading.creator && <span class="now__creator">{reading.creator}</span>}</dd>
+          </div>
+        )}
+        {watching && (
+          <div class="now__item">
+            <dt>在看</dt>
+            <dd><span class="now__title">《{watching.title}》</span>{watching.creator && <span class="now__creator">{watching.creator}</span>}</dd>
+          </div>
+        )}
+      </dl>
+    </section>
+  )}
+
+  <section class="aside-block site-facts" aria-labelledby="facts-title">
+    <h2 class="home-aside__title" id="facts-title">这个站</h2>
+    <dl class="facts">
+      {facts.map(fact => {
+        const text = fact.value.toFixed(fact.decimals) + fact.suffix
+        return (
+          <div class="facts__row">
+            <dt>{fact.label}</dt>
+            <dd>
+              <b
+                data-count={fact.value}
+                data-decimals={fact.decimals}
+                data-suffix={fact.suffix}
+                data-days-since={'since' in fact ? fact.since : undefined}
+                data-final-text={text}
+                style={`min-width:${text.length + 1}ch`}
+              >{text}</b>
+              {fact.unit}
+            </dd>
+          </div>
+        )
+      })}
+    </dl>
+    {firstPost && <p class="facts__since">第一篇写于 {formatDate(firstPost)}</p>}
+  </section>
+
+  <nav class="aside-links" aria-label="更多">
+    {hasShelf && (
+      <a class="aside-link" href="/shelf/">
+        <svg class="aside-link__icon aside-link__icon--shelf" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path class="spine spine--a" d="M5.5 4.5v15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          <path class="spine spine--b" d="M9.5 4.5v15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          <path class="spine spine--c" d="M14 6l3.8 13.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          <path d="M4.5 19.5h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+        </svg>
+        <span>书单 · 片单 · 歌单</span>
+      </a>
+    )}
+    <a class="aside-link" href="/rss.xml" target="_blank" rel="noopener noreferrer">
+      <svg class="aside-link__icon aside-link__icon--rss" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path class="wave wave--outer" d="M5 5a14 14 0 0 1 14 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" pathLength="1"></path>
+        <path class="wave wave--inner" d="M5 11a8 8 0 0 1 8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" pathLength="1"></path>
+        <circle cx="6" cy="18" r="1.4" fill="currentColor"></circle>
+      </svg>
+      <span>用 RSS 订阅</span>
+    </a>
+  </nav>
+</aside>
+
 <span class="sr-only">共 {totalPosts} 篇文章</span>
+
+<script>
+  // The right column arrives as if being written into a ledger: the heading
+  // and links are inked in left to right, each row's rule is drawn, and the
+  // figures count up to their value. The text elements themselves are never
+  // animated (that changes their antialiasing and reads as a twitch): covers
+  // in the paper colour slide away, the rules are pseudo-elements, and the
+  // figures only change their digits.
+  const SETTLE = 'cubic-bezier(0.22, 1, 0.36, 1)'
+  const reduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  function inkIn(element: HTMLElement, delay: number) {
+    const cover = document.createElement('i')
+    cover.className = 'ink-cover ink-cover--line'
+    cover.setAttribute('aria-hidden', 'true')
+    cover.dataset.transient = ''
+    element.append(cover)
+    const motion = cover.animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], {
+      duration: 620, delay, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', fill: 'both',
+    })
+    const done = () => cover.remove()
+    motion.finished.then(done, done)
+  }
+
+  function countUp(figure: HTMLElement, delay: number) {
+    const target = Number(figure.dataset.count)
+    const decimals = Number(figure.dataset.decimals || 0)
+    const suffix = figure.dataset.suffix || ''
+    // Count toward the stored value, never toward whatever is on screen.
+    const final = target.toFixed(decimals) + suffix
+    const start = performance.now() + delay
+    const duration = 1200
+    figure.textContent = (0).toFixed(decimals) + suffix
+    const step = (now: number) => {
+      if (!figure.isConnected) return
+      const t = Math.min(1, Math.max(0, (now - start) / duration))
+      const eased = 1 - (1 - t) ** 4
+      figure.textContent = t >= 1 ? final : (target * eased).toFixed(decimals) + suffix
+      if (t < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+  }
+
+  function arrive() {
+    const aside = document.querySelector<HTMLElement>('.home-aside')
+    // Runs once per page: page-load and the initial call can both fire.
+    if (!aside || aside.dataset.arrived === 'true' || !aside.getClientRects().length) return
+    aside.dataset.arrived = 'true'
+    // Days since the first article, counted on the reader's clock.
+    aside.querySelectorAll<HTMLElement>('[data-days-since]').forEach((figure) => {
+      const since = Date.parse(figure.dataset.daysSince!)
+      if (Number.isFinite(since)) {
+        const days = String(Math.max(1, Math.floor((Date.now() - since) / 86400000)))
+        figure.textContent = days
+        figure.dataset.count = days
+        figure.dataset.finalText = days
+      }
+    })
+    if (reduce()) return
+    // The column is the same on every page of the list: play its arrival
+    // once per visit, not again on every 下一页.
+    try {
+      if (sessionStorage.getItem('onpaper:aside-arrived') === '1') return
+      sessionStorage.setItem('onpaper:aside-arrived', '1')
+    }
+    catch { return }
+    aside.querySelectorAll<HTMLElement>('.home-aside__title, .now__item dd').forEach((element, index) => inkIn(element, 80 + index * 110))
+    aside.querySelectorAll<HTMLElement>('.facts__row').forEach((row, index) => {
+      const delay = 420 + index * 140
+      row.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], {
+        duration: 900, delay, easing: SETTLE, fill: 'backwards', pseudoElement: '::after',
+      })
+      const figure = row.querySelector<HTMLElement>('[data-count]')
+      if (figure) countUp(figure, delay + 80)
+    })
+    const rest = [...aside.querySelectorAll<HTMLElement>('.facts__since, .aside-link')]
+    rest.forEach((element, index) => inkIn(element, 900 + index * 120))
+  }
+
+  document.addEventListener('astro:page-load', arrive)
+  if (document.readyState !== 'loading') arrive()
+</script>

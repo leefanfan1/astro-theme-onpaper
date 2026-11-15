@@ -2,46 +2,60 @@
 import type { Post } from '@/utils/posts'
 import {
   formatDate,
+  formatMonthDay,
+  formatYear,
   getPostDescription,
   getPostHref,
+  getTagHref,
+  visibleTags,
 } from '@/utils/posts'
 
 interface Props {
   posts: Post[]
+  /** Pinned entries lead the home page at a larger size. */
+  featurePinned?: boolean
 }
 
-const { posts } = Astro.props
+const { posts, featurePinned = false } = Astro.props
+
+// Like a ledger, the year is written once where it changes. Pinned entries
+// stand outside the timeline, so they carry their full date instead.
+let previousYear = ''
+const entries = posts.map((post) => {
+  const pinned = featurePinned && post.data.pin > 0
+  const year = formatYear(post.data.published)
+  const showYear = !pinned && year !== previousYear
+  if (!pinned) previousYear = year
+  return { post, pinned, year, showYear }
+})
 ---
 
 <ol class="post-list">
-  {posts.map((post, index) => {
+  {entries.map(({ post, pinned, year, showYear }) => {
     const excerpt = getPostDescription(post, 88)
+    const tags = visibleTags(post.data.tags)
 
     return (
-      <li
-        class="post-item"
-        data-reveal
-        style={`--reveal-delay:${Math.min(index, 5) * 55}ms`}
-      >
-        <article class="post-row">
+      <li class:list={['post-item', pinned && 'post-item--featured']}>
+        <div class="post-meta">
+          {showYear && <span class="post-year" aria-hidden="true">{year}</span>}
+          {pinned && <span class="post-pin">置顶</span>}
+          <time datetime={post.data.published.toISOString()}>
+            {pinned ? formatDate(post.data.published) : formatMonthDay(post.data.published)}
+            {!pinned && <span class="sr-only">，{year} 年</span>}
+          </time>
+        </div>
+
+        <article class="post-body">
           <h2 class="post-title">
             <a href={getPostHref(post)}>{post.data.title}</a>
           </h2>
-
-          <div class="post-meta">
-            {post.data.pin > 0 && (
-              <span class="pinned-badge" role="img" aria-label="置顶文章" title="置顶文章">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M9.2 4.2h5.6l-.9 4.7 2.8 2.8v1.1H7.3v-1.1l2.8-2.8-.9-4.7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
-                  <path d="M12 12.8v7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-                </svg>
-                <span>PINNED</span>
-              </span>
-            )}
-            <time datetime={post.data.published.toISOString()}>{formatDate(post.data.published)}</time>
-          </div>
-
           {excerpt && <p class="post-desc">{excerpt}</p>}
+          {tags.length > 0 && (
+            <ul class="post-tags" aria-label="标签">
+              {tags.map(tag => <li><a href={getTagHref(tag)}>{tag}</a></li>)}
+            </ul>
+          )}
         </article>
       </li>
     )

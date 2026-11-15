@@ -1,42 +1,40 @@
 ---
-import Footer from '@/components/Footer.astro'
 import ThemeToggle from '@/components/ThemeToggle.astro'
 import { siteConfig } from '@/config'
+import { isNavActive } from '@/utils/nav'
 
 const pathname = Astro.url.pathname
-const isArticleList = pathname === '/' || pathname.startsWith('/page/') || pathname.startsWith('/posts/')
-
-const nav = siteConfig.nav.map((item, index) => {
-  const active = item.href === '/'
-    ? isArticleList
-    : pathname.startsWith(item.href)
-  return { ...item, active, num: String(index + 1).padStart(2, '0') }
-})
+const nav = siteConfig.nav.map(item => ({ ...item, active: isNavActive(item.href, pathname) }))
+// Set vertically, the subtitle breaks where its punctuation pauses; the
+// full sentence (with punctuation) stays available to screen readers.
+const subtitleLines = siteConfig.subtitle.split(/[，。、；！？,.;!?\s]+/).filter(Boolean)
 ---
 
+<!-- The spine: the site's name stands upright on its own panel, like the
+     title on a book's spine. Everything in it shares one centre line. -->
 <aside class="site-rail" aria-label="站点信息与导航">
   <div class="rail-masthead">
-    <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} 首页`}>
-      <span class="rail-wordmark__cn">{siteConfig.title}</span>
+    <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} 首页`} data-wordmark>
+      <span class="rail-wordmark__cn" aria-hidden="true" style={`--chars:${[...siteConfig.title].length}`}>{[...siteConfig.title].map(char => <span>{char}</span>)}</span>
     </a>
-    <p class="rail-subtitle">{siteConfig.subtitle}</p>
+    <p class="rail-subtitle">
+      <span class="sr-only">{siteConfig.subtitle}</span>
+      <span class="rail-subtitle__lines" aria-hidden="true">{subtitleLines.map(line => <span>{[...line].map(char => <span>{char}</span>)}</span>)}</span>
+    </p>
   </div>
 
   <nav aria-label="主导航">
-    <ul class="rail-nav">
+    <ul class="rail-nav" data-nav-indicator="y">
       {nav.map(item => (
         <li>
-          <a href={item.href} aria-current={item.active ? 'page' : undefined}>
-            <span class="rail-nav__num" aria-hidden="true">{item.num}</span>
-            <span class="rail-nav__label"><span class="rail-nav__label-text">{item.label}</span></span>
-          </a>
+          <a href={item.href} aria-current={item.active ? 'page' : undefined}>{item.label}</a>
         </li>
       ))}
     </ul>
   </nav>
 
   <div class="rail-actions">
-    <button class="text-button" type="button" data-search-trigger>
+    <button class="text-button" type="button" data-search-trigger aria-haspopup="dialog">
       <svg class="text-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.6"></circle>
         <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
@@ -45,6 +43,4 @@ const nav = siteConfig.nav.map((item, index) => {
     </button>
     <ThemeToggle />
   </div>
-
-  <Footer class="rail-footer" />
 </aside>

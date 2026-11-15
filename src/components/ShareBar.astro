@@ -23,7 +23,7 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
 ---
 
 <div class="share-bar" aria-label="分享这篇文章">
-  <span class="share-bar__label">分享</span>
+  <span class="share-bar__label">分享到</span>
 
   <a class="share-button" href={xHref} target="_blank" rel="noopener noreferrer" aria-label="分享到 X" title="X">
     <XIcon fill="currentColor" aria-hidden="true" />
@@ -58,37 +58,43 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.15rem;
-    margin-top: 1.2rem;
+    gap: var(--space-1);
   }
 
   .share-bar__label {
-    margin-right: 0.55rem;
-    padding-right: 0.6rem;
-    border-right: 1px solid var(--line);
+    margin-right: var(--space-3);
     color: var(--ink-faint);
-    font-size: 0.64rem;
+    font-size: var(--text-xs);
     line-height: 1;
     letter-spacing: 0.1em;
-    text-transform: uppercase;
   }
 
   .share-button {
     display: grid;
     place-items: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
     padding: 0;
     border: 0;
-    border-radius: 999px;
+    border-radius: var(--radius-round);
     background: transparent;
-    color: color-mix(in oklab, var(--ink-soft) 62%, transparent);
-    transition: color 0.2s ease, background 0.2s ease;
+    color: var(--ink-faint);
+    transition:
+      color var(--dur-hover) ease,
+      background-color var(--dur-hover) ease,
+      transform var(--dur-hover) var(--ease-out);
   }
 
-  .share-button:hover {
-    color: var(--ink);
-    background: var(--surface);
+  .share-button:active {
+    transform: scale(0.94);
+    transition-duration: 0s;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .share-button:hover {
+      color: var(--ink);
+      background: color-mix(in srgb, var(--ink) 6%, transparent);
+    }
   }
 
   .share-button svg {
@@ -101,7 +107,7 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
   }
 
   .share-button.copied {
-    color: var(--accent-strong);
+    color: var(--accent);
     background: var(--accent-soft);
   }
 
@@ -113,10 +119,23 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
     display: block;
   }
 
+  @media (prefers-reduced-motion: no-preference) {
+    .share-button.copied .share-icon--check {
+      animation: share-check-in 260ms var(--ease-out);
+    }
+  }
+
+  @keyframes share-check-in {
+    from {
+      opacity: 0;
+      scale: 0.6;
+    }
+  }
+
   .share-status {
-    margin-left: 0.35rem;
-    color: var(--accent-strong);
-    font-size: 0.68rem;
+    margin-left: var(--space-2);
+    color: var(--accent);
+    font-size: var(--text-xs);
   }
 
   .share-status:empty {
@@ -130,20 +149,19 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
     }
   }
 
-  /* Tablets / larger phones: keep label and icons on one compact line. */
-  @media (max-width: 700px) and (min-width: 360px) {
+  /* Phones: the label takes its own line so the seven targets share one row. */
+  @media (max-width: 479px) and (min-width: 360px) {
     .share-bar {
-      flex-wrap: wrap;
-      gap: 0.2rem 0.1rem;
+      justify-content: space-between;
+      gap: 0;
     }
 
-    .share-button {
-      width: 2.35rem;
-      height: 2.35rem;
+    .share-bar__label {
+      flex-basis: 100%;
+      margin: 0 0 var(--space-2);
     }
   }
 
-  /* Narrow phones: label gets its own row, icons share one row. */
   @media (max-width: 359px) {
     .share-bar {
       display: grid;
@@ -152,16 +170,10 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
       width: 100%;
     }
 
-    .share-bar__label {
-      grid-column: 1 / -1;
-      margin: 0 0 0.15rem;
-      padding: 0;
-      border-right: 0;
-    }
-
+    .share-bar__label,
     .share-status {
       grid-column: 1 / -1;
-      margin: 0.1rem 0 0;
+      margin: 0 0 0.15rem;
     }
 
     .share-button {
@@ -170,13 +182,6 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
       height: auto;
       aspect-ratio: 1;
       justify-self: center;
-    }
-  }
-
-  /* Very small screens: fall back to a two-row icon grid. */
-  @media (max-width: 300px) {
-    .share-bar {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 </style>

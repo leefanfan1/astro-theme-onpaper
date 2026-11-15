@@ -182,7 +182,7 @@ async function render(rawQuery: string) {
 
     const meta = document.createElement('span')
     meta.className = 'search-result__meta'
-    meta.textContent = [item.date, ...item.tags].filter(Boolean).join(' · ')
+    meta.textContent = [item.date, item.tags.join('、')].filter(Boolean).join('　')
 
     const text = document.createElement('span')
     text.className = 'search-result__excerpt'
@@ -203,7 +203,15 @@ async function render(rawQuery: string) {
     return
   }
   if (current !== renderVersion) return
+  const changed = resultsEl.textContent !== (results.textContent ?? '')
   resultsEl.replaceChildren(results)
+  // A new result set settles in place so the eye registers the change
+  // without the list jumping; typing the same results again stays still.
+  if (changed && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    resultsEl.animate([{ opacity: 0.45, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }], {
+      duration: 160, easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+    })
+  }
 }
 
 function setTriggerState(open: boolean) {
@@ -278,7 +286,7 @@ function closeSearch() {
     closeTimer = undefined
     closingDialog.classList.remove('is-closing')
     if (closingDialog.open) closingDialog.close()
-  }, 240)
+  }, 160)
 }
 
 const boundSearchDialogs = new WeakSet<HTMLDialogElement>()

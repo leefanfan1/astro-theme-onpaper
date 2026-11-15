@@ -11,8 +11,7 @@ const { slug } = Astro.props
 {
   siteConfig.features.views && (
     <span class="view-count" data-view-count data-slug={slug} hidden aria-live="polite">
-      <span class="article-meta__dot" aria-hidden="true"></span>
-      阅读 <b data-view-value>—</b>
+      <b data-view-value>—</b> 次阅读
     </span>
   )
 }

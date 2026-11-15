@@ -1,11 +1,11 @@
 ---
 import PostList from '@/components/PostList.astro'
+import TagIndex from '@/components/TagIndex.astro'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import {
   getAllPosts,
   getAllTags,
   getPostsByTag,
-  getTagHref,
 } from '@/utils/posts'
 
 export async function getStaticPaths() {
@@ -31,34 +31,22 @@ const tags = getAllTags(posts)
   title={`标签：${tag}`}
   description={`标签「${tag}」下的全部文章。`}
 >
-  <a class="tag-back" href="/tags/">
-    <span aria-hidden="true">←</span>
-    全部标签
-  </a>
-
-  <header class="tag-header" data-reveal>
-    <h1>{tag}</h1>
-    <span>{taggedPosts.length} 篇文章</span>
+  <header class="page-head">
+    <a class="page-back" href="/tags/">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      归档
+    </a>
+    <h1 class="page-title">{tag}</h1>
+    <p class="page-lead">这个标签下有 {taggedPosts.length} 篇文章。</p>
   </header>
 
-  <div style="margin-top: 1.6rem;">
+  <section class="post-list-section" aria-label={`标签「${tag}」的文章`}>
     <PostList posts={taggedPosts} />
-  </div>
+  </section>
 
-  <div style="margin-top: 2.4rem;">
-    <ul class="tag-list" aria-label="全部标签">
-      {tags.map(item => (
-        <li>
-          <a
-            class="tag-chip"
-            href={getTagHref(item.tag)}
-            aria-current={item.tag === tag ? 'page' : undefined}
-          >
-            {item.tag}
-            <span class="tag-chip__count">{item.count}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
+  <div class="tag-more">
+    <TagIndex {tags} current={tag} title="其他标签" />
   </div>
 </BaseLayout>

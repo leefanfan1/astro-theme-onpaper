@@ -10,6 +10,8 @@ import { fetchHostedBytes, parseHostedCSS, serializeHostedCSS, validateDefinitio
 import { analyzeFontText } from './font-text.mjs'
 
 const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 20)
+// Alias words must not start with a digit: WebKit then serializes the family
+// name with quotes, and every word after the prefix is a hex hash.
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;')
 const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 
@@ -36,23 +38,40 @@ function advertisedRanges(css) {
   return (family, c) => (families.get(family) ?? []).some(([a, b]) => c.codePointAt(0) >= a && c.codePointAt(0) <= b)
 }
 
+// Three roles, three families. Latin display text and figures use Newsreader;
+// Chinese display text uses Noto Serif SC at heavy weights; all running text,
+// UI and dynamic text use Noto Sans SC, which carries its own Latin.
+const FAMILY_QUERY = {
+  'Newsreader': 'Newsreader:opsz,wght@6..72,400..700',
+  'Noto Serif SC': 'Noto Serif SC:wght@500..900',
+  'Noto Sans SC': 'Noto Sans SC:wght@400..700',
+}
+const complete = definitions => Object.keys(FAMILY_QUERY).every(family => definitions.some(face => face.family === family)) && definitions.every(face => face.range)
+
 export async function hostedFontCSS(cache = new URL('../../node_modules/.cache/onpaper-google-cn/', import.meta.url)) {
   await mkdir(cache, { recursive: true })
-  const key = hash('google-cn-full-v3-native-family-names') + '.css'
+  const key = hash('google-cn-full-v4-display-body-families') + '.css'
   try {
     const definitions = parseHostedCSS(await readFile(new URL(key, cache), 'utf8'))
-    if (!definitions.some(face => face.family === 'Newsreader') || !definitions.some(face => face.family === 'Noto Serif SC') || definitions.some(face => !face.range)) throw new Error('Incomplete cached font CSS')
+    if (!complete(definitions)) throw new Error('Incomplete cached font CSS')
     return serializeHostedCSS(definitions)
   }
   catch (error) { if (error.code !== 'ENOENT') throw error }
-  const query = new URLSearchParams({ family: 'Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700', display: 'block' })
-  query.append('family', 'Noto Serif SC:wght@200..900')
+  const query = new URLSearchParams({ display: 'block' })
+  for (const family of Object.values(FAMILY_QUERY)) query.append('family', family)
   const bytes = await fetchHostedBytes('https://fonts.googleapis.cn/css2?' + query, 'css', { 'User-Agent': ua })
   const definitions = parseHostedCSS(bytes.toString('utf8'))
-  if (!definitions.some(face => face.family === 'Newsreader') || !definitions.some(face => face.family === 'Noto Serif SC') || definitions.some(face => !face.range)) throw new Error('Incomplete hosted font CSS')
+  if (!complete(definitions)) throw new Error('Incomplete hosted font CSS')
   const css = serializeHostedCSS(definitions)
   await writeFile(new URL(key, cache), css)
   return css
+}
+
+// Runtime text (search results) is set in the body family. Leaving the serif
+// shards out of the deferred sheet keeps them from ever being requested for
+// running text that merely shares a page with display headings.
+function dynamicFontCSS(css) {
+  return serializeHostedCSS(parseHostedCSS(css).filter(face => face.family !== 'Noto Serif SC'))
 }
 
 export function hostedFontDevelopment(server) {
@@ -61,7 +80,8 @@ export function hostedFontDevelopment(server) {
     try {
       const css = (await hostedFontCSS())
         .replaceAll('"Newsreader"', '"OnPaper Hosted Newsreader"')
-        .replaceAll('"Noto Serif SC"', '"OnPaper Hosted Noto"')
+        .replaceAll('"Noto Serif SC"', '"OnPaper Hosted Serif"')
+        .replaceAll('"Noto Sans SC"', '"OnPaper Hosted Sans"')
       res.writeHead(200, { 'Content-Type': 'text/css; charset=utf-8' }).end(css)
     } catch (error) { next(error) }
   })
@@ -76,10 +96,8 @@ async function writeHostedPageFonts({ output, fonts, pages, logger }) {
   const requests = new Map()
   async function request(family, text, style = 'normal') {
     if (!text) return []
-    const query = new URLSearchParams({
-      family: family === 'Newsreader' ? (style === 'italic' ? 'Newsreader:ital,opsz,wght@1,6..72,400..700' : 'Newsreader:opsz,wght@6..72,400..700') : 'Noto Serif SC:wght@200..900',
-      display: 'block', text,
-    })
+    if (style !== 'normal') throw new Error('Only upright hosted faces are configured')
+    const query = new URLSearchParams({ family: FAMILY_QUERY[family], display: 'block', text })
     const endpoint = 'https://fonts.googleapis.cn/css2?' + query
     const key = hash(endpoint)
     if (requests.has(key)) return requests.get(key)
@@ -121,26 +139,34 @@ async function writeHostedPageFonts({ output, fonts, pages, logger }) {
   const latinCharacters = new Set(Array.from({ length: 95 }, (_, i) => String.fromCodePoint(i + 32)))
   for (const page of pages) for (const c of page.characters) if (supports('Newsreader', c)) latinCharacters.add(c)
   const latinText = [...latinCharacters].sort((a, b) => a.codePointAt(0) - b.codePointAt(0)).join('')
-  const dynamicHref = '/fonts/pages/dynamic-' + hash(fullCSS) + '.css'
-  await writeFile(join(output, dynamicHref), fullCSS)
+  const dynamicCSS = dynamicFontCSS(fullCSS)
+  const dynamicHref = '/fonts/pages/dynamic-' + hash(dynamicCSS) + '.css'
+  await writeFile(join(output, dynamicHref), dynamicCSS)
+  const ascii = Array.from({ length: 95 }, (_, i) => String.fromCodePoint(i + 32))
   const shared = await request('Newsreader', latinText)
   const latinCoverage = new Set(shared.flatMap(face => face.characters))
-  const latinAlias = 'OnPaper Latin Google ' + hash(latinText)
+  const latinAlias = 'OnPaper Latin Google h' + hash(latinText)
   let index = 0
   async function worker() {
     while (index < pages.length) {
-      const { path, html, characters, italicCharacters } = pages[index++]
-      const chinese = characters.filter(c => !latinCoverage.has(c) && supports('Noto Serif SC', c)).join('')
-      const body = await request('Noto Serif SC', chinese)
-      const italicText = italicCharacters === null ? latinText : italicCharacters.filter(c => latinCoverage.has(c)).join('')
-      const italic = await request('Newsreader', italicText, 'italic')
-      const bodyAlias = 'OnPaper Page Google ' + hash(chinese)
-      const definitions = [...shared.map(face => ({ ...face, alias: latinAlias })), ...italic.map(face => ({ ...face, alias: latinAlias })), ...body.map(face => ({ ...face, alias: bodyAlias }))]
+      const { path, html, characters, displayCharacters } = pages[index++]
+      // Running text: every page character plus printable ASCII, so typed
+      // search queries never fall back to a local face.
+      const bodyText = [...new Set([...ascii, ...characters])].filter(c => supports('Noto Sans SC', c))
+        .sort((a, b) => a.codePointAt(0) - b.codePointAt(0)).join('')
+      const body = await request('Noto Sans SC', bodyText)
+      // Display text: only characters the CSS sets in the display face. An
+      // unrecognized display rule conservatively falls back to the full page.
+      const displayText = (displayCharacters ?? characters).filter(c => !latinCoverage.has(c) && supports('Noto Serif SC', c)).join('')
+      const display = await request('Noto Serif SC', displayText)
+      const bodyAlias = 'OnPaper Text Google h' + hash(bodyText)
+      const displayAlias = 'OnPaper Display Google h' + hash(displayText)
+      const definitions = [...shared.map(face => ({ ...face, alias: latinAlias })), ...display.map(face => ({ ...face, alias: displayAlias })), ...body.map(face => ({ ...face, alias: bodyAlias }))]
       const covered = new Set(definitions.flatMap(face => face.characters))
       const unavailable = characters.filter(c => !covered.has(c)).join('')
       const rules = definitions.map(face => '@font-face{font-family:"' + face.alias + '";src:url("' + face.url + '") format("woff2");font-style:' + face.style + ';font-weight:' + face.weight + ';font-display:block;unicode-range:' + face.characters.map(c => 'U+' + c.codePointAt(0).toString(16)).join(',') + '}')
       for (const property of ['body', 'display']) {
-        rules.push(':root{--font-' + property + '-web:' + fonts[property].replaceAll('"Newsreader"', '"' + latinAlias + '","Newsreader"').replaceAll('"Noto Serif SC"', '"' + bodyAlias + '","Noto Serif SC"') + '}')
+        rules.push(':root{--font-' + property + '-web:' + fonts[property].replaceAll('"Newsreader"', '"' + latinAlias + '","Newsreader"').replaceAll('"Noto Serif SC"', '"' + displayAlias + '","Noto Serif SC"').replaceAll('"Noto Sans SC"', '"' + bodyAlias + '","Noto Sans SC"') + '}')
       }
       const style = '<style data-onpaper-page-fonts data-provider="google-cn" data-dynamic-css="' + dynamicHref + '" data-characters="' + escape([...covered].join('')) + '" data-unavailable="' + escape(unavailable) + '">' + rules.join('') + '</style>'
       const preloads = definitions.map(face => '<link rel="preload" as="font" type="font/woff2" crossorigin href="' + escape(face.url) + '" data-onpaper-font>').join('')

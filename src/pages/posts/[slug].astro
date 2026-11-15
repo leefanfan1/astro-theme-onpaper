@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content'
 import katexCss from 'katex/dist/katex.min.css?url'
+import ArticleActions from '@/components/ArticleActions.astro'
 import ArticleEnhancements from '@/components/ArticleEnhancements.astro'
 import ReadingProgress from '@/components/ReadingProgress.astro'
 import ShareBar from '@/components/ShareBar.astro'
@@ -11,9 +12,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import type { Post } from '@/utils/posts'
 import {
   formatDate,
-  formatDateLong,
   getAllPosts,
   getPostDescription,
+  getPostHref,
+  getReadingMinutes,
+  getRelatedPosts,
   getTagHref,
   visibleTags,
 } from '@/utils/posts'
@@ -32,6 +35,20 @@ interface Props {
 
 const { post } = Astro.props
 const { Content, headings } = await render(post)
+const allPosts = await getAllPosts()
+const index = allPosts.findIndex(item => item.id === post.id)
+// allPosts runs newest first: the previous article is the older one.
+const previous = allPosts[index + 1]
+const next = allPosts[index - 1]
+const related = getRelatedPosts(allPosts, post, 3).filter(item => item !== previous && item !== next).slice(0, 2)
+// One list to read on with: neighbours first, then articles sharing a tag.
+const readNext = [
+  ...(previous ? [{ label: '上一篇', post: previous, rel: 'prev' }] : []),
+  ...(next ? [{ label: '下一篇', post: next, rel: 'next' }] : []),
+  ...related.map(item => ({ label: '同标签', post: item, rel: undefined })),
+]
+const minutes = getReadingMinutes(post)
+const tags = visibleTags(post.data.tags)
 // Ignore math-looking text inside fenced/inline code examples.
 const mathSource = (post.body ?? '')
   .replace(/```[\s\S]*?```/g, ' ')
@@ -40,7 +57,9 @@ const mathSource = (post.body ?? '')
 const hasMath = /\$[^$\n]+\$|\$\$[\s\S]+?\$\$/.test(mathSource)
 const canonical = new URL(Astro.url.pathname, siteConfig.url).href
 const description = getPostDescription(post, 160) || siteConfig.description
-const ogImage = new URL('/og.png', siteConfig.url).href
+// Each article has its own social image, built by src/pages/og/[slug].png.ts.
+const ogPath = `/og/${post.id}.png`
+const ogImage = new URL(ogPath, siteConfig.url).href
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -66,6 +85,7 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
 <BaseLayout
   title={post.data.title}
   description={description}
+  image={ogPath}
   article
 >
   <Fragment slot="head">
@@ -78,25 +98,28 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
   <article class="article">
     <a class="article-home" href="/" data-article-back aria-label="返回上一页">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg>
       <span>返回</span>
     </a>
 
     <header class="article-header">
       <h1 class="article-title">{post.data.title}</h1>
-
-      <div class="article-meta">
-        <time datetime={post.data.published.toISOString()}>{formatDateLong(post.data.published)}</time>
-        {post.data.updated && (
-          <>
-            <span class="article-meta__dot" aria-hidden="true"></span>
-            <span>更新于 {formatDate(post.data.updated)}</span>
-          </>
-        )}
-        <ViewCount slug={post.id} />
-      </div>
     </header>
+
+    <div class="article-meta">
+      <time datetime={post.data.published.toISOString()}>{formatDate(post.data.published)}</time>
+      {post.data.updated && post.data.updated.getTime() !== post.data.published.getTime() && (
+        <span>更新于 {formatDate(post.data.updated)}</span>
+      )}
+      <span>约 {minutes} 分钟读完</span>
+      <ViewCount slug={post.id} />
+      {tags.length > 0 && (
+        <ul class="article-tags" aria-label="文章标签">
+          {tags.map(tag => <li><a href={getTagHref(tag)}>{tag}</a></li>)}
+        </ul>
+      )}
+    </div>
 
     <TableOfContents {headings} />
 
@@ -105,19 +128,36 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
     </div>
 
     <footer class="article-footer">
-      {visibleTags(post.data.tags).length > 0 && (
-        <ul class="tag-list article-tags" aria-label="文章标签">
-          {visibleTags(post.data.tags).map(tag => (
-            <li>
-              <a class="tag-chip" href={getTagHref(tag)}>{tag}</a>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div class="article-end">
+        <div class="article-tools">
+          <ShareBar title={post.data.title} url={canonical} />
+          <ArticleActions
+            title={post.data.title}
+            url={canonical}
+            date={formatDate(post.data.published)}
+            description={description}
+            slug={post.id}
+          />
+        </div>
 
-      <ShareBar title={post.data.title} url={canonical} />
-
-      </footer>
+        {readNext.length > 0 && (
+          <nav class="read-next" aria-labelledby="read-next-title">
+            <h2 class="read-next__title" id="read-next-title">接着读</h2>
+            <ol>
+              {readNext.map(entry => (
+                <li>
+                  <a href={getPostHref(entry.post)} rel={entry.rel}>
+                    <span class="read-next__label">{entry.label}</span>
+                    <span class="read-next__name"><span class="mark-text">{entry.post.data.title}</span></span>
+                    <time datetime={entry.post.data.published.toISOString()}>{formatDate(entry.post.data.published)}</time>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+      </div>
+    </footer>
   </article>
 
   <ArticleEnhancements />

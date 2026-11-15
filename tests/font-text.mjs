@@ -56,4 +56,21 @@ const chars = value => [...new Set(value)].sort((a, b) => a.codePointAt(0) - b.c
   assert.equal(analyze('<span style="font-style:var(--x)">A</span>').italicCharacters, null)
   assert.equal(analyze('A', 'invalid {').italicCharacters, null)
 }
-console.log('PASS font-text: dates, semantic and inline italics, known selectors, conservative fallback, imports, generated content and emoji')
+{
+  // Display-face characters: only text inside elements the CSS sets in --font-display.
+  const css = '.post-title{font-family:var(--font-display)}.prose h2,.prose blockquote p{font-family:var(--font-display)}.nav a:hover{font-family:var(--font-display)}'
+  const html = '<h2 class="post-title"><a>题目</a></h2><p>正文</p><div class="prose"><h2>小节</h2><blockquote><p>引文</p></blockquote><p>其他</p></div><nav class="nav"><a>导航</a></nav><span>侧</span>'
+  const result = analyze(html, css)
+  assert.deepEqual(result.displayCharacters, chars('题目小节引文导航'))
+  assert.ok(result.characters.includes('正') && result.characters.includes('侧'))
+  // Inline styles and generated content count as display text.
+  assert.ok(analyze('<span style="font-family: var(--font-display)">字</span><b>否</b>').displayCharacters.includes('字'))
+  assert.ok(!analyze('<span style="font-family: var(--font-display)">字</span><b>否</b>').displayCharacters.includes('否'))
+  assert.ok(analyze('<p class="x">A</p>', '.x:before{content:"、"}.x{font-family:var(--font-display)}').displayCharacters.includes('、'))
+  // The display variable definition itself is not a usage; an aliasing custom property is unknown.
+  assert.deepEqual(analyze('<p>甲</p>', ':root{--font-display:var(--font-display-web)}').displayCharacters, [])
+  assert.equal(analyze('<p>甲</p>', ':root{--heading:var(--font-display)}').displayCharacters, null)
+  // Nested rules cannot be matched reliably: fall back to every character.
+  assert.equal(analyze('<p>甲</p>', '.a{&.b{font-family:var(--font-display)}}').displayCharacters, null)
+}
+console.log('PASS font-text: dates, semantic and inline italics, known selectors, conservative fallback, imports, generated content, emoji and display-face text')

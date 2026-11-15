@@ -74,36 +74,39 @@ function initToc() {
     if (!immediate && next === requestedExpanded) return
     requestedExpanded = next
     const version = ++transitionVersion
-    // Preserve opacity when reversing an unfinished animation.
-    const opacity = viewport ? getComputedStyle(viewport).opacity : '1'
+    // Preserve the wipe's position when reversing an unfinished animation.
+    const drawn = viewport ? getComputedStyle(viewport).clipPath : 'none'
+    const clip = drawn && drawn !== 'none' ? drawn : 'inset(0 0 0 0)'
     animation?.cancel()
     animation = undefined
     if (!viewport || immediate || reducedMotion.matches) {
-      viewport?.style.removeProperty('opacity')
+      viewport?.style.removeProperty('clip-path')
       desktop?.removeAttribute('data-closing')
       applyExpanded(next)
       return
     }
-    viewport.style.opacity = opacity
+    viewport.style.clipPath = clip
     desktop?.toggleAttribute('data-closing', !next)
     // Reflow only while invisible. Text never wraps or moves row by row
     // during an animation, and the same navigation remains in the DOM.
-    animation = viewport.animate([{ opacity }, { opacity: 0 }], {
+    // Text is wiped with clip-path rather than faded, so it never changes
+    // antialiasing mid-animation.
+    animation = viewport.animate([{ clipPath: clip }, { clipPath: 'inset(0 0 100% 0)' }], {
       duration: next ? 75 : 65, easing: 'ease-out', fill: 'forwards',
     })
     try { await animation.finished } catch { return }
     if (disposed || version !== transitionVersion) return
-    viewport.style.opacity = '0'
+    viewport.style.clipPath = 'inset(0 0 100% 0)'
     animation.cancel()
     applyExpanded(next)
     desktop?.removeAttribute('data-closing')
     animation = viewport.animate([
-      { opacity: 0, transform: next ? 'translateX(-3px)' : 'translateX(0)' },
-      { opacity: 1, transform: 'translateX(0)' },
-    ], { duration: next ? 210 : 170, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' })
+      { clipPath: 'inset(0 0 100% 0)' },
+      { clipPath: 'inset(0 0 0 0)' },
+    ], { duration: next ? 260 : 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' })
     try { await animation.finished } catch { return }
     if (disposed || version !== transitionVersion) return
-    viewport.style.removeProperty('opacity')
+    viewport.style.removeProperty('clip-path')
     animation.cancel()
     animation = undefined
     updateEdges()
@@ -224,7 +227,7 @@ function initToc() {
     setExpanded(false)
   }
   const onResize = () => {
-    if (window.innerWidth < 1440) { clearTimers(); setExpanded(false, true) }
+    if (window.innerWidth < 1280) { clearTimers(); setExpanded(false, true) }
     scheduleMeasure()
     onScroll()
   }
@@ -248,7 +251,7 @@ function initToc() {
     disposed = true
     ++transitionVersion
     animation?.cancel()
-    viewport?.style.removeProperty('opacity')
+    viewport?.style.removeProperty('clip-path')
     clearTimers()
     cancelAnimationFrame(frame)
     cancelAnimationFrame(measureFrame)

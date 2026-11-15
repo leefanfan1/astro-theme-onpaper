@@ -13,6 +13,7 @@ import { rehypeMermaid } from './src/plugins/rehype-mermaid.mjs'
 import { rehypeStripEntities } from './src/plugins/rehype-strip-entities.mjs'
 import { rehypeTaskListLabels } from './src/plugins/rehype-task-list-labels.mjs'
 import { remarkEditorialExtensions } from './src/plugins/remark-editorial-extensions.mjs'
+import { sitemapAlias, sitemapOptions } from './src/plugins/sitemap-extras.mjs'
 
 export default defineConfig({
   site: siteConfig.url,
@@ -28,7 +29,7 @@ export default defineConfig({
     prefetchAll: false,
     defaultStrategy: 'hover',
   },
-  integrations: [sitemap(), devViewsIntegration(), hostedFontIntegration(siteConfig.fonts)],
+  integrations: [sitemap(sitemapOptions()), sitemapAlias(), devViewsIntegration(), hostedFontIntegration(siteConfig.fonts)],
   markdown: {
     processor: unified({
       remarkPlugins: [

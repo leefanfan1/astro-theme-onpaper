@@ -131,11 +131,25 @@ async function stylesFor(next: Document, base: string) {
   }))
 }
 
+// The landing page is cached from the live DOM, which page scripts may be
+// changing at that moment. Restore the page as delivered: drop temporary
+// decorations (animation covers), put animated figures back to their final
+// text, and clear one-shot markers so the page's entrance can run again.
+function pristineCopy(source: Document) {
+  const copy = source.cloneNode(true) as Document
+  copy.querySelectorAll('[data-transient]').forEach(node => node.remove())
+  copy.querySelectorAll<HTMLElement>('[data-final-text]').forEach((node) => {
+    node.textContent = node.dataset.finalText ?? node.textContent
+  })
+  copy.querySelectorAll('[data-arrived]').forEach(node => node.removeAttribute('data-arrived'))
+  return copy
+}
+
 export function installNavigation() {
   if (installed) return
   installed = true
   readRoutes(document)
-  store(location.href.split('#')[0], Promise.resolve({ document: document.cloneNode(true) as Document, url: location.href.split('#')[0] }))
+  store(location.href.split('#')[0], Promise.resolve({ document: pristineCopy(document), url: location.href.split('#')[0] }))
 
   // Navigation animates the live DOM. Only theme changes need native snapshots;
   // even an immediately skipped native capture can retain WebKit font renderers.
