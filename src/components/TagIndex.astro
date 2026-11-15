@@ -1,0 +1,24 @@
+---
+import { getTagHref } from '@/utils/posts'
+
+interface Props {
+  tags: Array<{ tag: string, count: number }>
+  current?: string
+  title?: string
+}
+
+const { tags, current, title = '按标签' } = Astro.props
+---
+
+<nav class="tag-index" aria-labelledby="tag-index-title">
+  <h2 class="tag-index__title" id="tag-index-title">{title}</h2>
+  <ul>
+    {tags.map(({ tag, count }) => (
+      <li>
+        <a href={getTagHref(tag)} aria-current={tag === current ? 'page' : undefined}>
+          {tag}<span class="tag-index__count"><span class="sr-only">，</span>{count}<span class="sr-only"> 篇</span></span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

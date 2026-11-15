@@ -2,7 +2,7 @@ import postcss from 'postcss'
 
 export const FONT_ORIGIN = 'https://fonts.gstatic.cn'
 const CSS_ORIGIN = 'https://fonts.googleapis.cn'
-const families = new Set(['Newsreader', 'Noto Serif SC'])
+const families = new Set(['Newsreader', 'Noto Serif SC', 'Noto Sans SC'])
 const allowed = new Set(['font-family', 'font-style', 'font-weight', 'font-display', 'font-stretch', 'src', 'unicode-range'])
 
 export function fontURL(value) {

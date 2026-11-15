@@ -1,0 +1,411 @@
+---
+import { siteConfig } from '@/config'
+
+interface Props {
+  title: string
+  url: string
+  date: string
+  description: string
+  slug: string
+}
+
+const { title, url, date, description, slug } = Astro.props
+const { light } = siteConfig.theme
+// Everything the card needs, read by the script below.
+const card = JSON.stringify({
+  title, url, date, description, slug,
+  site: siteConfig.title,
+  author: siteConfig.author,
+  colors: { paper: light.paper, spine: light.surface, ink: light.ink, soft: light.inkSoft, faint: light.inkFaint, accent: light.accent },
+})
+---
+
+<div class="article-actions" data-article-actions data-card={card}>
+  <button class="article-action" type="button" data-cite>
+    <span data-cite-label>复制引用</span>
+  </button>
+  <button class="article-action" type="button" data-card-open aria-haspopup="dialog">
+    分享卡片
+  </button>
+  <button class="article-action" type="button" data-print>
+    打印 / 存成 PDF
+  </button>
+  <!-- Labels written at runtime, listed so this page's font subset has them. -->
+  <span hidden aria-hidden="true">已复制复制失败正在生成卡片生成失败请重试扫码读全文</span>
+</div>
+
+<dialog class="card-dialog" data-card-dialog aria-labelledby="card-dialog-title">
+  <div class="card-dialog__head">
+    <h2 id="card-dialog-title">分享卡片</h2>
+    <button class="card-dialog__close" type="button" data-card-close aria-label="关闭分享卡片">关闭</button>
+  </div>
+  <p class="card-dialog__hint">先在正文里选中一段话再打开，卡片会用你选中的句子；否则用文章摘要。</p>
+  <div class="card-dialog__preview" data-card-preview>
+    <p class="card-dialog__status" data-card-status>正在生成卡片…</p>
+    <img data-card-image alt="" hidden />
+  </div>
+  <div class="card-dialog__actions">
+    <p class="card-dialog__tip">手机上长按图片即可保存。</p>
+    <a class="card-dialog__save" data-card-save download hidden>保存图片</a>
+  </div>
+</dialog>
+
+<script>
+  import { encode } from 'uqr'
+  import { prepareTextFonts } from '@/utils/fonts'
+
+  interface CardData {
+    title: string, url: string, date: string, description: string, slug: string, site: string, author: string
+    colors: { paper: string, spine: string, ink: string, soft: string, faint: string, accent: string }
+  }
+
+  // Remember the last passage selected inside the article: on phones,
+  // tapping a button clears the live selection.
+  let selected = ''
+  document.addEventListener('selectionchange', () => {
+    const selection = window.getSelection()
+    const text = selection?.toString().replace(/\s+/g, ' ').trim() ?? ''
+    const node = selection?.anchorNode
+    const inside = node && (node.nodeType === 1 ? node as Element : node.parentElement)?.closest('#article-content')
+    if (inside && text.length >= 4) selected = text.slice(0, 160)
+  })
+  document.addEventListener('astro:before-swap', () => { selected = '' })
+
+  const flash = (label: HTMLElement, text: string, reset: string) => {
+    label.textContent = text
+    window.setTimeout(() => { label.textContent = reset }, 1600)
+  }
+
+  // Lines broken by width; closing punctuation never starts a line.
+  function wrap(context: CanvasRenderingContext2D, text: string, width: number, maxLines: number) {
+    const lines: string[] = []
+    let line = ''
+    for (const char of [...text]) {
+      if (context.measureText(line + char).width > width && line && !/[，。、；：！？）」』”’,.;:!?)]/.test(char)) {
+        lines.push(line)
+        line = char.trim() ? char : ''
+      }
+      else line += char
+    }
+    if (line) lines.push(line)
+    if (lines.length > maxLines) {
+      lines.length = maxLines
+      lines[maxLines - 1] = lines[maxLines - 1].replace(/.{1}$/u, '…')
+    }
+    return lines
+  }
+
+  // The page being shared, as the reader reached it (the configured site
+  // URL may still be a placeholder).
+  const pageUrl = () => new URL(location.pathname, location.origin).href
+
+  // A line that must fit: cut with an ellipsis.
+  function fit(context: CanvasRenderingContext2D, text: string, width: number) {
+    if (context.measureText(text).width <= width) return text
+    let cut = text
+    while (cut && context.measureText(`${cut}…`).width > width) cut = cut.slice(0, -1)
+    return `${cut}…`
+  }
+
+  // The QR code on a white tile, with a caption under it. Always dark on
+  // white, the only way round every scanner reads.
+  function drawQr(c: CanvasRenderingContext2D, link: string, x: number, y: number, size: number, ink: string, font: string) {
+    const { data: modules, size: count } = encode(link, { ecc: 'M', border: 0 })
+    const pad = 14
+    // A long link means more modules: keep each at least 3px, letting the
+    // tile grow up and to the left from its bottom-right corner.
+    const cell = Math.max(3, Math.floor((size - pad * 2) / count))
+    const code = cell * count
+    if (code + pad * 2 > size) {
+      x -= code + pad * 2 - size
+      y -= code + pad * 2 - size
+      size = code + pad * 2
+    }
+    const inset = (size - code) / 2
+    c.fillStyle = '#FFFFFF'
+    c.beginPath()
+    c.roundRect(x, y, size, size + 34, 10)
+    c.fill()
+    c.fillStyle = ink
+    modules.forEach((row, rowIndex) => row.forEach((dark, colIndex) => {
+      if (dark) c.fillRect(x + inset + colIndex * cell, y + inset + rowIndex * cell, cell, cell)
+    }))
+    c.font = font
+    c.textAlign = 'center'
+    c.textBaseline = 'top'
+    c.fillText('扫码读全文', x + size / 2, y + size - 4)
+    c.textAlign = 'left'
+  }
+
+  async function drawCard(data: CardData, quote: string) {
+    const root = getComputedStyle(document.documentElement)
+    const display = root.getPropertyValue('--font-display-web').trim() || 'serif'
+    const body = root.getPropertyValue('--font-body-web').trim() || 'sans-serif'
+    const fonts = {
+      mark: `900 56px ${display}`,
+      title: `800 60px ${display}`,
+      quote: `400 36px ${body}`,
+      meta: `400 26px ${body}`,
+      qr: `400 20px ${body}`,
+    }
+    const link = pageUrl()
+    let shownLink = link.replace(/^https?:\/\//, '')
+    try { shownLink = decodeURI(shownLink) }
+    catch {}
+    // Make sure every glyph on the card is loaded before drawing it.
+    const probe = document.createElement('div')
+    probe.hidden = true
+    probe.textContent = [data.site, data.title, quote, data.author, data.date, shownLink, '扫码读全文…'].join(' ')
+    document.body.append(probe)
+    try { await prepareTextFonts(probe) }
+    catch {}
+    finally { probe.remove() }
+    await Promise.all(Object.values(fonts).map(font => document.fonts.load(font, probe.textContent!).catch(() => [])))
+
+    // Lay the text out first, then size the card to it: square for a short
+    // passage, up to 3:4 for a long one.
+    // The footer (byline, link and the QR tile) takes the bottom 340px.
+    const W = 1080, strip = 168, left = strip + 96, width = W - left - 96, footer = 340
+    const measure = document.createElement('canvas').getContext('2d')!
+    measure.font = fonts.title
+    const titleLines = wrap(measure, data.title, width, 4)
+    const quoteTop = 150 + titleLines.length * 86 + 40 + 64
+    measure.font = fonts.quote
+    const quoteLines = wrap(measure, quote, width, Math.max(2, Math.min(10, Math.floor((1440 - footer - quoteTop) / 64))))
+    const contentEnd = quoteTop + quoteLines.length * 64
+    const H = Math.min(1440, Math.max(1080, contentEnd + footer))
+    const canvas = document.createElement('canvas')
+    canvas.width = W
+    canvas.height = H
+    const c = canvas.getContext('2d')!
+    const { colors } = data
+    c.fillStyle = colors.paper
+    c.fillRect(0, 0, W, H)
+    // The spine: the site's name standing upright, as on the site itself.
+    c.fillStyle = colors.spine
+    c.fillRect(0, 0, strip, H)
+    c.fillStyle = colors.ink
+    c.font = fonts.mark
+    c.textAlign = 'center'
+    c.textBaseline = 'top'
+    ;[...data.site].forEach((char, index) => c.fillText(char, strip / 2, 120 + index * 76))
+    c.textAlign = 'left'
+
+    let y = 150
+    c.font = fonts.title
+    c.fillStyle = colors.ink
+    for (const line of titleLines) {
+      c.fillText(line, left, y)
+      y += 86
+    }
+    y += 40
+    c.fillStyle = colors.accent
+    c.fillRect(left, y, 64, 4)
+    y += 64
+    c.font = fonts.quote
+    c.fillStyle = colors.soft
+    for (const line of quoteLines) {
+      c.fillText(line, left, y)
+      y += 64
+    }
+
+    const qrSize = 184
+    const qrX = W - 96 - qrSize
+    const qrY = H - 96 - qrSize - 34
+    const footWidth = qrX - 48 - left
+    c.font = fonts.meta
+    c.fillStyle = colors.faint
+    c.fillText(fit(c, `${data.author}　${data.date}`, footWidth), left, H - 190)
+    c.fillStyle = colors.accent
+    c.fillRect(left, H - 140, footWidth, 2)
+    c.fillStyle = colors.faint
+    c.fillText(fit(c, shownLink, footWidth), left, H - 116)
+    drawQr(c, link, qrX, qrY, qrSize, colors.ink, fonts.qr)
+    return canvas
+  }
+
+  function init() {
+    const actions = document.querySelector<HTMLElement>('[data-article-actions]')
+    if (!actions || actions.dataset.bound === 'true') return
+    actions.dataset.bound = 'true'
+    const data: CardData = JSON.parse(actions.dataset.card!)
+
+    // 复制引用: title, author, date and link, ready to paste.
+    actions.querySelector('[data-cite]')!.addEventListener('click', async () => {
+      const label = actions.querySelector<HTMLElement>('[data-cite-label]')!
+      const text = `《${data.title}》，${data.author}，${data.site}，${data.date}\n${pageUrl()}`
+      try {
+        await navigator.clipboard.writeText(text)
+        flash(label, '已复制', '复制引用')
+      }
+      catch { flash(label, '复制失败', '复制引用') }
+    })
+
+    actions.querySelector('[data-print]')!.addEventListener('click', () => window.print())
+
+    const dialog = document.querySelector<HTMLDialogElement>('[data-card-dialog]')!
+    const image = dialog.querySelector<HTMLImageElement>('[data-card-image]')!
+    const status = dialog.querySelector<HTMLElement>('[data-card-status]')!
+    const save = dialog.querySelector<HTMLAnchorElement>('[data-card-save]')!
+    let objectUrl = ''
+    const close = () => dialog.close()
+    dialog.querySelector('[data-card-close]')!.addEventListener('click', close)
+    dialog.addEventListener('click', (event) => { if (event.target === dialog) close() })
+    dialog.addEventListener('close', () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+      objectUrl = ''
+    })
+
+    actions.querySelector('[data-card-open]')!.addEventListener('click', async () => {
+      const quote = selected || data.description || data.title
+      image.hidden = true
+      save.hidden = true
+      status.hidden = false
+      status.textContent = '正在生成卡片…'
+      dialog.showModal()
+      try {
+        const canvas = await drawCard(data, quote)
+        const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
+        if (!blob || !dialog.open) return
+        objectUrl = URL.createObjectURL(blob)
+        image.src = objectUrl
+        image.alt = `分享卡片：${data.title}`
+        save.href = objectUrl
+        save.download = `${data.slug}.png`
+        image.hidden = false
+        save.hidden = false
+        status.hidden = true
+      }
+      catch {
+        status.textContent = '生成失败，请重试。'
+      }
+    })
+  }
+
+  document.addEventListener('astro:page-load', init)
+  if (document.readyState !== 'loading') init()
+</script>
+
+<style is:global>
+  .article-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-4);
+  }
+
+  .article-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.5rem;
+    color: var(--ink-soft);
+    font-size: var(--text-sm);
+    transition: color var(--dur-hover) ease;
+  }
+
+  .article-action svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .article-action:active {
+    transform: scale(0.97);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .article-action:hover {
+      color: var(--accent);
+    }
+  }
+
+  .card-dialog {
+    width: min(28rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    margin: auto;
+    padding: var(--space-5);
+    overflow: auto;
+    border: var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--paper-raised);
+    color: var(--ink);
+    box-shadow: var(--shadow-float);
+  }
+
+  .card-dialog::backdrop {
+    background: color-mix(in srgb, #0b0f17 40%, transparent);
+  }
+
+  .card-dialog__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-dialog__head h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+
+  .card-dialog__close {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    color: var(--ink-faint);
+    font-size: var(--text-sm);
+  }
+
+  .card-dialog__hint,
+  .card-dialog__tip {
+    color: var(--ink-faint);
+    font-size: var(--text-xs);
+    line-height: 1.7;
+  }
+
+  .card-dialog__hint {
+    margin-top: var(--space-1);
+  }
+
+  .card-dialog__preview {
+    display: grid;
+    place-items: center;
+    min-height: 16rem;
+    margin-top: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+
+  .card-dialog__preview img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+    box-shadow: 0 1px 0 var(--line);
+  }
+
+  .card-dialog__status {
+    color: var(--ink-faint);
+    font-size: var(--text-sm);
+  }
+
+  .card-dialog__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+  }
+
+  .card-dialog__save {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding-inline: var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: var(--paper-raised);
+    font-size: var(--text-sm);
+  }
+
+  .card-dialog__save[hidden] {
+    display: none;
+  }
+</style>

@@ -46,7 +46,6 @@ const ogImageType = image.endsWith('.png')
 const ogLocale = siteConfig.lang.replace('-', '_')
 const { light, dark } = siteConfig.theme
 const gaId = siteConfig.analytics.googleAnalyticsId.trim()
-const isHomePage = Astro.url.pathname === '/' || Astro.url.pathname.startsWith('/page/')
 
 const tokenNames: Record<keyof typeof light, string> = {
   paper: '--paper',
@@ -60,8 +59,7 @@ const tokenNames: Record<keyof typeof light, string> = {
   accent: '--accent',
   accentStrong: '--accent-strong',
   accentSoft: '--accent-soft',
-  peach: '--peach',
-  moss: '--moss',
+  mark: '--mark',
   selection: '--selection',
 }
 
@@ -72,7 +70,7 @@ function tokensToCss(tokens: typeof light) {
 }
 
 const hostedDevelopment = import.meta.env.DEV
-const developmentStack = (value: string) => hostedDevelopment ? value.replaceAll('"Newsreader"', '"OnPaper Hosted Newsreader"').replaceAll('"Noto Serif SC"', '"OnPaper Hosted Noto"') : value
+const developmentStack = (value: string) => hostedDevelopment ? value.replaceAll('"Newsreader"', '"OnPaper Hosted Newsreader"').replaceAll('"Noto Serif SC"', '"OnPaper Hosted Serif"').replaceAll('"Noto Sans SC"', '"OnPaper Hosted Sans"') : value
 const themeCSS = `
 :root{${tokensToCss(light)}--font-display-web:${developmentStack(siteConfig.fonts.display)};--font-body-web:${developmentStack(siteConfig.fonts.body)};--font-display:var(--font-display-web);--font-body:var(--font-body-web);--font-mono:${siteConfig.fonts.mono};color-scheme:light}
 html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
@@ -202,21 +200,22 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
     <MobileBar />
 
     <div class="site-shell">
-      <main id="main" class:list={['site-main', !isHomePage && 'site-main--inner']}>
-        <slot />
-        <Footer class="footer--mobile" />
-      </main>
       <SiteRail />
+      <main id="main" class="site-main">
+        <slot />
+        <Footer />
+      </main>
     </div>
 
     <!-- Labels inserted by copy controls must be ready before their first paint. -->
     <span hidden aria-hidden="true" data-font-ui-text>复制已失败</span>
+    <div class="page-turn" aria-hidden="true" transition:persist="page-turn"><div class="page-turn__sheet"></div></div>
+    <div class="route-ink" aria-hidden="true" transition:persist="route-ink"><span></span></div>
     <Search />
     <BackToTop />
     <ImageZoom />
 
     <script>
-      import { animateContent, cancelContentMotion } from '@/utils/content-motion'
       import { installNavigation } from '@/utils/navigation'
 
       installNavigation()
@@ -224,7 +223,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
       let revealObserver: IntersectionObserver | undefined
 
       document.addEventListener('astro:before-swap', (event) => {
-        cancelContentMotion()
+        leavingIndicators = captureIndicators()
         revealObserver?.disconnect()
         revealObserver = undefined
         // Keep ClientRouter navigation/history without its snapshot overlay.
@@ -270,6 +269,31 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
         belowFold.forEach(element => observer.observe(element))
       }
 
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+      // The button that was pressed confirms the copy itself, then settles
+      // back. A quick blur bridges the label swap instead of a hard cut.
+      function swapLabel(button: HTMLButtonElement, state: 'copied' | 'failed' | '', label: string) {
+        if (state) button.dataset.state = state
+        else delete button.dataset.state
+        button.replaceChildren()
+        if (state === 'copied') {
+          const check = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+          check.setAttribute('viewBox', '0 0 16 16')
+          check.setAttribute('class', 'code-copy__check')
+          check.setAttribute('aria-hidden', 'true')
+          check.innerHTML = '<path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
+          button.append(check)
+        }
+        button.append(label)
+        if (!reducedMotion.matches) {
+          button.animate(
+            [{ opacity: 0.2, filter: 'blur(2px)' }, { opacity: 1, filter: 'blur(0)' }],
+            { duration: 180, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+          )
+        }
+      }
+
       function initCodeCopy() {
         const blocks = [...document.querySelectorAll<HTMLPreElement>('.prose pre:not([data-copy-ready])')]
         for (const pre of blocks) {
@@ -282,20 +306,150 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
           button.className = 'code-copy'
           button.textContent = '复制'
           button.setAttribute('aria-label', '复制代码')
+          let resetTimer: number | undefined
           button.addEventListener('click', async () => {
+            window.clearTimeout(resetTimer)
             try {
               await navigator.clipboard.writeText(code.textContent ?? '')
-              button.textContent = '已复制'
-              window.setTimeout(() => { button.textContent = '复制' }, 1600)
+              swapLabel(button, 'copied', '已复制')
             }
             catch {
-              button.textContent = '失败'
-              window.setTimeout(() => { button.textContent = '复制' }, 1600)
+              swapLabel(button, 'failed', '复制失败')
             }
+            resetTimer = window.setTimeout(() => swapLabel(button, '', '复制'), 1800)
           })
           pre.append(button)
         }
       }
+
+      // Navigation indicators travel from the section you left to the one
+      // you arrived at, so the change of place is visible, not a jump.
+      type IndicatorRects = Map<string, DOMRect>
+      let leavingIndicators: IndicatorRects | undefined
+      const markOf = (nav: HTMLElement) => nav.dataset.navIndicator === 'y' ? '::before' : '::after'
+      function captureIndicators(): IndicatorRects {
+        const rects: IndicatorRects = new Map()
+        document.querySelectorAll<HTMLElement>('[data-nav-indicator]').forEach((nav) => {
+          const active = nav.querySelector<HTMLElement>('a[aria-current="page"]')
+          if (!active || !active.getClientRects().length) return
+          const rect = active.getBoundingClientRect()
+          // Start from where the mark is drawn now, which may be leaning
+          // towards a hovered item rather than sitting under the current one.
+          const drawn = getComputedStyle(active, markOf(nav)).transform
+          const m = drawn && drawn !== 'none' ? new DOMMatrixReadOnly(drawn) : new DOMMatrixReadOnly()
+          rects.set(nav.dataset.navIndicator!, new DOMRect(rect.x + m.m41, rect.y + m.m42, rect.width * m.m11, rect.height))
+        })
+        return rects
+      }
+
+      // The ink mark leans towards the section under the pointer (or keyboard
+      // focus) and returns to the current one on leave.
+      const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)')
+      function initNavFollow() {
+        document.querySelectorAll<HTMLElement>('[data-nav-indicator]').forEach((nav) => {
+          if (nav.dataset.follow === 'true') return
+          nav.dataset.follow = 'true'
+          const axis = nav.dataset.navIndicator
+          let motion: Animation | undefined
+          const moveTo = (target: HTMLElement | null) => {
+            const current = nav.querySelector<HTMLElement>('a[aria-current="page"]')
+            if (!current || reducedMotion.matches) return
+            const pseudoElement = markOf(nav)
+            const from = getComputedStyle(current, pseudoElement).transform
+            const goal = target && target !== current ? target : current
+            const to = axis === 'y'
+              ? `translateY(${goal.offsetTop - current.offsetTop}px)`
+              : `translateX(${goal.offsetLeft - current.offsetLeft}px) scaleX(${goal.offsetWidth / current.offsetWidth})`
+            motion?.cancel()
+            motion = current.animate([
+              { transform: from && from !== 'none' ? from : 'none', opacity: 1 },
+              { transform: to, opacity: 1 },
+            ], { duration: goal === current ? 340 : 260, easing: 'cubic-bezier(0.25, 1, 0.5, 1)', pseudoElement, fill: 'forwards' })
+          }
+          nav.addEventListener('pointerover', (event) => {
+            if (!finePointer.matches) return
+            const link = (event.target as Element).closest<HTMLElement>('a')
+            if (link) moveTo(link)
+          })
+          nav.addEventListener('pointerleave', () => moveTo(null))
+          nav.addEventListener('focusin', (event) => {
+            const link = (event.target as Element).closest<HTMLElement>('a')
+            if (link?.matches(':focus-visible')) moveTo(link)
+          })
+          nav.addEventListener('focusout', (event) => {
+            if (!nav.contains(event.relatedTarget as Node | null)) moveTo(null)
+          })
+        })
+      }
+      function moveIndicators(previous: IndicatorRects | undefined) {
+        if (!previous || reducedMotion.matches) return
+        document.querySelectorAll<HTMLElement>('[data-nav-indicator]').forEach((nav) => {
+          const axis = nav.dataset.navIndicator as 'x' | 'y'
+          const from = previous.get(axis)
+          const active = nav.querySelector<HTMLElement>('a[aria-current="page"]')
+          if (!from || !active || !active.getClientRects().length) return
+          const to = active.getBoundingClientRect()
+          if (Math.abs(from.top - to.top) < 1 && Math.abs(from.left - to.left) < 1) return
+          const pseudoElement = axis === 'y' ? '::before' : '::after'
+          const offset = axis === 'y'
+            ? `translateY(${from.top - to.top}px)`
+            : `translateX(${from.left - to.left}px) scaleX(${from.width / to.width})`
+          active.animate(
+            [{ transform: offset, opacity: 1 }, { transform: 'none', opacity: 1 }],
+            { duration: 340, easing: 'cubic-bezier(0.25, 1, 0.5, 1)', pseudoElement },
+          )
+        })
+      }
+
+      // Route ink: runs while the next page loads, completes and lifts when it
+      // is readable. Nothing waits for it; it only shows the wait.
+      let inkRun: Animation | undefined
+      function routeInk(phase: 'start' | 'end') {
+        const bar = document.querySelector<HTMLElement>('.route-ink > span')
+        if (!bar || reducedMotion.matches) return
+        const scale = window.matchMedia('(min-width: 1101px)').matches ? 'scaleY' : 'scaleX'
+        if (phase === 'start') {
+          inkRun?.cancel()
+          inkRun = bar.animate([
+            { transform: `${scale}(0)`, opacity: 1 },
+            { transform: `${scale}(0.85)`, opacity: 1 },
+          ], { duration: 1800, easing: 'cubic-bezier(0.1, 0.75, 0.2, 1)', fill: 'forwards' })
+          return
+        }
+        if (!inkRun) return
+        const from = getComputedStyle(bar).transform
+        inkRun.cancel()
+        const finish = bar.animate([
+          { transform: from === 'none' ? `${scale}(0)` : from, opacity: 1 },
+          { transform: `${scale}(1)`, opacity: 1, offset: 0.4 },
+          { transform: `${scale}(1)`, opacity: 0 },
+        ], { duration: 560, easing: 'ease-out', fill: 'forwards' })
+        inkRun = finish
+        finish.finished.then(() => { if (inkRun === finish) { finish.cancel(); inkRun = undefined } }, () => {})
+      }
+      // Page turn: the incoming page is revealed by turning a sheet of paper
+      // away from it. It starts on the first frame the new page is readable
+      // and never delays navigation, focus or input.
+      let turnDirection: 'forward' | 'back' = 'forward'
+      let turn: Animation | undefined
+      function turnPage() {
+        const sheet = document.querySelector<HTMLElement>('.page-turn__sheet')
+        if (!sheet || reducedMotion.matches) return
+        turn?.cancel()
+        sheet.dataset.direction = turnDirection
+        const away = turnDirection === 'back' ? 'translateX(calc(100% + 4rem))' : 'translateX(calc(-100% - 4rem))'
+        turn = sheet.animate([
+          { transform: 'none', visibility: 'visible' },
+          { transform: away, visibility: 'visible' },
+        ], { duration: 620, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' })
+      }
+
+      document.addEventListener('astro:before-preparation', (event) => {
+        turnDirection = event.direction === 'back' ? 'back' : 'forward'
+        routeInk('start')
+        event.signal?.addEventListener('abort', () => routeInk('end'), { once: true })
+      })
+
 
       function rememberNavigation() {
         try {
@@ -334,6 +488,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 
       function initPage() {
         document.documentElement.classList.add('js')
+        initNavFollow()
         initReveal()
         initCodeCopy()
         restoreListScroll()
@@ -342,7 +497,11 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
       document.addEventListener('onpaper:content-ready', () => {
         restoreListScroll()
         initReveal()
-        if (document.documentElement.hasAttribute('data-font-navigation')) animateContent()
+        if (!document.documentElement.hasAttribute('data-font-navigation')) return
+        turnPage()
+        routeInk('end')
+        moveIndicators(leavingIndicators)
+        leavingIndicators = undefined
       })
       document.addEventListener('astro:before-swap', rememberNavigation)
       window.addEventListener('pagehide', rememberNavigation)

@@ -3,6 +3,8 @@
 </div>
 
 <script>
+  // Browsers with scroll-driven animations draw this bar from CSS alone.
+  const native = typeof CSS !== 'undefined' && CSS.supports('animation-timeline', 'scroll()')
   let bar: HTMLElement | null = null
   let maxScroll = 0
   let ticking = false
@@ -18,8 +20,9 @@
     if (!bar) return
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
     const progress = maxScroll > 0 ? Math.min(scrollTop / maxScroll, 1) : 0
-    // scaleX is composited; animating width would force a layout pass per frame.
-    bar.style.transform = `scaleX(${progress})`
+    // The custom property is set on the bar itself, so no ancestor restyles;
+    // CSS maps it to scaleX or scaleY depending on where the ribbon runs.
+    bar.style.setProperty('--progress', String(progress))
   }
 
   function onScroll() {
@@ -32,6 +35,7 @@
   }
 
   function refresh() {
+    if (native) return
     bar = document.querySelector<HTMLElement>('[data-progress-bar]')
     // Fonts, lazy images and viewport changes all alter the article height;
     // keep maxScroll current without reading layout on every scroll frame.
@@ -44,8 +48,10 @@
   }
 
   document.addEventListener('astro:page-load', refresh)
-  window.addEventListener('scroll', onScroll, { passive: true })
-  window.addEventListener('resize', measure, { passive: true })
+  if (!native) {
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', measure, { passive: true })
+  }
   if (document.readyState === 'loading')
     document.addEventListener('DOMContentLoaded', refresh, { once: true })
   else

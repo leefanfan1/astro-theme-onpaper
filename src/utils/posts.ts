@@ -136,6 +136,30 @@ export function getPostDescription(post: Post, maxLength = 160): string {
   return body.length > maxLength ? `${body.slice(0, maxLength).trim()}…` : body
 }
 
+/**
+ * Reading time in whole minutes: about 400 Chinese characters or 220 Latin
+ * words per minute, the common pace for screen reading.
+ */
+export function getReadingMinutes(post: Post): number {
+  const text = stripMarkdown(post.body ?? '')
+  const han = text.match(/\p{Script=Han}/gu)?.length ?? 0
+  const words = text.replace(/\p{Script=Han}/gu, ' ').match(/[\p{L}\p{N}]+/gu)?.length ?? 0
+  return Math.max(1, Math.round(han / 400 + words / 220))
+}
+
+/** Other articles sharing the most tags with this one, newest first on ties. */
+export function getRelatedPosts(posts: Post[], post: Post, limit = 3): Post[] {
+  const tags = new Set(visibleTags(post.data.tags))
+  if (!tags.size) return []
+  return posts
+    .filter(item => item.id !== post.id)
+    .map(item => ({ item, shared: visibleTags(item.data.tags).filter(tag => tags.has(tag)).length }))
+    .filter(entry => entry.shared > 0)
+    .sort((a, b) => b.shared - a.shared || byDateDesc(a.item, b.item))
+    .slice(0, limit)
+    .map(entry => entry.item)
+}
+
 export function formatDate(date: Date): string {
   const y = date.getUTCFullYear()
   const m = String(date.getUTCMonth() + 1).padStart(2, '0')

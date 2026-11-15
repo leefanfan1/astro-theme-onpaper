@@ -67,7 +67,7 @@ try {
             { title: 'ABC', description: 'available-token', content: 'available-token', tags: [], date: '2026-01-01', url: '/about/' },
           ] }))
           await context.route('https://fonts.gstatic.cn/**', async route => {
-            if (hold && route.request().resourceType() === 'font' && new URL(route.request().url()).pathname.includes('/notoserifsc/')) {
+            if (hold && route.request().resourceType() === 'font' && new URL(route.request().url()).pathname.includes('/notosanssc/')) {
               held++
               notifyHeld()
               await gate

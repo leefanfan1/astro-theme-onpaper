@@ -19,8 +19,8 @@ const pages = Array.from({ length: totalPages }, (_, index) => index + 1)
     <nav class="pagination" aria-label="分页">
       <span class="pagination__side">
         {currentPage > 1
-          ? <a href={pageHref(currentPage - 1)}>← 上一页</a>
-          : <span class="pagination__disabled">← 上一页</span>}
+          ? <a href={pageHref(currentPage - 1)} rel="prev">上一页</a>
+          : <span class="pagination__disabled" aria-hidden="true">上一页</span>}
       </span>
 
       <span class="pagination__pages">
@@ -33,8 +33,8 @@ const pages = Array.from({ length: totalPages }, (_, index) => index + 1)
 
       <span class="pagination__side pagination__side--next">
         {currentPage < totalPages
-          ? <a href={pageHref(currentPage + 1)}>下一页 →</a>
-          : <span class="pagination__disabled">下一页 →</span>}
+          ? <a href={pageHref(currentPage + 1)} rel="next">下一页</a>
+          : <span class="pagination__disabled" aria-hidden="true">下一页</span>}
       </span>
     </nav>
   )
