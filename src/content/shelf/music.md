@@ -10,7 +10,7 @@
 
   名为必填，其余可省。链接填音乐平台地址即可。`npm run covers` 沿用音乐卡片
   那套解析：补上歌手、年份，把「链接：」换成网易云的专辑页（卡片点开就是它），
-  封面也从网易云取，记在 src/data/shelf-covers.json。写了的字段不会被改。
+  封面也从网易云取，下载到 public/shelf/ 并记在 src/data/shelf-covers.json。
   「豆瓣：」只是备忘，页面不显示。想自己指定封面就写一行「封面：/shelf/xxx.jpg」。
 -->
 

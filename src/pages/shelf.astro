@@ -27,8 +27,10 @@ const covers = coverCache as Record<string, string>
 
 // A cover comes from, in order: the item's own `cover`, a file fetched by
 // `npm run covers` (saved under public/shelf/), the music cache for records.
-// Nothing points at Douban directly: its image hosts refuse a browser request
-// without a Douban referrer, so the images are served from this site.
+// Every cover `npm run covers` saves is local — Douban's image hosts refuse a
+// request without a Douban referrer, and keeping records' covers here too means
+// one origin, one cache header, and no dependency on a third-party CDN. The
+// remote fallbacks only apply to an entry in a repo that has not run it yet.
 function coverOf(item: ShelfItem) {
   const raw = item.cover || covers[`${item.kind}:${item.title}`] || (item.kind === 'music' && item.url ? cache[item.url]?.cover : '')
   if (!raw) return ''
@@ -36,7 +38,7 @@ function coverOf(item: ShelfItem) {
   try {
     const url = new URL(raw)
     if (url.protocol !== 'https:') return ''
-    if (/^p\d+\.music\.126\.net$/.test(url.hostname)) url.searchParams.set('param', '400y400')
+    if (/^p\d+\.music\.126\.net$/.test(url.hostname)) url.searchParams.set('param', '500y500')
     return url.href
   }
   catch {

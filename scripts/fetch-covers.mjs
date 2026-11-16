@@ -13,12 +13,13 @@
  * the same lookups, with no cover: the column shows no pictures, and its year
  * and a record's Douban page are recorded in the file for reference only.
  *
- * Covers are saved rather than hotlinked. Douban rejects a browser request
- * without a Douban referrer with 418, so books and films have their poster
- * downloaded into public/shelf/ and recorded in src/data/shelf-covers.json;
- * a record's cover comes from NetEase (via the same resolver the `::music`
- * card uses) and is recorded there as a URL, which the shelf page sizes for
- * the wall.
+ * Covers are saved rather than hotlinked, for every kind. Douban rejects a
+ * browser request without a Douban referrer with 418; NetEase would serve one,
+ * but a local file is the same origin as the page, rides the immutable cache
+ * header public/_headers sets for /shelf/, and cannot break when an image host
+ * changes its rules. Both land in public/shelf/ and are recorded in
+ * src/data/shelf-covers.json. A record's cover is found through the same
+ * resolver the `::music` card uses.
  *
  * Music entries follow the music card's own logic: a `链接：` line is resolved
  * with src/utils/music-resolver.mjs and its result cached in
@@ -37,6 +38,7 @@ import { createHash } from 'node:crypto'
 import path from 'node:path'
 import process from 'node:process'
 import sharp from 'sharp'
+import { isDoubanImage, isLocalCover, isNeteaseImage, largeCover, neteaseCover } from './cover-source.mjs'
 import { findSubject, posterFromPage, subjectDetail, subjectUrl } from './douban.mjs'
 import { nowEntriesOf, rewriteNow } from './now-document.mjs'
 import { entriesOf, rewriteDocument } from './shelf-document.mjs'
@@ -90,40 +92,39 @@ async function readShelf() {
   return files
 }
 
-/** Ask the image host for the largest size of a Douban cover. */
-function largeCover(url) {
-  return url
-    .replace('/view/subject/s/public/', '/view/subject/l/public/')
-    .replace('/view/subject/m/public/', '/view/subject/l/public/')
-    .replace('/view/photo/s_ratio_poster/public/', '/view/photo/l/public/')
-    .replace('/view/photo/m_ratio_poster/public/', '/view/photo/l/public/')
-    .replace(/^http:/, 'https:')
+// How each kind is re-encoded. A poster is 2:3 and the wall draws it about
+// 200px wide, so 800px tall covers a retina screen. A record's cover is square
+// and drawn about 170px wide, so it is stored at 500px; NetEase serves that
+// size itself, and sharp trims the last few KB off it.
+const RECIPE = {
+  book: { height: 800, referer: REFERRER.book },
+  film: { height: 800, referer: REFERRER.film },
+  music: { height: 500, referer: 'https://music.163.com/' },
 }
 
-// Only Douban's own image hosts are fetched, never a URL an API could be
-// tricked into handing back.
-function isDoubanImage(value) {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'https:' && /^img\d*\.doubanio\.com$/.test(url.hostname)
-  }
-  catch { return false }
-}
-
+/**
+ * Download a cover and store it under public/shelf/, whichever host it came
+ * from: one origin for the page, one cache header, and no cover that breaks
+ * when an image host changes its rules. Only the hosts below are fetched.
+ */
 async function downloadCover(item, pic) {
-  const url = largeCover(pic)
-  if (!isDoubanImage(url)) throw new Error('not a Douban image')
-  const response = await fetchWithTimeout(url, { Referer: REFERRER[item.kind] })
+  const recipe = RECIPE[item.kind]
+  const url = item.kind === 'music' ? neteaseCover(pic, recipe.height) : largeCover(pic)
+  const allowed = item.kind === 'music' ? isNeteaseImage(url) : isDoubanImage(url)
+  if (!url || !allowed) throw new Error('not an image host this script fetches from')
+
+  const response = await fetchWithTimeout(url, { Referer: recipe.referer })
   if (!response.ok) throw new Error(`image ${response.status}`)
   const type = response.headers.get('content-type') ?? ''
-  if (!/^image\/(jpeg|png|webp)/.test(type)) throw new Error(`unexpected image type ${type}`)
+  // NetEase labels its JPEGs `image/jpg`, which is not the registered type.
+  if (!/^image\/(jpe?g|png|webp)/.test(type)) throw new Error(`unexpected image type ${type}`)
   const bytes = Buffer.from(await response.arrayBuffer())
   if (bytes.byteLength < 2048 || bytes.byteLength > 8 * 1024 * 1024) throw new Error('image size out of range')
   // Douban hands back print-sized scans (1600x2400, 600KB); the wall shows
   // posters about 200px wide, so 800px tall covers a retina screen.
   const reencoded = await sharp(bytes)
     .rotate()
-    .resize({ height: 800, fit: 'inside', withoutEnlargement: true })
+    .resize({ height: recipe.height, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 82, progressive: true, mozjpeg: true })
     .toBuffer()
   // A stable name means a re-run rewrites the same file instead of piling up.
@@ -135,17 +136,18 @@ async function downloadCover(item, pic) {
 
 /**
  * Whether an entry already has everything this script would fill in, so a
- * second run costs no requests. A cover counts as present when the entry
- * names one, or when the cache has a file (books, films) or a URL (records)
- * for it.
+ * second run costs no requests. The cover has to be a file under public/shelf/
+ * that is still there: a cache entry pointing at a remote URL is what an older
+ * run left behind, and that image is not stored yet.
  */
 function isComplete(item, kind, key, covers) {
   const cover = item.cover || covers[key]
   if (!cover) return false
+  const downloaded = isLocalCover(cover) && existsSync(path.resolve(root, 'public' + cover))
   if (kind === 'music') {
-    return Boolean(item.creator && item.year && item.douban && /^https:\/\/music\.163\.com\//.test(item.link))
+    return Boolean(item.creator && item.year && item.douban
+      && /^https:\/\/music\.163\.com\//.test(item.link) && downloaded)
   }
-  const downloaded = cover.startsWith('/') ? existsSync(path.resolve(root, 'public' + cover)) : true
   return Boolean(item.creator && item.year && item.url && downloaded)
 }
 
@@ -304,8 +306,8 @@ async function main() {
     }
   }
 
-  const coversBefore = Object.keys(covers).length
   let complete = 0
+  let coversSaved = 0
   let failed = 0
   let filesUpdated = 0
 
@@ -339,7 +341,12 @@ async function main() {
             { key: '链接', value: neteaseUrl, mode: 'set' },
             { key: '豆瓣', value: subject ? subjectUrl('music', subject.id) : '' },
           ])
-          if (!item.cover && info.cover) covers[key] = info.cover
+          if (!item.cover && info.cover) {
+            // A record's cover is downloaded like a poster: the image host
+            // serves it, but the page serves it from here.
+            const cover = await downloadCover({ ...item, kind: 'music' }, info.cover)
+            if (cover) covers[key] = cover
+          }
           console.log(`  ✓ ${item.title}${info.artist ? ` / ${info.artist}` : ''}${info.year ? ` (${info.year})` : ''}${subject ? ` -> ${subjectUrl('music', subject.id)}` : ''}`)
         }
         catch (error) {
@@ -401,10 +408,6 @@ async function main() {
     for (const { title, keys } of result.changed) console.log(`  + ${title}: ${keys.join('、')}`)
   }
 
-  // Records whose cover lives on NetEase need no download, so count what the
-  // cache gained rather than what was written to disk.
-  const coversSaved = Object.keys(covers).length - coversBefore
-
   if (!only.length) {
     const now = await completeNow(musicCache, shelfFacts)
     filesUpdated += now.files
@@ -422,7 +425,7 @@ async function main() {
       : 'Nothing to add: the Douban lookups found nothing new.')
     return
   }
-  console.log(`\nDone: ${filesUpdated} file(s) updated, ${coversSaved} cover(s) recorded, ${failed} failed, ${considered} considered.`)
+  console.log(`\nDone: ${filesUpdated} file(s) updated, ${coversSaved} cover(s) saved, ${failed} failed, ${considered} considered.`)
   if (failed) console.log('Entries that failed are unchanged; run again to retry.')
 }
 
