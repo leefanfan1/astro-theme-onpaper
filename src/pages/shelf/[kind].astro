@@ -1,15 +1,12 @@
 ---
-import ShelfCard from '@/components/ShelfCard.astro'
+import ShelfKindPage from '@/components/ShelfKindPage.astro'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import musicCache from '@/data/music-cache.json'
-import coverCache from '@/data/shelf-covers.json'
 import { getAllPosts } from '@/utils/posts'
 import { loadShelf } from '@/utils/shelf'
-import type { ShelfItem, ShelfKind } from '@/utils/shelf'
+import type { ShelfKind } from '@/utils/shelf'
 
-// One page per shelf, so /shelf/books/, /shelf/films/ and /shelf/music/ can
-// be linked to on their own. They share the wall and the cards with /shelf/;
-// only the heading and the index change.
+// A shelf's own page: /shelf/books/, /shelf/films/, /shelf/music/. A long
+// shelf continues on /shelf/books/page/2/ (src/pages/shelf/[kind]/page/[page].astro).
 const KINDS: Record<string, { kind: ShelfKind, title: string, heading: string, lead: string }> = {
   books: { kind: 'book', title: '书单', heading: '书', lead: '读过、想再读，愿意推荐给别人的那些书。' },
   films: { kind: 'film', title: '片单', heading: '电影', lead: '看过、会重看，愿意推荐给别人的那些电影。' },
@@ -30,25 +27,7 @@ const route = Astro.params.kind!
 const meta = KINDS[route]
 const shelf = await loadShelf(await getAllPosts())
 const items = shelf[meta.kind] ?? []
-
-const cache = musicCache as Record<string, { cover?: string }>
-const covers = coverCache as Record<string, string>
-
-function coverOf(item: ShelfItem) {
-  const raw = item.cover || covers[`${item.kind}:${item.title}`] || (item.kind === 'music' && item.url ? cache[item.url]?.cover : '')
-  if (!raw) return ''
-  if (raw.startsWith('/')) return raw
-  try {
-    const url = new URL(raw)
-    if (url.protocol !== 'https:') return ''
-    if (/^p\d+\.music\.126\.net$/.test(url.hostname)) url.searchParams.set('param', '400y400')
-    return url.href
-  }
-  catch { return '' }
-}
-
-const inkOf = (index: number) => index % 6
-const verb: Record<ShelfKind, string> = { book: '著', film: '导演', music: '' }
+const base = `/shelf/${route}/`
 const others = Object.entries(KINDS).filter(([key]) => key !== route)
 ---
 
@@ -69,18 +48,7 @@ const others = Object.entries(KINDS).filter(([key]) => key !== route)
     )}
   </header>
 
-  {items.length > 0
-    ? (
-        <section class="shelf" aria-labelledby="shelf-list" data-kind={meta.kind}>
-          <h2 class="shelf__title" id="shelf-list">{meta.heading}<span>{items.length}</span></h2>
-          <ul class="shelf-wall" role="list">
-            {items.map((item, index) => (
-              <ShelfCard item={item} cover={coverOf(item)} ink={inkOf(index)} verb={verb[meta.kind]} />
-            ))}
-          </ul>
-        </section>
-      )
-    : <p class="empty-state">这一份清单还是空的。</p>}
+  <ShelfKindPage kind={meta.kind} heading={meta.heading} items={items} page={1} base={base} />
 
   <p class="shelf-credit">书与电影的封面取自豆瓣，只作个人记录之用；封面与简介的权利归豆瓣、出版方和发行方所有。</p>
 </BaseLayout>

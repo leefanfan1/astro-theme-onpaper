@@ -1,11 +1,9 @@
 ---
-import ShelfCard from '@/components/ShelfCard.astro'
+import ShelfWall from '@/components/ShelfWall.astro'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import musicCache from '@/data/music-cache.json'
-import coverCache from '@/data/shelf-covers.json'
 import { getAllPosts } from '@/utils/posts'
 import { loadShelf } from '@/utils/shelf'
-import type { ShelfItem, ShelfKind } from '@/utils/shelf'
+import type { ShelfKind } from '@/utils/shelf'
 
 // Books, films and music, each from its own Markdown file under
 // src/content/shelf/. Covers come from `npm run covers` (saved in
@@ -22,38 +20,10 @@ const lists = groups
   .map(group => ({ ...group, items: shelf[group.kind] ?? [] }))
   .filter(group => group.items.length > 0)
 
-const cache = musicCache as Record<string, { cover?: string }>
-const covers = coverCache as Record<string, string>
-
-// A cover comes from, in order: the item's own `cover`, a file fetched by
-// `npm run covers` (saved under public/shelf/), the music cache for records.
-// Nothing points at Douban directly: its image hosts refuse a browser request
-// without a Douban referrer, so the images are served from this site.
-function coverOf(item: ShelfItem) {
-  const raw = item.cover || covers[`${item.kind}:${item.title}`] || (item.kind === 'music' && item.url ? cache[item.url]?.cover : '')
-  if (!raw) return ''
-  if (raw.startsWith('/')) return raw
-  try {
-    const url = new URL(raw)
-    if (url.protocol !== 'https:') return ''
-    if (/^p\d+\.music\.126\.net$/.test(url.hostname)) url.searchParams.set('param', '400y400')
-    return url.href
-  }
-  catch {
-    return ''
-  }
-}
-
-// Inks run in order along the wall, offset per shelf, so neighbours never
-// share a colour.
-const inkOf = (group: number, index: number) => (group * 2 + index) % 6
-
-// A shelf of two hundred books would be one long scroll nobody finishes.
-// Each shelf shows a screenful of covers and folds the rest behind a
-// summary that opens without JavaScript.
+// Each shelf shows a screenful of covers and folds the rest behind a summary
+// that opens without JavaScript. The per-shelf pages page through the list
+// instead of folding, so a long shelf never renders every cover at once.
 const VISIBLE = 12
-const countWord: Record<ShelfKind, string> = { book: '本', film: '部', music: '张' }
-const verb: Record<ShelfKind, string> = { book: '著', film: '导演', music: '' }
 ---
 
 <BaseLayout title="书单 · 片单 · 歌单" description="读过、看过、反复听过，愿意推荐给别人的那些。">
@@ -69,34 +39,17 @@ const verb: Record<ShelfKind, string> = { book: '著', film: '导演', music: ''
     )}
   </header>
 
-  {lists.map((group, groupIndex) => {
-    const shown = group.items.slice(0, VISIBLE)
-    const folded = group.items.slice(VISIBLE)
-    return (
-      <section class="shelf" aria-labelledby={`shelf-${group.id}`} data-kind={group.kind}>
-        <h2 class="shelf__title" id={`shelf-${group.id}`}>
-          <a class="shelf__title-link" href={`/shelf/${group.id}/`}>
-            {group.title}<span>{group.items.length}</span>
-          </a>
-          <a class="shelf__more" href={`/shelf/${group.id}/`}>看全部</a>
-        </h2>
-        <ul class="shelf-wall" role="list">
-          {shown.map((item, index) => <ShelfCard item={item} cover={coverOf(item)} ink={inkOf(groupIndex, index)} verb={verb[group.kind]} />)}
-        </ul>
-        {folded.length > 0 && (
-          <details class="shelf-more">
-            <summary>
-              <span class="shelf-more__label">还有 {folded.length} {countWord[group.kind]}</span>
-              <span class="shelf-more__hint">展开</span>
-            </summary>
-            <ul class="shelf-wall" role="list">
-              {folded.map((item, index) => <ShelfCard item={item} cover={coverOf(item)} ink={inkOf(groupIndex, index + VISIBLE)} verb={verb[group.kind]} />)}
-            </ul>
-          </details>
-        )}
-      </section>
-    )
-  })}
+  {lists.map((group, groupIndex) => (
+    <ShelfWall
+      items={group.items}
+      kind={group.kind}
+      id={`shelf-${group.id}`}
+      heading={group.title}
+      href={`/shelf/${group.id}/`}
+      visible={VISIBLE}
+      offset={groupIndex * 2}
+    />
+  ))}
 
   <p class="shelf-credit">书与电影的封面取自豆瓣，只作个人记录之用；封面与简介的权利归豆瓣、出版方和发行方所有。</p>
 </BaseLayout>

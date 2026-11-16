@@ -2,10 +2,14 @@
 interface Props {
   currentPage: number
   totalPages: number
+  /** The list's first page; later pages hang off it as `page/2/`. Defaults to
+   *  the site root, which is where the article list lives. */
+  base?: string
+  label?: string
 }
 
-const { currentPage, totalPages } = Astro.props
-const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const { currentPage, totalPages, base: listBase, label = '分页' } = Astro.props
+const base = (listBase ?? import.meta.env.BASE_URL).replace(/\/$/, '')
 
 function pageHref(page: number) {
   return page === 1 ? `${base}/` : `${base}/page/${page}/`
@@ -16,7 +20,7 @@ const pages = Array.from({ length: totalPages }, (_, index) => index + 1)
 
 {
   totalPages > 1 && (
-    <nav class="pagination" aria-label="分页">
+    <nav class="pagination" aria-label={label}>
       <span class="pagination__side">
         {currentPage > 1
           ? <a href={pageHref(currentPage - 1)} rel="prev">上一页</a>

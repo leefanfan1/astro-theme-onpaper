@@ -11,8 +11,9 @@
   一句话：小时候读不懂，长大才知道它写的是告别。
 
   - 书名为必填，其余可省。
-  - 豆瓣填电影详情页或影人页都可以；不填时 `npm run covers` 会按书名去豆瓣找。
-  - 封面通常不用自己填：`npm run covers` 会下载到 public/shelf/ 并记在 src/data/shelf-covers.json。
+  - 只写书名也行：`npm run covers` 会按书名去豆瓣找条目，补上作者、年份和豆瓣地址，
+    再把封面下载到 public/shelf/，路径记在 src/data/shelf-covers.json。
+  - 自己写了的字段不会被改：这里写 1960，豆瓣说 2008，留 1960。
   - 以 # 开头的行是注释，不会显示。
 -->
 

@@ -1,0 +1,43 @@
+---
+/**
+ * The body of one shelf's own page — heading, the wall, pagination.
+ *
+ * Shared by /shelf/books/ (page one) and /shelf/books/page/2/, so the two
+ * routes cannot drift apart. The wall itself is ShelfWall.
+ */
+import Pagination from '@/components/Pagination.astro'
+import ShelfWall from '@/components/ShelfWall.astro'
+import type { ShelfItem, ShelfKind } from '@/utils/shelf'
+import { SHELF_PER_PAGE } from '@/utils/shelf-covers'
+
+interface Props {
+  kind: ShelfKind
+  heading: string
+  items: ShelfItem[]
+  page: number
+  /** Where page one lives, e.g. /shelf/books/. Pagination builds the rest. */
+  base: string
+}
+
+const { kind, heading, items, page, base } = Astro.props
+
+const totalPages = Math.max(1, Math.ceil(items.length / SHELF_PER_PAGE))
+const offset = (page - 1) * SHELF_PER_PAGE
+const shown = items.slice(offset, offset + SHELF_PER_PAGE)
+---
+
+{shown.length > 0
+  ? (
+      <ShelfWall
+        items={shown}
+        kind={kind}
+        id="shelf-list"
+        heading={heading}
+        offset={offset}
+      />
+    )
+  : <p class="empty-state">这一份清单还是空的。</p>}
+
+{totalPages > 1 && (
+  <Pagination currentPage={page} totalPages={totalPages} base={base} label={`${heading}的分页`} />
+)}
