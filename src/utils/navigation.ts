@@ -1,5 +1,6 @@
 import type { TransitionBeforePreparationEvent } from 'astro:transitions/client'
 import { prepareNavigationFonts, warmPageFonts } from '@/utils/fonts'
+import { coverIsDown, releaseTurn } from './page-turn'
 
 interface Page {
   document: Document
@@ -15,11 +16,26 @@ const packets: Record<string, string> = {}
 let prefetchVersion = 0
 let navigating = false
 
+// Which pages this site navigates in place, and which are handed to the
+// browser. A hardcoded list of route prefixes used to decide this, and any
+// page added later (the shelf, for one) silently fell outside it: the click
+// became a full document load, which has no page turn and flashes. The
+// generated route table is the truth instead — every route the build wrote a
+// navigation packet for can be swapped in without leaving the document.
 function pageUrl(href: string) {
   const url = new URL(href, location.href)
-  if (url.origin !== location.origin || !/^\/(?:$|(?:posts|page|tags|about|friends)(?:\/|$))/.test(url.pathname)) return null
+  if (url.origin !== location.origin) return null
   url.hash = ''
+  if (!isKnownRoute(url.pathname)) return null
   return url
+}
+
+function isKnownRoute(pathname: string) {
+  // Console and API endpoints are never pages.
+  if (/^\/(?:api|_)/.test(pathname)) return false
+  if (!Object.keys(packets).length) return true
+  const path = pathname.endsWith('/') ? pathname : pathname + '/'
+  return Object.hasOwn(packets, path)
 }
 
 function readRoutes(next: Document) {
@@ -181,6 +197,10 @@ export function installNavigation() {
     event.signal.addEventListener('abort', () => { if (prefetchVersion === current) navigating = false }, { once: true })
     const load = event.loader
     event.loader = async () => {
+      // The page-turn sheet started on the click; do not swap documents
+      // until it is fully over the old page (see utils/page-turn.ts).
+      await coverIsDown()
+      if (event.signal.aborted) return
       const destination = event.to.href.split('#')[0]
       const hit = cached(destination)
       let page = hit ? await hit : await requestPage(new URL(destination), event.signal, 'high')
@@ -209,6 +229,7 @@ export function installNavigation() {
       let onAbort: () => void = () => {}
       const aborted = new Promise<void>(resolve => { onAbort = resolve })
       event.signal.addEventListener('abort', onAbort, { once: true })
+      if (event.signal.aborted) return
       try {
         let delay = 500
         while (!event.signal.aborted) {
@@ -228,6 +249,9 @@ export function installNavigation() {
         }
       }
       finally { event.signal.removeEventListener('abort', onAbort) }
+      // Document, styles and glyphs are all resident: the swap that follows
+      // can paint a complete page, so the sheet may be turned now.
+      releaseTurn()
     }
   })
 

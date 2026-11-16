@@ -1,10 +1,9 @@
 ---
 import Pagination from '@/components/Pagination.astro'
 import PostList from '@/components/PostList.astro'
+import SiteAside from '@/components/SiteAside.astro'
 import { siteConfig } from '@/config'
 import type { Post } from '@/utils/posts'
-import musicCache from '@/data/music-cache.json'
-import { formatDate, getAllPosts, stripMarkdown } from '@/utils/posts'
 
 interface Props {
   posts: Post[]
@@ -21,46 +20,6 @@ const {
 } = Astro.props
 
 const isFirst = page === 1
-const allPosts = await getAllPosts()
-
-// 这个站: counted from the posts themselves at build time. The day count is
-// refreshed in the browser so it stays right between builds.
-const firstPost = allPosts.at(-1)?.data.published
-const characters = allPosts.reduce((sum, post) => sum + (stripMarkdown(post.body ?? '').match(/\p{Script=Han}/gu)?.length ?? 0), 0)
-const words = characters >= 10000
-  ? { value: Number((characters / 10000).toFixed(1)), decimals: 1, suffix: '万' }
-  : { value: Math.round(characters / 100) * 100, decimals: 0, suffix: '' }
-const days = firstPost ? Math.max(1, Math.floor((Date.now() - firstPost.getTime()) / 86400000)) : 0
-const facts = [
-  { label: '文章', value: allPosts.length, decimals: 0, suffix: '', unit: '篇' },
-  { label: '约计字数', ...words, unit: '字' },
-  ...(firstPost ? [{ label: '写了', value: days, decimals: 0, suffix: '', unit: '天', since: firstPost.toISOString() }] : []),
-]
-const hasShelf = Object.values(siteConfig.shelf).some(list => list.length > 0)
-
-// 最近: in config. The music entry borrows title, artist and cover from the
-// music card cache when that link has been resolved before.
-const now = siteConfig.now as {
-  listening?: { url?: string, title?: string }
-  reading?: { title?: string, creator?: string }
-  watching?: { title?: string, creator?: string }
-}
-type CachedMusic = { title?: string, artist?: string, cover?: string }
-const cached = now.listening?.url ? (musicCache as Record<string, CachedMusic>)[now.listening.url] : undefined
-const coverUrl = (() => {
-  try {
-    const cover = cached?.cover ? new URL(cached.cover) : null
-    if (!cover || cover.protocol !== 'https:') return ''
-    if (/^p\d+\.music\.126\.net$/.test(cover.hostname)) cover.searchParams.set('param', '120y120')
-    return cover.href
-  }
-  catch { return '' }
-})()
-const listening = now.listening && (cached?.title || now.listening.title)
-  ? { title: cached?.title || now.listening.title!, artist: cached?.artist, url: now.listening.url, cover: coverUrl }
-  : null
-const reading = now.reading?.title ? now.reading : null
-const watching = now.watching?.title ? now.watching : null
 ---
 
 {isFirst
@@ -75,90 +34,7 @@ const watching = now.watching?.title ? now.watching : null
   <Pagination currentPage={page} totalPages={totalPages} />
 </div>
 
-<aside class="home-aside" aria-label="最近与这个站">
-  {(listening || reading || watching) && (
-    <section class="aside-block now" aria-labelledby="now-title">
-      <h2 class="home-aside__title" id="now-title">最近</h2>
-      <dl class="now__list">
-        {listening && (
-          <div class="now__item now__item--music">
-            <dt>在听</dt>
-            <dd>
-              {listening.url
-                ? (
-                    <a class="now__music" href={listening.url} target="_blank" rel="noopener noreferrer">
-                      {listening.cover && <span class="now__disc"><img src={listening.cover} alt="" width="48" height="48" loading="lazy" decoding="async" /></span>}
-                      <span class="now__text"><span class="now__title">《{listening.title}》</span>{listening.artist && <span class="now__creator">{listening.artist}</span>}</span>
-                    </a>
-                  )
-                : <span class="now__title">《{listening.title}》</span>}
-            </dd>
-          </div>
-        )}
-        {reading && (
-          <div class="now__item">
-            <dt>在读</dt>
-            <dd><span class="now__title">《{reading.title}》</span>{reading.creator && <span class="now__creator">{reading.creator}</span>}</dd>
-          </div>
-        )}
-        {watching && (
-          <div class="now__item">
-            <dt>在看</dt>
-            <dd><span class="now__title">《{watching.title}》</span>{watching.creator && <span class="now__creator">{watching.creator}</span>}</dd>
-          </div>
-        )}
-      </dl>
-    </section>
-  )}
-
-  <section class="aside-block site-facts" aria-labelledby="facts-title">
-    <h2 class="home-aside__title" id="facts-title">这个站</h2>
-    <dl class="facts">
-      {facts.map(fact => {
-        const text = fact.value.toFixed(fact.decimals) + fact.suffix
-        return (
-          <div class="facts__row">
-            <dt>{fact.label}</dt>
-            <dd>
-              <b
-                data-count={fact.value}
-                data-decimals={fact.decimals}
-                data-suffix={fact.suffix}
-                data-days-since={'since' in fact ? fact.since : undefined}
-                data-final-text={text}
-                style={`min-width:${text.length + 1}ch`}
-              >{text}</b>
-              {fact.unit}
-            </dd>
-          </div>
-        )
-      })}
-    </dl>
-    {firstPost && <p class="facts__since">第一篇写于 {formatDate(firstPost)}</p>}
-  </section>
-
-  <nav class="aside-links" aria-label="更多">
-    {hasShelf && (
-      <a class="aside-link" href="/shelf/">
-        <svg class="aside-link__icon aside-link__icon--shelf" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path class="spine spine--a" d="M5.5 4.5v15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-          <path class="spine spine--b" d="M9.5 4.5v15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-          <path class="spine spine--c" d="M14 6l3.8 13.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-          <path d="M4.5 19.5h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-        </svg>
-        <span>书单 · 片单 · 歌单</span>
-      </a>
-    )}
-    <a class="aside-link" href="/rss.xml" target="_blank" rel="noopener noreferrer">
-      <svg class="aside-link__icon aside-link__icon--rss" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path class="wave wave--outer" d="M5 5a14 14 0 0 1 14 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" pathLength="1"></path>
-        <path class="wave wave--inner" d="M5 11a8 8 0 0 1 8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" pathLength="1"></path>
-        <circle cx="6" cy="18" r="1.4" fill="currentColor"></circle>
-      </svg>
-      <span>用 RSS 订阅</span>
-    </a>
-  </nav>
-</aside>
+<SiteAside />
 
 <span class="sr-only">共 {totalPosts} 篇文章</span>
 

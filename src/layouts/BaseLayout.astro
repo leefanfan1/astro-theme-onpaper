@@ -213,10 +213,12 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
     <div class="route-ink" aria-hidden="true" transition:persist="route-ink"><span></span></div>
     <Search />
     <BackToTop />
-    <ImageZoom />
+    {/* Only articles have prose images; the dialog is dead weight elsewhere. */}
+    {article && <ImageZoom />}
 
     <script>
       import { installNavigation } from '@/utils/navigation'
+      import { holdSwapForCover, whenTurnReady } from '@/utils/page-turn'
 
       installNavigation()
 
@@ -427,27 +429,114 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
         inkRun = finish
         finish.finished.then(() => { if (inkRun === finish) { finish.cancel(); inkRun = undefined } }, () => {})
       }
-      // Page turn: the incoming page is revealed by turning a sheet of paper
-      // away from it. It starts on the first frame the new page is readable
-      // and never delays navigation, focus or input.
+      // Page turn: a sheet of paper sweeps over the page you are leaving,
+      // waits while the next one settles underneath, then is turned away to
+      // reveal it.
+      //
+      // The sheet must be fully down before the router swaps documents: the
+      // swap is what replaces one page with the other, and it happens within a
+      // frame or two of the click. A 300ms sweep started at the click would
+      // therefore be only a tenth of the way across when the old page goes,
+      // and the reader would see the bare new page before the paper reached
+      // it — the flash this replaces. So the sweep starts now, and the router
+      // waits for it (astro:before-preparation holds the swap until the promise
+      // below settles), which costs at most 300ms on a prefetched page.
+      const SWEEP = 200
+      const SWEEP_EASING = 'cubic-bezier(0.33, 0, 0.2, 1)'
       let turnDirection: 'forward' | 'back' = 'forward'
+      let cover: Animation | undefined
       let turn: Animation | undefined
-      function turnPage() {
-        const sheet = document.querySelector<HTMLElement>('.page-turn__sheet')
-        if (!sheet || reducedMotion.matches) return
+      let turnFallback: number | undefined
+      let coverPatience: number | undefined
+      // A navigation slow enough to outlast the reader's patience gets no
+      // turn at all: the old page stays as it is until the swap, and the new
+      // one simply appears, which is what a plain navigation does.
+      let turnSkipped = false
+      let sweepDone: Promise<void> = Promise.resolve()
+
+      function sheetElement() {
+        return document.querySelector<HTMLElement>('.page-turn__sheet')
+      }
+
+      function resetTurn() {
+        window.clearTimeout(turnFallback)
+        window.clearTimeout(coverPatience)
+        const sheet = sheetElement()
+        cover?.cancel()
         turn?.cancel()
+        cover = turn = undefined
+        sheet?.classList.remove('is-covering')
+      }
+
+      function inFrom() {
+        return turnDirection === 'back' ? 'translateX(calc(-100% - 4rem))' : 'translateX(calc(100% + 4rem))'
+      }
+
+      // Sweep the sheet over the current page and hold it there, so the swap
+      // happens out of sight. Forward, the sheet comes from the right; going
+      // back, from the left. Returns a promise that settles when the sheet is
+      // fully down (or the sweep was abandoned).
+      function coverPage() {
+        resetTurn()
+        turnSkipped = false
+        const sheet = sheetElement()
+        // Nothing to turn when motion is off: the new page simply appears.
+        if (!sheet || reducedMotion.matches) return Promise.resolve()
         sheet.dataset.direction = turnDirection
+        sheet.classList.add('is-covering')
+        cover = sheet.animate([{ transform: inFrom() }, { transform: 'none' }], {
+          duration: SWEEP,
+          easing: SWEEP_EASING,
+          fill: 'forwards',
+        })
+        // If the next page is taking its time, put the old one back in view
+        // rather than holding the reader on blank paper, and skip the turn.
+        coverPatience = window.setTimeout(() => {
+          turnSkipped = true
+          const current = cover
+          sheet.classList.remove('is-covering')
+          cover = sheet.animate([{ transform: 'none' }, { transform: inFrom() }], {
+            duration: 260,
+            easing: 'cubic-bezier(0.4, 0, 1, 1)',
+            fill: 'forwards',
+          })
+          current?.cancel()
+          cover.finished.then(() => { if (turnSkipped) cover?.cancel() }, () => {})
+        }, SWEEP + 900)
+        // Never leave the sheet down for good, whatever happens to the page.
+        turnFallback = window.setTimeout(() => { resetTurn() }, 8000)
+        return cover.finished.catch(() => {})
+      }
+
+      function revealPage() {
+        window.clearTimeout(turnFallback)
+        window.clearTimeout(coverPatience)
+        const sheet = sheetElement()
+        if (!sheet || reducedMotion.matches) return
+        if (turnSkipped || !sheet.classList.contains('is-covering')) {
+          resetTurn()
+          return
+        }
         const away = turnDirection === 'back' ? 'translateX(calc(100% + 4rem))' : 'translateX(calc(-100% - 4rem))'
-        turn = sheet.animate([
-          { transform: 'none', visibility: 'visible' },
-          { transform: away, visibility: 'visible' },
-        ], { duration: 620, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' })
+        cover?.cancel()
+        turn?.cancel()
+        turn = sheet.animate([{ transform: 'none' }, { transform: away }], {
+          duration: 420,
+          easing: 'cubic-bezier(0.32, 0.72, 0, 1)',
+          fill: 'forwards',
+        })
+        const done = () => { resetTurn() }
+        turn.finished.then(done, done)
       }
 
       document.addEventListener('astro:before-preparation', (event) => {
         turnDirection = event.direction === 'back' ? 'back' : 'forward'
+        holdSwapForCover(coverPage())
         routeInk('start')
-        event.signal?.addEventListener('abort', () => routeInk('end'), { once: true })
+        event.signal?.addEventListener('abort', () => {
+          resetTurn()
+          routeInk('end')
+        }, { once: true })
       })
 
 
@@ -494,11 +583,16 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
         restoreListScroll()
       }
 
+      // The sheet is turned from the first frame the new page can paint,
+      // which is not the same moment content is ready: the swap already
+      // waited for the fonts, so the document and its styles are in place
+      // (see utils/page-turn.ts). Turning one frame later lets the new page
+      // paint beneath the sheet first, so nothing is revealed half-drawn.
       document.addEventListener('onpaper:content-ready', () => {
         restoreListScroll()
         initReveal()
         if (!document.documentElement.hasAttribute('data-font-navigation')) return
-        turnPage()
+        whenTurnReady(revealPage)
         routeInk('end')
         moveIndicators(leavingIndicators)
         leavingIndicators = undefined

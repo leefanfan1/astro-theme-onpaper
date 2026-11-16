@@ -1,0 +1,86 @@
+---
+import ShelfCard from '@/components/ShelfCard.astro'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import musicCache from '@/data/music-cache.json'
+import coverCache from '@/data/shelf-covers.json'
+import { getAllPosts } from '@/utils/posts'
+import { loadShelf } from '@/utils/shelf'
+import type { ShelfItem, ShelfKind } from '@/utils/shelf'
+
+// One page per shelf, so /shelf/books/, /shelf/films/ and /shelf/music/ can
+// be linked to on their own. They share the wall and the cards with /shelf/;
+// only the heading and the index change.
+const KINDS: Record<string, { kind: ShelfKind, title: string, heading: string, lead: string }> = {
+  books: { kind: 'book', title: '书单', heading: '书', lead: '读过、想再读，愿意推荐给别人的那些书。' },
+  films: { kind: 'film', title: '片单', heading: '电影', lead: '看过、会重看，愿意推荐给别人的那些电影。' },
+  music: { kind: 'music', title: '歌单', heading: '音乐', lead: '反复听过的专辑和歌，愿意推荐给别人的那些。' },
+}
+
+// Written out rather than read from KINDS: getStaticPaths is bundled on its
+// own, and module-level constants are not in scope there.
+export function getStaticPaths() {
+  return [
+    { params: { kind: 'books' } },
+    { params: { kind: 'films' } },
+    { params: { kind: 'music' } },
+  ]
+}
+
+const route = Astro.params.kind!
+const meta = KINDS[route]
+const shelf = await loadShelf(await getAllPosts())
+const items = shelf[meta.kind] ?? []
+
+const cache = musicCache as Record<string, { cover?: string }>
+const covers = coverCache as Record<string, string>
+
+function coverOf(item: ShelfItem) {
+  const raw = item.cover || covers[`${item.kind}:${item.title}`] || (item.kind === 'music' && item.url ? cache[item.url]?.cover : '')
+  if (!raw) return ''
+  if (raw.startsWith('/')) return raw
+  try {
+    const url = new URL(raw)
+    if (url.protocol !== 'https:') return ''
+    if (/^p\d+\.music\.126\.net$/.test(url.hostname)) url.searchParams.set('param', '400y400')
+    return url.href
+  }
+  catch { return '' }
+}
+
+const inkOf = (index: number) => index % 6
+const verb: Record<ShelfKind, string> = { book: '著', film: '导演', music: '' }
+const others = Object.entries(KINDS).filter(([key]) => key !== route)
+---
+
+<BaseLayout title={meta.title} description={meta.lead}>
+  <header class="page-head">
+    <a class="page-back" href="/shelf/">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      书单 · 片单 · 歌单
+    </a>
+    <h1 class="page-title">{meta.title}</h1>
+    <p class="page-lead">{meta.lead}</p>
+    {others.length > 0 && (
+      <nav class="shelf-index" aria-label="其他清单">
+        {others.map(([key, other]) => <a href={`/shelf/${key}/`}>{other.title}</a>)}
+      </nav>
+    )}
+  </header>
+
+  {items.length > 0
+    ? (
+        <section class="shelf" aria-labelledby="shelf-list" data-kind={meta.kind}>
+          <h2 class="shelf__title" id="shelf-list">{meta.heading}<span>{items.length}</span></h2>
+          <ul class="shelf-wall" role="list">
+            {items.map((item, index) => (
+              <ShelfCard item={item} cover={coverOf(item)} ink={inkOf(index)} verb={verb[meta.kind]} />
+            ))}
+          </ul>
+        </section>
+      )
+    : <p class="empty-state">这一份清单还是空的。</p>}
+
+  <p class="shelf-credit">书与电影的封面取自豆瓣，只作个人记录之用；封面与简介的权利归豆瓣、出版方和发行方所有。</p>
+</BaseLayout>

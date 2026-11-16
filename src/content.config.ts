@@ -22,4 +22,12 @@ const pages = defineCollection({
   }),
 })
 
-export const collections = { posts, pages }
+// 书单、片单、歌单：每份 Markdown 一份清单，见 src/utils/shelf.ts 的解析规则。
+const shelf = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/shelf' }),
+  schema: z.object({
+    title: z.string().default(''),
+  }),
+})
+
+export const collections = { posts, pages, shelf }

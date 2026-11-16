@@ -57,6 +57,8 @@ export function postModifiedDates() {
 export function sitemapOptions() {
   const dates = postModifiedDates()
   return {
+    // /page/1/ redirects to the home page; it has nothing of its own to index.
+    filter: page => !/\/page\/1\/?$/.test(new URL(page).pathname),
     serialize(item) {
       const date = dates.get(new URL(item.url).pathname)
       return date ? { ...item, lastmod: date.toISOString() } : item

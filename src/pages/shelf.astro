@@ -1,25 +1,36 @@
 ---
+import ShelfCard from '@/components/ShelfCard.astro'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import { siteConfig } from '@/config'
-import type { ShelfItem } from '@/config'
 import musicCache from '@/data/music-cache.json'
+import coverCache from '@/data/shelf-covers.json'
+import { getAllPosts } from '@/utils/posts'
+import { loadShelf } from '@/utils/shelf'
+import type { ShelfItem, ShelfKind } from '@/utils/shelf'
 
-// Books, films and music from siteConfig.shelf, hung as a wall of covers.
-// An item shows its own cover when it has one (music borrows the cover the
-// music cards already cached); otherwise a cover is typeset from the title,
-// in one of six inks, so the wall still reads as a wall.
-type Kind = 'book' | 'film' | 'music'
+// Books, films and music, each from its own Markdown file under
+// src/content/shelf/. Covers come from `npm run covers` (saved in
+// public/shelf/) or the music cache; an item with neither gets a cover
+// typeset from its title.
+const groups: Array<{ id: string, title: string, kind: ShelfKind }> = [
+  { id: 'books', title: '书', kind: 'book' },
+  { id: 'films', title: '电影', kind: 'film' },
+  { id: 'music', title: '音乐', kind: 'music' },
+]
 
-const groups: Array<{ id: string, title: string, kind: Kind, items: ShelfItem[] }> = [
-  { id: 'books', title: '书', kind: 'book' as const, items: siteConfig.shelf.books },
-  { id: 'films', title: '电影', kind: 'film' as const, items: siteConfig.shelf.films },
-  { id: 'music', title: '音乐', kind: 'music' as const, items: siteConfig.shelf.music },
-].filter(group => group.items.length > 0)
+const shelf = await loadShelf(await getAllPosts())
+const lists = groups
+  .map(group => ({ ...group, items: shelf[group.kind] ?? [] }))
+  .filter(group => group.items.length > 0)
 
 const cache = musicCache as Record<string, { cover?: string }>
+const covers = coverCache as Record<string, string>
 
-function coverOf(item: ShelfItem, kind: Kind) {
-  const raw = item.cover || (kind === 'music' && item.url ? cache[item.url]?.cover : '')
+// A cover comes from, in order: the item's own `cover`, a file fetched by
+// `npm run covers` (saved under public/shelf/), the music cache for records.
+// Nothing points at Douban directly: its image hosts refuse a browser request
+// without a Douban referrer, so the images are served from this site.
+function coverOf(item: ShelfItem) {
+  const raw = item.cover || covers[`${item.kind}:${item.title}`] || (item.kind === 'music' && item.url ? cache[item.url]?.cover : '')
   if (!raw) return ''
   if (raw.startsWith('/')) return raw
   try {
@@ -37,57 +48,55 @@ function coverOf(item: ShelfItem, kind: Kind) {
 // share a colour.
 const inkOf = (group: number, index: number) => (group * 2 + index) % 6
 
-const verb: Record<Kind, string> = { book: '著', film: '导演', music: '' }
+// A shelf of two hundred books would be one long scroll nobody finishes.
+// Each shelf shows a screenful of covers and folds the rest behind a
+// summary that opens without JavaScript.
+const VISIBLE = 12
+const countWord: Record<ShelfKind, string> = { book: '本', film: '部', music: '张' }
+const verb: Record<ShelfKind, string> = { book: '著', film: '导演', music: '' }
 ---
 
 <BaseLayout title="书单 · 片单 · 歌单" description="读过、看过、反复听过，愿意推荐给别人的那些。">
   <header class="page-head">
     <h1 class="page-title">书单 · 片单 · 歌单</h1>
     <p class="page-lead">读过、看过、反复听过，愿意推荐给别人的那些。</p>
-    {groups.length > 1 && (
+    {lists.length > 1 && (
       <nav class="shelf-index" aria-label="分类">
-        {groups.map(group => (
+        {lists.map(group => (
           <a href={`#shelf-${group.id}`}>{group.title}<span>{group.items.length}</span></a>
         ))}
       </nav>
     )}
   </header>
 
-  {groups.map((group, groupIndex) => (
-    <section class="shelf" aria-labelledby={`shelf-${group.id}`} data-kind={group.kind}>
-      <h2 class="shelf__title" id={`shelf-${group.id}`}>{group.title}<span>{group.items.length}</span></h2>
-      <ul class="shelf-wall" role="list">
-        {group.items.map((item, index) => {
-          const cover = coverOf(item, group.kind)
-          const name = group.kind === 'music' ? item.title : `《${item.title}》`
-          const byline = [item.creator && `${item.creator}${verb[group.kind] ? ` ${verb[group.kind]}` : ''}`, item.year].filter(Boolean).join(' · ')
-          const body = (
-            <>
-              <span class:list={['shelf-cover', !cover && `shelf-cover--set ink-${inkOf(groupIndex, index)}`]} aria-hidden="true">
-                {cover
-                  ? <img src={cover} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
-                  : (
-                      <>
-                        {item.year && <span class="shelf-cover__year">{item.year}</span>}
-                        <span class="shelf-cover__title">{item.title}</span>
-                        <span class="shelf-cover__creator">{item.creator}</span>
-                      </>
-                    )}
-              </span>
-              <span class="shelf-card__name"><span class="mark-text">{name}</span></span>
-              {byline && <span class="shelf-card__by">{byline}</span>}
-              {item.note && <span class="shelf-card__note">{item.note}</span>}
-            </>
-          )
-          return (
-            <li>
-              {item.url
-                ? <a class="shelf-card" href={item.url} target="_blank" rel="noopener noreferrer">{body}<span class="sr-only">（在新窗口打开）</span></a>
-                : <div class="shelf-card">{body}</div>}
-            </li>
-          )
-        })}
-      </ul>
-    </section>
-  ))}
+  {lists.map((group, groupIndex) => {
+    const shown = group.items.slice(0, VISIBLE)
+    const folded = group.items.slice(VISIBLE)
+    return (
+      <section class="shelf" aria-labelledby={`shelf-${group.id}`} data-kind={group.kind}>
+        <h2 class="shelf__title" id={`shelf-${group.id}`}>
+          <a class="shelf__title-link" href={`/shelf/${group.id}/`}>
+            {group.title}<span>{group.items.length}</span>
+          </a>
+          <a class="shelf__more" href={`/shelf/${group.id}/`}>看全部</a>
+        </h2>
+        <ul class="shelf-wall" role="list">
+          {shown.map((item, index) => <ShelfCard item={item} cover={coverOf(item)} ink={inkOf(groupIndex, index)} verb={verb[group.kind]} />)}
+        </ul>
+        {folded.length > 0 && (
+          <details class="shelf-more">
+            <summary>
+              <span class="shelf-more__label">还有 {folded.length} {countWord[group.kind]}</span>
+              <span class="shelf-more__hint">展开</span>
+            </summary>
+            <ul class="shelf-wall" role="list">
+              {folded.map((item, index) => <ShelfCard item={item} cover={coverOf(item)} ink={inkOf(groupIndex, index + VISIBLE)} verb={verb[group.kind]} />)}
+            </ul>
+          </details>
+        )}
+      </section>
+    )
+  })}
+
+  <p class="shelf-credit">书与电影的封面取自豆瓣，只作个人记录之用；封面与简介的权利归豆瓣、出版方和发行方所有。</p>
 </BaseLayout>

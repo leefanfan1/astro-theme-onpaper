@@ -274,7 +274,8 @@ function renderEmbed(attrs) {
   }
 
   return html(`
-<figure class="embed-card">
+<figure class="embed-card" data-provider="${esc(detected.provider)}">
+  <div class="embed-card__frame">
   <iframe
     src="${esc(detected.src)}"
     title="${esc(`${detected.provider}：${title}`)}"
@@ -283,6 +284,7 @@ function renderEmbed(attrs) {
     allowfullscreen
     referrerpolicy="strict-origin-when-cross-origin"
   ></iframe>
+  </div>
   ${caption}
 </figure>`)
 }

@@ -333,7 +333,30 @@
   let contentReady = false
   const retryDelays = [500, 1000, 2000, 5000, 10000]
 
+  // A page whose fonts never arrive must still be readable. The hosted faces
+  // come from a single origin; if it is unreachable, the gate that hides the
+  // body until the faces load would hide the whole site for as long as the
+  // reader stays. After a short grace period the local stack takes over — the
+  // configured families already end in PingFang SC / Microsoft YaHei — and the
+  // page is shown as it is.
+  let giveUpTimer
+
+  function showWithoutFonts() {
+    if (document.documentElement.dataset.fontState === 'ready') return
+    window.clearTimeout(giveUpTimer)
+    document.documentElement.classList.add('fonts-unavailable')
+    activateFonts()
+    // Keep trying in the background: a slow network can still improve on this.
+    if (navigator.onLine) retryTimer = window.setTimeout(() => { void loadFonts(true) }, retryDelays.at(-1))
+  }
+
+  function armGiveUp() {
+    window.clearTimeout(giveUpTimer)
+    giveUpTimer = window.setTimeout(showWithoutFonts, 6000)
+  }
+
   function activateFonts() {
+    window.clearTimeout(giveUpTimer)
     document.documentElement.dataset.fontState = 'ready'
     document.dispatchEvent(new Event('onpaper:fonts-ready'))
     if (!contentReady) {
@@ -359,6 +382,10 @@
     if (!main) return
     if (arePageFontsLoaded(document.body)) { activateFonts(); return }
     root.dataset.fontState = 'loading'
+    // One grace period per page, not per attempt: a hung request must not be
+    // able to hold the page invisible through its retries.
+    if (document.documentElement.classList.contains('fonts-unavailable')) return
+    armGiveUp()
     try {
       await preparePageFonts(document.body, retryFailed)
       if (current !== version || root !== document.documentElement || main !== content) return

@@ -21,6 +21,12 @@ const nav = siteConfig.nav.map(item => ({ ...item, active: isNavActive(item.href
           </svg>
         </button>
         <ThemeToggle />
+        <a class="text-button text-button--icon" href="/now/" aria-label="最近与这个站">
+          <svg class="text-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="14" rx="1.6" stroke="currentColor" stroke-width="1.6"></rect>
+            <path d="M14 5v14" stroke="currentColor" stroke-width="1.6"></path>
+          </svg>
+        </a>
       </div>
     </div>
     <nav class="mobile-nav" aria-label="主导航" data-nav-indicator="x">
@@ -32,9 +38,22 @@ const nav = siteConfig.nav.map(item => ({ ...item, active: isNavActive(item.href
 </header>
 
 <script is:inline>
+  // The bar is a fixed height, so the spacer needs a number before first paint.
+  // Reading offsetHeight here would force a synchronous layout in the body —
+  // 15ms on desktop and up to 170ms at 390px wide — so the height is taken
+  // from the stylesheet instead and refined after the first frame if a
+  // font or a wrapped label changes it.
   (function () {
     var bar = document.querySelector('[data-mobile-bar]')
-    if (bar) document.documentElement.style.setProperty('--mobile-bar-height', bar.offsetHeight + 'px')
+    if (!bar) return
+    var root = document.documentElement
+    var apply = function (h) {
+      if (h > 0) root.style.setProperty('--mobile-bar-height', h + 'px')
+    }
+    apply(parseFloat(getComputedStyle(root).getPropertyValue('--mobile-bar-base')) || 0)
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { apply(bar.offsetHeight) })
+    })
   })()
 </script>
 

@@ -38,6 +38,9 @@
   --space-9: 6rem;
 
   /* Layout — spine | margin | text | aside. */
+  /* One row of brand + one row of nav, before anything has been measured.
+     The bar's script replaces it with the real height after first paint. */
+  --mobile-bar-base: 6.5rem;
   --spine: 12rem;
   --measure: 38rem;
   --margin-col: 6.5rem;
@@ -353,7 +356,10 @@ pre {
 }
 
 /* Covers used by the opening brush stroke (critical/brand.ts). They take the
-   colour of whatever they sit on and shrink away; the glyphs never move. */
+   colour of whatever they sit on and shrink away; the glyphs never move.
+   Overhang is a whole pixel on every side: characters sit 0.36em apart in the
+   verse, so the 0.08em this used to be left a hairline seam between two
+   glyphs, visible as a stray stroke before its neighbour was uncovered. */
 .rail-wordmark__cn > span,
 .rail-subtitle__lines > span > span {
   position: relative;
@@ -361,10 +367,19 @@ pre {
 
 .ink-cover {
   position: absolute;
-  inset: -0.08em;
+  inset: -2px;
   background: var(--cover, var(--paper));
   transform-origin: center bottom;
   pointer-events: none;
+}
+
+/* The wordmark is set at 48px with 0.22em of tracking: its strokes reach
+   much further past the glyph box than the verse's, and a 2px overhang left
+   a fringe of stroke along the edge of every character. Measured: 12px of
+   overhang at 48px clears it completely, so a quarter em scales with
+   whatever size the wordmark is given. */
+.rail-wordmark__cn .ink-cover {
+  inset: -0.25em;
 }
 
 .mobile-bar .ink-cover {
@@ -402,7 +417,11 @@ pre {
 }
 
 .rail-subtitle__lines {
-  display: block;
+  /* In vertical writing the block axis runs right to left, so `column`
+     gives the columns of verse, the first on the right. */
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
   writing-mode: vertical-rl;
   line-height: 2;
 }
@@ -413,7 +432,9 @@ pre {
 
 /* The second line starts a beat lower, like a poem's indented answer. */
 .rail-subtitle__lines > span + span {
-  padding-top: 1.5em;
+  /* In vertical writing the inline axis runs top to bottom, so this starts
+     the second line a beat lower rather than pushing it sideways. */
+  margin-inline-start: 1.5em;
 }
 
 .rail-nav {
@@ -644,7 +665,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
   .mobile-bar-spacer {
     display: block;
-    height: var(--mobile-bar-height, 6.5rem);
+    height: var(--mobile-bar-height, var(--mobile-bar-base, 6.5rem));
   }
 
   .mobile-bar__inner {
@@ -927,93 +948,71 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .now__list {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
   margin: 0;
 }
 
+/* Label, then the work: title and creator share one line. They wrap onto a
+   second line only when the two together cannot fit, and then the creator
+   starts that line — never a half-cut title beside a half-cut name. */
 .now__item {
   display: grid;
   grid-template-columns: 2.5rem minmax(0, 1fr);
   align-items: baseline;
-}
-
-.now__item--music {
-  align-items: center;
+  gap: 0 var(--space-2);
 }
 
 .now__item dt {
   color: var(--ink-faint);
   font-size: var(--text-xs);
   letter-spacing: 0.12em;
+  white-space: nowrap;
 }
 
 .now__item dd {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 0.5rem;
+  min-width: 0;
   margin: 0;
   font-size: var(--text-sm);
   line-height: 1.6;
 }
 
-.now__music {
+/* The title and the creator are two inline boxes in one line box, side by
+   side while they fit and wrapping as a pair when they do not. Each is
+   `min-width: 0` so a long one can break inside its share instead of
+   running past the column. */
+.now__item dd > .now__link {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-/* The album cover is a small record; it turns while you hover it. */
-.now__disc {
-  position: relative;
-  flex: none;
-  width: 2.75rem;
-  height: 2.75rem;
-  overflow: hidden;
-  border-radius: 50%;
-  background: var(--ink);
-  box-shadow: 0 0 0 1px var(--line);
-}
-
-.now__disc img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.now__disc::after {
-  content: "";
-  position: absolute;
-  inset: 41%;
-  border-radius: 50%;
-  background: var(--paper);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 35%, transparent);
-}
-
-.now__text {
-  display: grid;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.5rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
 }
 
 .now__title {
+  flex: 0 1 auto;
+  min-width: 0;
   color: var(--ink);
   transition: color var(--dur-hover) ease;
 }
 
 .now__creator {
+  flex: 0 1 auto;
+  min-width: 0;
   color: var(--ink-faint);
   font-size: var(--text-xs);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .now__music:hover .now__title {
-    color: var(--accent);
-  }
+/* When the pair is too wide, the creator takes the second line whole and the
+   title keeps the first; neither is cut. */
+.now__creator {
+  white-space: nowrap;
+}
 
-  @media (prefers-reduced-motion: no-preference) {
-    .now__music:hover .now__disc img {
-      animation: record-spin 3.2s linear infinite;
-    }
+@media (hover: hover) and (pointer: fine) {
+  .now__link:hover .now__title {
+    color: var(--accent);
   }
 }
 
@@ -1090,6 +1089,13 @@ html[data-theme="dark"] .theme-toggle .moon {
   display: grid;
   justify-items: start;
   gap: var(--space-2);
+}
+
+/* The shelf door sits directly under 最近 — where the eye lands after the
+   three lines — while the numbers below keep the column's full gap. The
+   negative margin cancels the grid gap between them. */
+.aside-links--shelf {
+  margin-top: calc(var(--space-5) - var(--space-8));
 }
 
 .aside-link {
@@ -1180,6 +1186,35 @@ html[data-theme="dark"] .theme-toggle .moon {
 @media (max-width: 1279px) {
   .site-main > .home-aside {
     display: none;
+  }
+}
+
+/* /now/ is the right column as a page of its own: the bar's menu button leads
+   here on a phone, where the column is folded away. The same block of markup
+   serves both, so the styles below only remove what the sidebar context gave
+   it (sticky positioning, a narrow measure) and give it a page's rhythm. */
+.aside-page .home-aside {
+  display: grid;
+  gap: var(--space-8);
+  position: static;
+  padding-top: 0;
+}
+
+.aside-page .home-aside__title {
+  margin-bottom: var(--space-4);
+}
+
+.aside-page .now__item {
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+}
+
+.aside-page .facts__row {
+  padding-block: var(--space-4);
+}
+
+@media (max-width: 1279px) {
+  .aside-page {
+    max-width: 34rem;
   }
 }
 
@@ -1795,6 +1830,39 @@ html[data-theme="dark"] .timeline-item:hover .timeline-title {
   font-weight: 400;
 }
 
+.shelf__title-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--dur-hover) ease;
+}
+
+/* 「看全部」 is the section's own page; it stays quiet until you look at the
+   heading it belongs to. */
+.shelf__more {
+  margin-left: auto;
+  color: var(--ink-faint);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dur-hover) ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shelf__title-link:hover {
+    color: var(--accent);
+  }
+
+  .shelf__more:hover {
+    color: var(--accent);
+  }
+}
+
 .shelf-wall {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(9.5rem, 100%), 1fr));
@@ -1956,6 +2024,74 @@ html[data-theme="dark"] .shelf-cover--set {
   text-align: center;
 }
 
+/* The rest of a long shelf: one line you can open, without scripting. */
+.shelf-more {
+  margin-top: var(--space-6);
+  border-top: var(--border);
+}
+
+.shelf-more > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--dur-hover) ease;
+}
+
+.shelf-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.shelf-more > summary::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-1px) rotate(45deg);
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+
+.shelf-more[open] > summary::before {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+.shelf-more__label {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.shelf-more__hint {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+}
+
+.shelf-more[open] .shelf-more__hint::after {
+  content: "收起";
+}
+
+.shelf-more[open] .shelf-more__hint {
+  font-size: 0;
+}
+
+.shelf-more[open] .shelf-more__hint::after {
+  font-size: 0.75rem;
+}
+
+.shelf-more > .shelf-wall {
+  margin-top: var(--space-5);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shelf-more > summary:hover {
+    color: var(--accent);
+  }
+}
+
 .shelf-card__name {
   font-family: var(--font-display);
   font-size: var(--text-md);
@@ -1982,6 +2118,74 @@ html[data-theme="dark"] .shelf-cover--set {
   line-height: 1.65;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+}
+
+.shelf-entry {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 「写过：…」 sits under the card, in the same quiet register as the byline:
+   it is a second way out of the same wall, not a caption of its own.
+   No underline: the line wraps when the section title is long, and a border
+   on an inline box follows the text onto the second line, leaving a stray
+   rule under the first. The whole line is the target instead, and an arrow
+   takes the place of the underline. */
+/* Confined to the cover's width, so the line never runs wider than the card
+   above it and the wall keeps its rhythm. */
+/* The credit is a footnote, not a section: small, quiet, and set apart from
+   the last row of covers by a hairline so it never reads as part of the list. */
+.shelf-credit {
+  max-width: 42rem;
+  margin-top: var(--space-7);
+  padding-top: var(--space-4);
+  border-top: var(--border);
+  color: color-mix(in srgb, var(--ink-faint) 82%, var(--paper));
+  font-size: var(--text-2xs);
+  line-height: 1.75;
+}
+
+.shelf-card__mention {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3em;
+  align-self: stretch;
+  max-width: 100%;
+  margin-top: 0.25rem;
+  color: color-mix(in srgb, var(--ink-faint) 88%, var(--paper));
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+  text-decoration: none;
+  transition: color var(--dur-hover) ease;
+}
+
+.shelf-card__mention::before {
+  content: "↗";
+  flex: none;
+  font-size: 0.85em;
+  transform: translateY(-0.1em);
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+
+/* One line, cut with an ellipsis: the target is the article, and its full
+   title is on that page. Two lines of small grey text under a cover read as
+   a caption, which this is not. */
+.shelf-card__mention-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shelf-card__mention:hover {
+    color: var(--accent);
+  }
+
+  .shelf-card__mention:hover::before {
+    transform: translate(1px, -0.25em);
+  }
 }
 
 /* Taking a cover off the wall: it rises and its shadow lengthens. The
@@ -2208,12 +2412,14 @@ a.shelf-card:focus-visible .shelf-cover {
 }
 
 /* ---------------------------------------------------------
-   Article end: one row of tools, then one list to read on with
+   Article end: tools, then the articles that follow. A 608px column of
+   four full-width rows read as an empty appendix; the pairs sit side by
+   side instead, so the block closes the page rather than trailing off.
    --------------------------------------------------------- */
 
 .article-end {
   display: grid;
-  gap: var(--space-7);
+  gap: clamp(1.5rem, 2.6vw, 2.25rem);
   padding-top: var(--space-5);
   border-top: var(--border);
 }
@@ -2228,65 +2434,6 @@ a.shelf-card:focus-visible .shelf-cover {
   gap: var(--space-2) var(--space-5);
 }
 
-.read-next__title {
-  margin-bottom: var(--space-2);
-  color: var(--ink-faint);
-  font-size: var(--text-xs);
-  font-weight: 400;
-  letter-spacing: 0.12em;
-}
-
-.read-next ol {
-  list-style: none;
-}
-
-.read-next li + li {
-  border-top: var(--border);
-}
-
-.read-next a {
-  display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: var(--space-4);
-  padding-block: 0.8rem;
-}
-
-.read-next__label {
-  color: var(--ink-faint);
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-}
-
-.read-next__name {
-  justify-self: start;
-  font-family: var(--font-display);
-  font-size: 1.0625rem;
-  font-weight: 700;
-  line-height: 1.5;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-  transition: color var(--dur-hover) ease;
-}
-
-.read-next time {
-  color: var(--ink-faint);
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  font-variant-numeric: tabular-nums lining-nums;
-}
-
-
-@media (max-width: 719px) {
-  .read-next a {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.1rem var(--space-3);
-  }
-
-  .read-next__label {
-    grid-column: 1 / -1;
-  }
-}
 
 /* ---------------------------------------------------------
    Table of contents
@@ -2791,8 +2938,7 @@ html.theme-changing {
 /* Links and controls that respond to touch get an immediate press. */
 .post-item:active .post-title a,
 .timeline-item:active .timeline-title,
-.friend-link:active .friend-link__name,
-.read-next a:active .read-next__name {
+.friend-link:active .friend-link__name {
   color: var(--accent);
 }
 
@@ -2824,6 +2970,13 @@ html.theme-changing {
   .page-turn {
     left: var(--spine);
   }
+}
+
+/* Laid down at the swap, before the incoming page can paint, and turned
+   from the first readable frame (BaseLayout). Hidden again once turned. */
+.page-turn__sheet.is-covering {
+  visibility: visible;
+  transform: none;
 }
 
 .page-turn__sheet {
@@ -2886,7 +3039,6 @@ html.theme-changing {
   .post-item:hover .post-title a,
   .timeline-item:hover .mark-text,
   .friend-link:hover .mark-text,
-  .read-next a:hover .mark-text,
   a.shelf-card:hover .mark-text {
     background-size: 100% 0.42em;
   }

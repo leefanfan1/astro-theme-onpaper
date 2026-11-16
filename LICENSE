@@ -19,3 +19,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Third-party notices for code shipped in the built site:
+
+- Mermaid diagrams are rendered in the browser with mermaid (MIT). Its layout
+  engine, elkjs, is distributed under EPL-2.0 OR GPL-3.0-or-later and is
+  included in the built JavaScript bundle under the EPL-2.0 arm. The elkjs
+  source is available at https://github.com/kieler/elkjs and its licence at
+  https://www.eclipse.org/legal/epl-2.0/ .
+- KaTeX (MIT), used for maths rendering.
+- Fonts: Newsreader, Noto Serif SC and Noto Sans SC are licensed under the
+  SIL Open Font License 1.1; the subset files served from /fonts/ retain that
+  licence, included as public/fonts/OFL-NotoSansSC.txt.

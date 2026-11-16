@@ -290,6 +290,44 @@ try {
         } finally { release(); await context.close() }
         console.log('PASS ' + engine.name() + ': article text, entrance and theme controls do not wait for article modules')
       }
+      {
+        // The turn sheet goes down on the click and stays down while the
+        // next page loads, so no frame of it is ever shown unannounced.
+        const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference', colorScheme: 'light' })
+        await instrument(context)
+        const page = await context.newPage()
+        page.on('pageerror', error => errors.push(error.message))
+        try {
+          await page.goto(base + '/')
+          await ready(page)
+          await page.evaluate(() => {
+            window.__turns = []
+            const sheet = document.querySelector('.page-turn__sheet')
+            const at = label => window.__turns.push([label, sheet.className, sheet.dataset.direction ?? '', getComputedStyle(sheet).visibility])
+            document.addEventListener('astro:before-preparation', () => {
+              const link = document.querySelector('.post-title a')
+              link.click()
+              at('preparation')
+            }, { once: true })
+            document.addEventListener('onpaper:content-ready', () => at('ready'), { once: true })
+            document.querySelector('.post-title a').click()
+          })
+          await page.waitForURL(/\/posts\//)
+          await ready(page)
+          await page.waitForTimeout(900)
+          const turns = await page.evaluate(() => window.__turns)
+          assert.deepEqual(turns[0].slice(0, 2), ['preparation', 'page-turn__sheet is-covering'], 'the sheet covers the page before the swap')
+          assert.equal(turns[0][3], 'visible')
+          assert.equal(turns[1][0], 'ready')
+          assert.equal(turns[0][2], 'forward', 'opening an article turns forward')
+          const after = await page.evaluate(() => {
+            const sheet = document.querySelector('.page-turn__sheet')
+            return [sheet.className, getComputedStyle(sheet).visibility]
+          })
+          assert.deepEqual(after, ['page-turn__sheet', 'hidden'], 'the sheet is out of the way once the turn ends')
+        } finally { await context.close() }
+        console.log('PASS ' + engine.name() + ': the page-turn sheet covers the swap and clears once the new page is readable')
+      }
     } finally { await browser.close() }
   }
   assert.deepEqual(errors, [])

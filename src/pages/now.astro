@@ -1,0 +1,26 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import SiteAside from '@/components/SiteAside.astro'
+
+// The right column as a page of its own. A phone folds that column away, so
+// the bar's menu button leads here instead of opening a sheet over the text:
+// the reader gets a real page with a URL, the back button behaves, and the
+// content is reachable without JavaScript running the interaction.
+---
+
+<BaseLayout title="最近与这个站" description="在听、在读、在看，以及这个站的一些数字。">
+  <header class="page-head">
+    <a class="page-back" href="/">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      返回
+    </a>
+    <h1 class="page-title">最近与这个站</h1>
+    <p class="page-lead">在听、在读、在看，以及这个站写下的那些数字。</p>
+  </header>
+
+  <div class="aside-page">
+    <SiteAside as="div" headingLevel="h2" />
+  </div>
+</BaseLayout>

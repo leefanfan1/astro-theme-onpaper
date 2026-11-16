@@ -4,9 +4,11 @@
 
 **在字与字之间，留一点呼吸。**
 
-[![License](https://img.shields.io/badge/LICENSE-MIT-2f363d?style=for-the-badge)](LICENSE) [![Astro](https://img.shields.io/badge/ASTRO-7.x-BC52EE?style=for-the-badge&logo=astro&logoColor=white)](https://astro.build) [![Node](https://img.shields.io/badge/NODE-%E2%89%A522.12-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org) [![Cloudflare Pages](https://img.shields.io/badge/CLOUDFLARE-PAGES-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com)
+一个中文个人博客主题：把页边当作页面的一部分，用书脊、页边注和账本式的列表来组织阅读。
 
-**[预览](#预览) · [特性](#特性) · [快速开始](#快速开始) · [部署](#部署到-cloudflare-pages) · [设计说明](#设计说明)**
+[![License](https://img.shields.io/badge/LICENSE-MIT-182134?style=for-the-badge)](LICENSE) [![Astro](https://img.shields.io/badge/ASTRO-7.x-BC52EE?style=for-the-badge&logo=astro&logoColor=white)](https://astro.build) [![Node](https://img.shields.io/badge/NODE-%E2%89%A522.23-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org) [![Cloudflare Pages](https://img.shields.io/badge/CLOUDFLARE-PAGES-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com)
+
+[预览](#预览) · [特性](#特性) · [快速开始](#快速开始) · [书单](#书单--片单--歌单) · [写文章](#写文章) · [Markdown](#markdown-扩展) · [部署](#部署到-cloudflare-pages) · [设计](#设计说明)
 
 </div>
 
@@ -14,7 +16,21 @@
 
 ## 预览
 
-![纸上留白界面预览：浅色首页、深色首页、文章页、归档页与移动端](docs/showcase.png)
+![纸上留白：浅色首页、深色首页、带目录的文章页、书单页](docs/showcase.png)
+
+<div align="center">
+
+![移动端：首页与「最近与这个站」](docs/mobile.png)
+
+</div>
+
+<div align="center">
+
+<sub><b>搜索 · 音乐卡片 · GitHub 卡片</b></sub>
+
+</div>
+
+![搜索对话框、音乐卡片与 GitHub 卡片](docs/details.png)
 
 ---
 
@@ -22,16 +38,17 @@
 
 | | |
 | :--- | :--- |
-| **✦ 排版优先**<br>正文与界面使用 Noto Sans SC，标题、站名与引文使用 Noto Serif SC 粗字重，西文标题与数字使用 Newsreader；字体在线托管。代码、数学与图表各用专用字体。 | **◐ 阅读体验**<br>文章目录、阅读进度、图片灯箱（滚轮 / 双指缩放、拖动）、回到顶部与分享栏。 |
-| **▯ 移动端**<br>文章页顶栏随滚动压缩，给正文让出空间；44px 触控热区。 | **◯ 搜索**<br><kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>K</kbd> 或 <kbd>/</kbd> 唤起，构建期索引覆盖标题、标签与正文。 |
-| **◑ 主题**<br>浅色 / 深色 / 跟随系统，圆形揭示切换，可持久化。 | **✎ Markdown 扩展**<br>KaTeX 公式、Mermaid 图表、音乐卡片、GitHub 卡片与视频嵌入。 |
-| **◎ 可选能力**<br>Google Analytics 4，以及基于 Cloudflare KV 的阅读计数。 | **⌘ 无障碍**<br>跳转正文、可见焦点、语义化标题、`aria-current`、可键盘操作的弹窗。 |
+| **✦ 排版优先**<br>正文与界面 Noto Sans SC，标题、站名与数字 Newsreader + Noto Serif SC 粗字重。强调用中文着重号，不是斜体。 | **◐ 阅读体验**<br>目录、阅读进度、图片灯箱、回到顶部、分享栏；文末可复制引用、生成分享卡片、打印成 PDF。 |
+| **▯ 页边布局**<br>桌面端左侧书脊、正文左侧页边注、宽屏右侧目录或右栏；窄屏一路折回正文上方，不丢信息。 | **◯ 搜索**<br><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd> 或 <kbd>/</kbd> 唤起；构建期索引标题、标签与正文，命中处高亮。 |
+| **◑ 主题**<br>浅色 / 深色 / 跟随系统，从按钮处圆形揭示，可持久化。冷白纸面 + 蓝黑墨水，夜间是深蓝墨底而非纯黑。 | **✎ Markdown 扩展**<br>KaTeX、Mermaid、音乐卡片（一链四平台）、GitHub 卡片、Spotify / B 站 / YouTube 嵌入。 |
+| **▤ 书架**<br>书单、片单、歌单三份 Markdown，海报墙来自豆瓣真实封面，点进去是条目页，写过文章的条目还挂着「写过」链接。 | **◎ 分享**<br>每篇文章构建时生成自己的分享图（标题 + 摘要前 60 字），分享卡片带本地生成的二维码。 |
+| **⌘ 无障碍**<br>跳转正文、可见焦点、语义化标题、`aria-current`，弹窗可键盘操作，尊重 `prefers-reduced-motion`。 | **◈ 中国大陆可用**<br>核心 CSS / JS 全部随站打包，不依赖 jsDelivr、unpkg、cdnjs；字体只走 Google Fonts 中国接口。 |
 
 ---
 
 ## 快速开始
 
-需要 Node.js **22.12** 或更高版本。
+需要 Node.js **22.23.4** 或更高版本（Astro 7 的最低要求）。
 
 ```bash
 npm install
@@ -45,17 +62,23 @@ npm run dev
 | `npm run dev` | 启动开发服务器 |
 | `npm run new 网址` | 新建文章（可带 `title` / `tags` / `pin` / `draft` 参数） |
 | `npm run build` | 生成静态站点到 `dist/` |
-| `npm run test:responsiveness` | 构建并验证脚本延迟下的关键控件、后台请求让路与连续换页取消 |
-| `npm run test:performance` | 构建并验证首屏字体体积、页面稳定性与搜索恢复 |
-| `npm run test:hosted-fonts` | 构建并验证在线字体来源、动态字形、搜索、跨页复用和 Chrome / WebKit 表现 |
-| `npm run test:font-source` | 验证字体源安全边界、斜体与显示字体文字收集，不访问 CDN |
-| `npm run test:theme-controls` | 构建并验证主题动画、控件对齐及换页 |
-| `npm run build:clean` | 清理 Astro 内容缓存后再构建 |
-| `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
-| `npm run preview` | 预览生产构建 |
-| `npm run shots` | Playwright 截图检查（需要先运行 dev） |
+| `npm run build:clean` | 清理内容缓存后再构建 |
+| `npm run preview` | 预览生产构建（比较字体与动画请用它） |
+| `npm run covers` | 去豆瓣补书单 / 片单封面 |
+| `npm run music` | 解析并缓存 `::music` 里的链接 |
 | `npm run og` | 从 `public/og.svg` 重新生成 `public/og.png` |
-| `npm run music` | 解析并缓存 `::music` 指令里的链接 |
+| `npm run shots` | Playwright 截图检查（需先 `npm run dev`） |
+| `npm run clean` | 只清理 `.astro` 缓存 |
+
+测试（每条都会先构建）：
+
+| 命令 | 验证内容 |
+| --- | --- |
+| `npm run test:responsiveness` | 脚本延迟下关键控件可用、后台预取让路、连续换页取消、翻页遮罩 |
+| `npm run test:performance` | 首屏字体体积、无模块等待、无布局跳动、搜索恢复 |
+| `npm run test:hosted-fonts` | 在线字体来源、动态字形、跨页复用、Chrome / WebKit 一致性 |
+| `npm run test:font-source` | 字体源安全边界、斜体收集、显示字体文字收集（不访问 CDN） |
+| `npm run test:theme-controls` | 主题动画、控件对齐、切换中搜索、换页清理 |
 
 ### 新建文章
 
@@ -80,9 +103,7 @@ pin: 0
 在这里开始写正文。
 ```
 
-命令不会提问，跑完就结束；标题不合适，打开文件改 `title` 即可。
-
-想一次把标题、标签、置顶和草稿都定好，就用 `key=value` 写在网址后面（不需要 `--`，也不用记位置）：
+想一次把标题、标签、置顶和草稿都定好，就在网址后面写 `key=value`（不需要 `--`，也不用记位置）：
 
 ```bash
 npm run new a-walk-without-a-map title=在一条不认识的街上走一会儿 tags=随笔,城市 pin=1 draft=1
@@ -97,14 +118,10 @@ npm run new a-walk-without-a-map title=在一条不认识的街上走一会儿 t
 
 几个要点：
 
-- 网址只用小写英文、数字和连字符，例如 `a-walk-without-a-map`
-- 中文标题写成 `title=...`，不要把中文直接放在网址位置
-- 不写 `tags` 时，脚本会填一个占位标签 `_未分类`。它只用来保持 frontmatter 的列表格式，不会出现在文章页、标签页、搜索或 RSS 里
-- 同名文件已存在时会拒绝覆盖，换一个网址再试
-
-标签沿用列表写法（`tags:` 下面每个一行），和现有文章一致。
-
-不想用命令也完全可以：直接新建 `src/content/posts/我的文章.md`，手动写 frontmatter，效果一样。
+- 网址只用小写英文、数字和连字符
+- 中文标题写成 `title=...`，不要把中文直接放网址位置
+- 不写 `tags` 时会填占位标签 `_未分类`，它只维持 frontmatter 的列表格式，不会出现在文章、标签页、搜索或 RSS 里
+- 同名文件已存在会拒绝覆盖
 
 ---
 
@@ -112,31 +129,33 @@ npm run new a-walk-without-a-map title=在一条不认识的街上走一会儿 t
 
 ```text
 src/
-├── config.ts                 站点、导航、配色、字体、功能开关
-├── content.config.ts         内容集合 schema
+├── config.ts                 站点、导航、配色、字体、功能开关（单一配置入口）
+├── content.config.ts         posts / pages / shelf 三个集合的 schema
 ├── content/
 │   ├── posts/                文章
-│   └── pages/                about.md 关于页、friends.md 友链页
-├── components/               界面组件
-├── layouts/BaseLayout.astro  页面外壳、主题脚本、全局样式
-├── pages/                    首页、文章、归档、标签、关于、搜索索引、RSS
-├── plugins/                  Markdown 指令、Mermaid、外链、开发期 views
-├── styles/                   字体、布局、正文、扩展卡片
-└── utils/                    文章查询、格式化、音乐解析
+│   ├── pages/                about.md、friends.md、now.md（右栏「最近」）
+│   └── shelf/                books.md、films.md、music.md
+├── layouts/BaseLayout.astro  页面外壳、翻页动画、主题与字体脚本
+├── components/               书脊、右栏、书架卡片、目录、搜索、分享等
+├── pages/                    首页、归档、文章、书架、最近、404、RSS、sitemap、OG
+├── plugins/                  Markdown 指令、Mermaid、外链、消毒、导航包、字体
+├── styles/                   base.css（布局与令牌）、prose.css、extensions.css
+└── utils/                    critical/ 内联运行时、文章查询、书架解析、翻页交接
 
-functions/api/views.js        Cloudflare Pages Function
-scripts/                      音乐缓存、OG 生成、截图、缓存清理
-public/                       favicon、OG、字体、示例图片、_headers
+functions/api/views.js        Cloudflare Pages Function（阅读计数）
+scripts/                      封面抓取、音乐解析、OG、截图、新建文章、清理
+public/                       favicon、OG、封面缓存、_headers、_redirects
+tests/                        五套回归测试
 ```
 
 ---
 
-## 站点配置
+## 配置
 
-站点信息、导航和主题设置集中在 `src/config.ts`；友情链接内容在 `src/content/pages/friends.md` 中单独维护：
+站点信息、导航、配色、字体和功能开关都集中在 `src/config.ts`。友链、书单、「最近」各自是 Markdown，不在这个文件里。
 
 <details>
-<summary><b>展开完整配置示例</b></summary>
+<summary><b>展开完整配置</b></summary>
 
 ```ts
 export const siteConfig = {
@@ -146,6 +165,9 @@ export const siteConfig = {
   author: '李凡凡',
   email: 'hello@onpaper.example',
   url: 'https://onpaper.example.com', // 部署后改成真实域名
+  lang: 'zh-CN',
+  locale: 'zh_CN',
+  startYear: 2024,
   postsPerPage: 4,
   tocOpen: false, // 文章目录默认收起
 
@@ -156,135 +178,134 @@ export const siteConfig = {
     { label: '友链', href: '/friends/' },
   ],
 
-  analytics: {
-    googleAnalyticsId: '', // 可选，填写 GA4 的 G-XXXXXXXXXX
-  },
-
   socials: [
     { label: 'RSS', href: '/rss.xml', external: true },
     { label: 'GitHub', href: 'https://github.com/', external: true },
     { label: 'Email', href: 'mailto:hello@onpaper.example' },
   ],
 
+  analytics: { googleAnalyticsId: '' },
+
   theme: {
     defaultMode: 'auto', // auto | light | dark
-    light: { paper: '#F4F5F7', ink: '#182134', accent: '#2A47C9' },
-    dark: { paper: '#10141C', ink: '#E3E6ED', accent: '#93A6FF' },
+    light: { paper: '#F4F5F7', ink: '#182134', accent: '#2A47C9', /* … */ },
+    dark: { paper: '#10141C', ink: '#E3E6ED', accent: '#93A6FF', /* … */ },
   },
 
   fonts: {
-    display: '"Newsreader", "Noto Serif SC", "Songti SC", …',
-    body: '"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", …',
+    display: '"Newsreader", "Noto Serif SC", …',
+    body: '"Noto Sans SC", "PingFang SC", …',
     mono: '"SFMono-Regular", Consolas, …',
   },
 
   features: {
-    search: true,
-    views: true,
-    musicCards: true,
-    githubCards: true,
-    mediaEmbeds: true,
-    math: true,
-    mermaid: true,
+    search: true, views: true, musicCards: true, githubCards: true,
+    mediaEmbeds: true, math: true, mermaid: true,
   },
 }
 ```
 
 </details>
 
-### 改书单
-
-`/shelf/` 页面「书单 · 片单 · 歌单」的内容在 `src/config.ts` 的 `shelf` 里：`shelf.books` / `shelf.films` / `shelf.music`，每项写 `title`、`creator`，可选 `year`、`note`、`url`、`cover`。页面是一面封面墙：`cover` 填封面图（推荐放进 `public/shelf/` 写成 `/shelf/xxx.jpg`，外链请选国内可访问的图床）；音乐条目不填时沿用音乐卡片缓存里的专辑封面；都没有时按书名/片名排一张文字封面。某一类留空数组，那一栏就不显示；三类都空时，首页右栏也不显示入口。
-
-首页右栏「这个站」里的篇数、字数和天数都由文章自动统计，不需要维护。
-
-文章末尾除了分享按钮，还有「复制引用」「分享卡片」（把标题和选中的一段话生成图片）和「打印 / 存成 PDF」。
-
 ### 改配色
 
-只改 `theme.light` / `theme.dark` 即可，主题会把它们注入成 CSS 变量：
+只改 `theme.light` / `theme.dark`，主题会注入成 CSS 变量：
 
 | 变量 | 用途 | 变量 | 用途 |
 | --- | --- | --- | --- |
 | `paper` | 页面背景 | `ink` | 主文字 |
 | `paperRaised` | 卡片 / 代码块表面 | `inkSoft` | 正文 / 次要文字 |
-| `surface` | 浅一层的表面 | `inkFaint` | 日期 / 说明文字 |
+| `surface` | 浅一层的表面 | `inkFaint` | 日期 / 页边注 |
 | `surfaceAlt` | 更深的表面 | `line` | 分隔线 |
-| `accent` | 链接、当前导航 | `accentStrong` | 强调文字的深色版 |
+| `accent` | 链接、当前位置、焦点 | `accentStrong` | 悬停与按下 |
 | `accentSoft` | 强调的浅底 | `mark` | 搜索命中与 `<mark>` 底色 |
 | `selection` | 选区颜色 | | |
 
-默认配色是“冷白纸面上的蓝黑墨水”：`#F4F5F7` 纸色、`#182134` 蓝黑墨色（正文本身就是这个颜色）、`#2A47C9` 钢笔蓝。深色模式用 `#10141C` 深蓝墨底和 `#93A6FF` 灯下的蓝，而不是中性纯黑。
+默认是「冷白纸面上的蓝黑墨水」：`#F4F5F7` 纸色、`#182134` 蓝黑墨色、`#2A47C9` 钢笔蓝。深色模式用 `#10141C` 深蓝墨底和 `#93A6FF` 灯下的蓝，不用中性纯黑。
 
-尺寸、间距、圆角、阴影和动效时长曲线是主题的一部分，统一定义在 `src/styles/base.css` 顶部的 `:root` 中，不放进站点配置。
+尺寸、间距、圆角、阴影和动效曲线属于主题本身，统一定义在 `src/styles/base.css` 顶部的 `:root`，不放站点配置。
 
 ### 改字体
 
 `siteConfig.fonts` 控制三套字体栈：
 
-- `body`（正文、导航、界面、搜索结果）：**Noto Sans SC** 400–700，中英文同一套笔画
-- `display`（站名、标题、引文、日期数字）：中文 **Noto Serif SC** 500–900，西文与数字 **Newsreader**（光学尺寸轴）
-- `mono`：代码等宽字体；数学与 Mermaid 使用各自的专用字体
+- **body**：正文、导航、界面、搜索结果。Noto Sans SC，中英文同一套笔画
+- **display**：站名、标题、引文、日期数字。中文 Noto Serif SC 粗字重，西文与数字 Newsreader
+- **mono**：代码等宽字体；数学与 Mermaid 各用专用字体
 
-强调（`<em>`）使用中文着重号而不是斜体，因此不再请求斜体字形。
+构建时从 `https://fonts.googleapis.cn/css2` 取字体定义，访问者直接从 `https://fonts.gstatic.cn` 下载 WOFF2。每页固定 3 个字体请求：全站共用的 Newsreader 西文子集、该页正文用到的 Noto Sans SC 子集、只包含「显示字体」文字的 Noto Serif SC 子集。构建期会读 CSS 里使用 `var(--font-display)` 的选择器来收集显示文字；遇到无法静态确定的写法就保守地把整页算作显示文字，不猜层叠。
 
-构建时从 `https://fonts.googleapis.cn/css2` 获取字体定义，访问者直接从 `https://fonts.gstatic.cn` 下载 WOFF2 字体。首页、站内换页和搜索结果中的动态文字都使用在线字体，不加载本地字体文件作为兜底。原自托管字体文件、打包依赖、构建分支和导航包的 Base64 字体传输代码已移除。
+第三方字体 CSS 与缓存数据走同一套校验，只序列化允许的描述符，只接受指定 HTTPS 源，不跟随重定向，限制响应体大小。页面首次显示前等待本页字体就绪；6 秒仍未就绪就直接显示，避免字体源不可达时页面永远不出现。禁用 JavaScript 时使用浏览器原生加载策略。
 
-生产构建每页固定 3 个字体请求：全站共用的 Newsreader 西文子集、该页正文用到的 Noto Sans SC 子集，以及只包含“显示字体”文字的 Noto Serif SC 子集。构建时会读取 CSS 中使用 `var(--font-display)` 的选择器，只收集这些元素里的文字；遇到无法匹配的写法（嵌套规则、别名变量等）时保守地把整页文字都算作显示文字，不猜测 CSS 层叠。字重、光学尺寸和字形保持不变。HTML 提前连接字体域名并预加载确切的字体 URL，无须先下载远程 CSS 再发现字体。动态文字所需的通用字体声明在首次搜索时才加载，其字体文件也全部来自在线源；导航 JSON 只包含文档，不再内嵌字体字节。构建期缓存位于 `node_modules/.cache/onpaper-google-cn/`，其中下载的字体只用于核验真实字形，不作为网站字体后备。开发服务器也使用在线字体，但使用通用分片；比较实际访问速度请使用 `npm run build` 和 `npm run preview`。
+---
 
-第三方字体 CSS 与缓存数据都经过同一套校验，并只序列化允许的字体描述符；只接受指定 HTTPS 字体源，不跟随重定向，限制 CSS 和字体响应体大小。搜索中的额外字体准备不阻塞后续查询或换页，关闭搜索及换页会使旧结果失效。
+## 书单 · 片单 · 歌单
 
-页面文字首次显示前会等待本页所需字体全部就绪，保持字体一致；站内换页等待期间保留当前页面。临时请求失败仍自动重试，不切换到本地字体或系统字体；首次访问且没有缓存时，字体源无法访问会延长内容显示前的等待。禁用 JavaScript 时使用浏览器原生字体加载策略。运行 `npm run test:hosted-fonts` 验证在线字形、邮箱链接、动态文字、跨页复用与等待期间的一致性。
+三份 Markdown，一份清单一个文件：
 
-关键交互（主题、搜索、目录、移动顶栏与 TOP）在构建期编译为内联脚本，放在完整页面内容之后、字体就绪检查之前；正文首次可见时无需再等待这些控件的外部模块。脚本在站内换页时只初始化一次，原有动画参数与交互保持不变。后台预取只缓存少量 HTML，最多两个并发请求；自动预热最多两个链接、逐个执行。实际点击会取消未完成的后台预取，下一页字体使用高优先级，继续点击其他页面时会取消过时的字体下载。
+- `src/content/shelf/books.md`
+- `src/content/shelf/films.md`
+- `src/content/shelf/music.md`
+
+每本 / 每部 / 每张写成一个段落，一行一个字段：
+
+```text
+书名：城南旧事
+作者：林海音
+年份：1960
+豆瓣：https://book.douban.com/subject/3057333/
+一句话：小时候读不懂，长大才知道它写的是告别。
+```
+
+书单用 `书名：` / `作者：`，片单用 `片名：` / `导演：`，歌单用 `名称：` / `歌手：` / `链接：`。名称必填，其余可省；`一句话：` 显示在封面下面；文件开头的 `<!-- -->` 注释不会出现在页面上。
+
+页面：
+
+- `/shelf/` 三栏合在一起的海报墙
+- `/shelf/books/`、`/shelf/films/`、`/shelf/music/` 各自单独一页
+
+点封面去豆瓣（歌单回到音乐平台）。如果条目标题在某一篇文章里出现过，卡片下面会多一行「写过：…」，直接跳到那篇文章（有对应小标题就跳到小标题）。某一栏超过 12 项时折进 `<details>`，不依赖脚本；数量改 `src/pages/shelf.astro` 里的 `VISIBLE`。
+
+### 封面从豆瓣来
+
+```bash
+npm run covers
+```
+
+脚本读上面三份 Markdown，给没写 `封面：` 的条目去豆瓣找图：写了 `豆瓣：` 就用那个条目页，没写就按标题搜。封面下载到 `public/shelf/`，路径记进 `src/data/shelf-covers.json`，压到 800px，一张 50–110KB。歌单不用跑，封面沿用音乐卡片缓存里的那张。
+
+为什么不在页面里直接引用豆瓣图床：它有防盗链，浏览器直接请求返回 418，所以只能先下到本站再发。图片流量因此走你自己的站。只补某几本可以 `node scripts/fetch-covers.mjs 城南旧事 一一`。
+
+### 右栏「最近」
+
+`src/content/pages/now.md` 管三行，第二行末尾的网址就是点击目标（在读、在看填豆瓣条目页，在听填音乐平台）：
+
+```text
+在听：《城市》
+张悬 https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy
+```
+
+删掉某一段，那一行就不显示。手机上右栏是收起来的，顶栏最右边那个按钮进 `/now/` —— 一个独立页面，有自己的 URL 和返回按钮，不是下拉抽屉。桌面端和 `/now/` 共用同一个 `SiteAside.astro`，改一处两边同步。
+
+「这个站」里的篇数、字数和天数由文章自动统计，不需要维护。
 
 ### 友链
 
-所有友情链接集中写在 `src/content/pages/friends.md`，每个友链依次写名称、网址、简介三行，友链之间空一行：
+集中在 `src/content/pages/friends.md`，每个友链三行（名称、网址、简介），之间空一行：
 
 ```text
 朋友的博客
 https://example.com/
 一段简短的介绍。
-
-另一位朋友
-https://example.org/
-另一段介绍。
 ```
 
-复制一组三行即可新增友链，删除对应组即可移除，调整上下顺序即可改变展示顺序。无需括号、列表符号或缩进；网址填写完整地址，简介可以省略，也可以写多行。文件顶部的 `title` 和 `description` 分别设置页面标题和搜索摘要。页面会自动将这些内容显示为友链卡片，线上修改后需要重新构建部署。
-
-### 分享图（OG）
-
-`public/og.svg` 是分享卡片模板，`npm run og` 会把它渲染成 `public/og.png`（1200×630）。页面默认用它作为 `og:image` / `twitter:image`。
-
-修改标题、副标题或配色后，先同步 `public/og.svg`，再运行：
-
-```bash
-npm run og
-```
-
-### Google Analytics 4（可选）
-
-1. 在 [Google Analytics](https://analytics.google.com) 创建媒体资源和 Web 数据流，复制 Measurement ID（`G-XXXXXXXXXX`）
-2. 填到 `siteConfig.analytics.googleAnalyticsId`
-3. 重新构建并部署
-
-只有生产构建且 ID 非空时才注入 `gtag.js`，`npm run dev` 不会加载。主题关闭了 GA 的自动 page_view，改为在 `astro:page-load` 手动上报，客户端路由切换也能正确统计。留空则完全不加载任何 GA 脚本。
+复制一组三行即新增，删除对应组即移除，调换顺序即改变展示顺序。简介可省略，也可写多行。
 
 ---
 
 ## 写文章
 
-推荐用 `npm run new` 生成（见上方「新建文章」），标题、标签和置顶可以一次写清：
-
-```bash
-npm run new rain-before-it-stops title=雨停之前，先别急着走 tags=随笔,城市
-```
-
-生成后打开 `src/content/posts/rain-before-it-stops.md`，补上 `description` 和正文即可。
-
-也可以直接在 `src/content/posts/` 新建 `.md`，文件名即网址：
+推荐用 `npm run new` 生成，也可以直接在 `src/content/posts/` 新建 `.md`，文件名即网址：
 
 ```md
 ---
@@ -302,7 +323,7 @@ draft: false               # true 时只在 dev 可见
 正文……
 ```
 
-关于页在 `src/content/pages/about.md`。首页每页文章数由 `siteConfig.postsPerPage` 控制；置顶文章只出现在第一页，列表里用一个小别针图标标记。
+首页每页文章数由 `siteConfig.postsPerPage` 控制；置顶文章只出现在第一页，列表里用一个别针图标标记。关于页在 `src/content/pages/about.md`。
 
 ---
 
@@ -314,20 +335,14 @@ draft: false               # true 时只在 dev 可见
 ::music{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy"}
 ```
 
-构建时：
+构建时先读 `src/data/music-cache.json`，没缓存才去 Spotify 取元数据，再到 Apple Music / 网易云 / QQ 音乐按标题、艺人、类型打分，每个平台取最高分且过阈值的结果。推荐从 Spotify 链接开始，跨平台匹配最准。
 
-1. 先读 `src/data/music-cache.json` 缓存
-2. 没有缓存时，用 `fetch` 读取 Spotify 元数据
-3. 解析专辑 / 单曲名、艺人、类型与封面
-4. 到 Apple Music / 网易云 / QQ 音乐搜索，按标题、艺人、类型打分
-5. 每个平台取最高分且达到阈值的结果，合并成一张卡片
+新增或修改链接后运行 `npm run music` 写回缓存，建议一起提交，之后构建不再请求平台。
 
 > [!TIP]
-> **推荐从 Spotify 链接开始**，作为起点时跨平台匹配准确率最高。想加音乐，先在 Spotify 找到专辑或歌曲，再粘贴 `::music` 链接。
+> 卡片里的四个平台图标是固定的 2×2 网格，不会因为宽度变成 3+1。
 
-新增或修改链接后运行 `npm run music`，结果会写回 `src/data/music-cache.json`，建议一起提交，之后构建不再请求平台。
-
-手动填写（需要自己准备封面）：
+手动填写（自己准备封面）：
 
 ```md
 ::music-card{title="城市" artist="张悬" cover="https://.../cover.jpg" type="album" spotify="https://open.spotify.com/album/..."}
@@ -335,27 +350,25 @@ draft: false               # true 时只在 dev 可见
 
 ### GitHub 卡片
 
-支持直接粘贴仓库网址，或写 `owner/name`：
-
 ```md
 ::github{url="https://github.com/withastro/astro"}
 
-::github{repo="withastro/astro" description="The web framework for content-driven websites." stars="52k" forks="2.8k" language="TypeScript"}
+::github{repo="withastro/astro" description="…" stars="52k" forks="2.8k" language="TypeScript"}
 ```
 
-`url` 形式会在构建时解析出 owner / repo。卡片在浏览器里按需读取 GitHub 公开 API，并用 `sessionStorage` 缓存；没有网络时保留静态字段。
+`url` 形式在构建时解析 owner / repo。卡片在浏览器里按需读 GitHub 公开 API，用 `sessionStorage` 缓存；没有网络时保留静态字段。
 
 ### 媒体嵌入
 
 ```md
-::embed{url="https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy" title="张悬《城市》" caption="有时候，一张专辑就够陪一个晚上。"}
+::embed{url="https://open.spotify.com/album/..." title="张悬《城市》" caption="有时候，一张专辑就够陪一个晚上。"}
 ```
 
-支持 YouTube、Bilibili、Spotify、Vimeo。iframe 使用 `loading="lazy"`，进入视口后自动加载，**不会自动播放**（B 站额外设置 `autoplay=0`、`poster=1` 并禁用 autoplay 权限）。
+支持 YouTube、Bilibili、Spotify、Vimeo。iframe 使用 `loading="lazy"`，进视口才加载，**不会自动播放**（B 站另设 `autoplay=0`、`poster=1` 并禁用 autoplay 权限）。
 
 ### 数学与图表
 
-行内数学 `$T = \frac{C}{400}$`，块级数学：
+行内 `$T = \frac{C}{400}$`，块级：
 
 ```md
 $$
@@ -373,48 +386,42 @@ flowchart LR
 ```
 ````
 
-Mermaid 只在页面出现图表时动态加载；KaTeX 的 CSS 也只在文章包含数学时引入。
+Mermaid 只在页面出现图表时动态加载；KaTeX 的 CSS 也只在文章含数学时引入。
 
 > [!NOTE]
-> 修改 Markdown 插件后，先停止开发服务，运行 `npm run clean`，再重新 `npm run dev`，避免 Astro 继续使用旧的内容缓存。
+> 改了 Markdown 插件后，先停开发服务、`npm run clean`，再 `npm run dev`，避免 Astro 继续用旧的内容缓存。
+
+### 文章里可以直接写 HTML
+
+正文中的原始 HTML 会保留，但会经过一次 `rehype-sanitize`（schema 在 `src/plugins/rehype-sanitize-markdown.mjs`）。它排在插件链最后，所以 KaTeX 的 MathML、Mermaid 的 SVG、卡片图标都在消毒之后才被检查。允许的是一套主题自己的词汇（卡片 class、`data-*`、SVG 的 `viewBox` / `path` 等）；`script` 和事件属性一律丢弃，嵌入 iframe 只认四个白名单域名。
 
 ---
 
 ## 部署到 Cloudflare Pages
 
-页面输出包含 Cloudflare 的 `email_off` 排除标记，邮箱地址和 `mailto:` 链接直接保留在 HTML 中，避免 Email Address Obfuscation 将地址改写为依赖解码脚本的 `[email protected]`。页脚与关于页在脚本未加载时也可使用邮箱链接。
-
-站点是纯静态的，只有阅读计数通过一个 Pages Function 访问 KV。
-
-在 Cloudflare Pages 里设置：
+纯静态站点，只有阅读计数走一个 Pages Function 访问 KV。
 
 | 配置项 | 值 |
 | --- | --- |
 | Build command | `npm run build` |
 | Build output directory | `dist` |
-| Node version | 22.12+ |
+| Node version | 22.23.4+ |
 
-或者本地构建后用 Wrangler 上传：
+或者本地构建后用 Wrangler：
 
 ```bash
 npm run build
 npx wrangler pages deploy dist
 ```
 
-### 绑定 KV（可选，用于阅读计数）
+页面带 Cloudflare 的 `email_off` 标记，邮箱和 `mailto:` 直接留在 HTML 里，不被 Email Address Obfuscation 改写成依赖脚本的地址。
 
-1. 进入 **Workers & Pages → KV**，创建命名空间，例如 `onpaper-views`
-2. 进入 Pages 项目 → **Settings → Functions → KV namespace bindings**
+### 绑定 KV（可选）
+
+1. **Workers & Pages → KV**，创建命名空间，例如 `onpaper-views`
+2. Pages 项目 → **Settings → Functions → KV namespace bindings**
 3. 变量名填 **`VIEWS_KV`**，选择刚创建的命名空间
 4. 重新部署
-
-也可以使用 Wrangler：
-
-```bash
-npx wrangler kv namespace create VIEWS_KV
-```
-
-把返回的 id 填进 `wrangler.toml` 里被注释掉的 `[[kv_namespaces]]` 块并取消注释。
 
 接口：
 
@@ -423,31 +430,74 @@ npx wrangler kv namespace create VIEWS_KV
 | `GET` | `/api/views?slug=post-id` | 返回 `{ "views": 12 }` |
 | `POST` | `/api/views?slug=post-id` | 计数 +1，返回新值 |
 
-slug 只接受小写字母、数字和连字符，最长 96 字符。KV 未绑定时返回 503，文章页会自动隐藏计数，不影响阅读。
+KV 未绑定时返回 503，文章页自动隐藏计数，不影响阅读。`npm run dev` 用内存里的同名接口演示，重启归零。
 
-`npm run dev` 使用内存里的同名接口做演示，重启后计数归零。
+### 安全头
+
+`public/_headers` 里写好了 CSP、HSTS、`X-Frame-Options`、`Permissions-Policy`，以及静态资源的长期缓存。`_astro`、`fonts`、`_navigation`、`shelf`、`og`、`images` 都是 `immutable`。
+
+> Astro 自带的 `security.csp` 试过，它会拦 Shiki 生成的 inline style，所以这里改用手写的静态头部。
+
+### 站点地图与 404
+
+构建产出 `sitemap-index.xml` 和同内容的 `sitemap.xml`，文章条目带 `lastmod`（取 `updated`，没有则取 `published`）。`robots.txt` 指向 index。
+
+404 是 `src/pages/404.astro`，构建为 `dist/404.html`，Cloudflare Pages 自动用它响应不存在的地址。`/page/1/` 由 `public/_redirects` 301 回首页，并附一个不依赖脚本的跳转页，本地预览也能生效。
+
+> [!IMPORTANT]
+> 上线前把 `src/config.ts` 的 `url` 改成真实域名。否则 sitemap、robots.txt、canonical、RSS 和分享图地址都会指向示例域名。
+
+### 分享图（OG）
+
+- `public/og.svg` 是默认模板，`npm run og` 渲染成 `public/og.png`（1200×630）
+- 每篇文章在构建时生成自己的 `/og/<slug>.png`：左侧竖排站名，右侧日期、标题和摘要前 60 字。字体只按图里用到的字取子集，缓存在 `node_modules/.cache/onpaper-og/`
+- 文章页的「分享卡片」带二维码，扫码打开当前文章；二维码在浏览器里本地生成（`uqr`），不请求外部服务
+
+### Google Analytics 4（可选）
+
+1. 在 [Google Analytics](https://analytics.google.com) 创建媒体资源和 Web 数据流，复制 `G-XXXXXXXXXX`
+2. 填进 `siteConfig.analytics.googleAnalyticsId`
+3. 重新构建部署
+
+只有生产构建且 ID 非空时才注入 `gtag.js`，`npm run dev` 不加载。自动 page_view 已关闭，改在 `astro:page-load` 手动上报，客户端路由切换也能统计。留空则完全不加载 GA。
 
 ---
 
 ## 设计说明
 
-整个主题围绕一个想法：**页边也是页面的一部分**。
+整个主题围绕一个想法：**页边也是页面的一部分。**
 
-- **书脊**：桌面端左侧是一条窄栏，「纸上留白」竖排站立，像书脊上的题签；下面是副标题、导航与搜索 / 主题按钮。平板和手机改为顶部横排，向下阅读时自动让出空间，向上滚动立即回来
-- **页边注**：页面网格是「页边列 · 正文列 · 右侧栏」。日期、年份、阅读时长和标签写在正文左侧的页边，像读书时的铅笔批注；窄屏时折回正文上方
-- **首页**：站点简介按句分行作为开篇，文章列表像账本一样只在年份变化处写一次年份；置顶文章更大、写全日期
-- **文章页**：标题与正文之间没有装饰；页边注随阅读停留在视线旁；宽屏右侧是目录，较窄时回到正文上方的折叠目录；文末是分享、上一篇 / 下一篇和同标签文章
-- **归档**：大号年份挂在页边，标签像书后的索引一样排成一行，篇数写成上标
-- **友链**：通讯录式的一行一位，不做卡片网格
-- **字体**：正文无衬线，标题与引文换成宋体粗字重——沿用中文书籍“引文换字体”的习惯，不用左边框和底色框
-- **动效**：首次访问时站名逐字“洇”出（每次会话一次）；导航当前位置的短竖线 / 下划线在换页时滑到新位置；翻页时内容沿翻页方向轻移；图片灯箱从原图位置放大并回到原处；主题切换从按钮处圆形揭示；复制代码在按钮本身确认。全部只动 transform 与 opacity，按组件分别处理 `prefers-reduced-motion`
-- **图标**：全部为内联 SVG
+- **书脊**：桌面端左侧窄栏，「纸上留白」竖排站立，像书脊上的题签；下面是副标题、导航与搜索 / 主题按钮。平板和手机改为顶部横排，向下阅读时让出空间，向上滚动立即回来
+- **页边注**：网格是「页边列 · 正文列 · 右侧栏」。日期、年份、阅读时长和标签写在正文左侧，像读书时的铅笔批注；窄屏折回正文上方
+- **首页**：站点简介按句分行作开篇，文章列表像账本，只在年份变化处写一次年份；置顶文章更大、写全日期
+- **右栏**：短账本 ——「最近」三行、站点的篇数字数天数、书单与 RSS 入口。内容少，所以给足呼吸。手机上进 `/now/` 看同一份内容
+- **文章页**：标题与正文之间没有装饰；页边注随阅读停在视线旁；宽屏右侧是目录，较窄时回到正文上方的折叠目录
+- **书架**：封面墙。真实封面本身就是最好的装饰，所以不加边框、不加阴影、不加说明文字，只在下面留书名、作者与年份
+- **归档**：大号年份挂在页边，标签像书后索引排成一行，篇数写成上标
+- **友链**：通讯录式一行一位，不做卡片网格
+- **字体**：正文无衬线，标题与引文换宋体粗字重——沿用中文书籍「引文换字体」的习惯，不用左边框和底色框
+- **图标**：全部内联 SVG，不引第三方图标库
+
+### 动效
+
+只动 `transform`、`opacity` 与 `clip-path`，按组件分别处理 `prefers-reduced-motion`。
+
+- **翻页**：点击链接后，一张与纸同色的幕先扫过（200ms），它盖住的瞬间才替换内容，再揭开。路由器会等幕落下，所以不会出现「先看到下一页再闪回去」
+- **目录**：展开和收起动的是列表自身高度，文字全程不消失、不重绘，鼠标底下的行也不会被滚走
+- **首屏**：站名逐字「洇」出（每次会话一次）。字本身不做动画——文字一旦进合成层，抗锯齿会变，看起来像抖
+- **其他**：导航当前位置的短竖线在换页时滑到新位置；图片灯箱从原图位置放大并回原处；主题切换从按钮处圆形揭示；复制代码在按钮本身确认
+
+### 性能
+
+- 关键交互（主题、搜索、目录、移动顶栏、回到顶部、站名洇墨）在构建期编译成内联脚本，放在完整正文之后、字体就绪检查之前，正文首次可见时无需等外部模块
+- 站内换页不走整页刷新：构建期把每个页面导出成 `/_navigation/<hash>/<route>.json` 导航包，包内只留标记与 `src` 模块；路由器按需取用
+- 后台预取最多两个并发、最多两个链接；实际点击会取消未完成的后台预取，下一页字体走高优先级，继续点别的页面即取消过时的字体下载
 
 ---
 
 ## 灵感
 
-版式上受到这两个 Astro 主题的启发，推荐一并看看：
+版式上受这两个 Astro 主题启发：
 
 - [astro-theme-retypeset](https://github.com/radishzzz/astro-theme-retypeset)
 - [astro-theme-typography](https://github.com/moeyua/astro-theme-typography)
@@ -456,13 +506,6 @@ slug 只接受小写字母、数字和连字符，最长 96 字符。KV 未绑�
 
 ## 许可
 
-[MIT](LICENSE) · 字体 Newsreader、Noto Serif SC 与 Noto Sans SC 使用 SIL Open Font License 1.1，见 `public/fonts/` 下的授权文件。
+[MIT](LICENSE) · 字体 Newsreader、Noto Serif SC 与 Noto Sans SC 使用 SIL Open Font License 1.1，授权文件见 `public/fonts/`。
 
-*纸上留白 · 在字与字之间，留一点呼吸。*
-
-## 分享图与站点地图
-
-- 每篇文章在构建时生成自己的分享图 `/og/<slug>.png`（1200×630）：左侧竖排站名，右侧日期、标题和摘要前 60 个字。字体来自 Google Fonts 中国镜像，只按图里用到的字取子集，缓存在 `node_modules/.cache/onpaper-og/`。其余页面仍用 `public/og.png`。
-- 文章页的「分享卡片」带二维码，扫码打开当前文章；二维码在浏览器里本地生成（npm 包 `uqr`），不请求任何外部服务。
-- 构建会生成 `sitemap-index.xml` 和同内容的 `sitemap.xml`，文章条目带 `lastmod`（取 `updated`，没有则取 `published`）。**上线前务必把 `src/config.ts` 的 `url` 改成你的真实域名**，否则 sitemap、robots.txt、canonical 和分享图地址都会指向示例域名。
-- 404 页面是 `src/pages/404.astro`，构建为 `dist/404.html`，Cloudflare Pages 会自动用它响应不存在的地址。
+<sub>*纸上留白 · 在字与字之间，留一点呼吸。*</sub>

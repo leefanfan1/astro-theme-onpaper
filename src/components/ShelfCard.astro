@@ -1,0 +1,51 @@
+---
+import type { ShelfItem } from '@/utils/shelf'
+
+interface Props {
+  item: ShelfItem
+  cover: string
+  /** Position on the wall, for the colour of a typeset cover. */
+  ink: number
+  verb: string
+}
+const { item, cover, ink, verb } = Astro.props
+const { kind } = item
+const name = kind === 'music' ? item.title : `《${item.title}》`
+const byline = [item.creator && `${item.creator}${verb ? ` ${verb}` : ''}`, item.year].filter(Boolean).join(' · ')
+const coverClass = ['shelf-cover', ...(cover ? [] : ['shelf-cover--set', `ink-${ink}`])]
+
+// The card opens the work's own page (Douban for books and films). The line
+// under it, when present, leads to the passage here that writes about it —
+// a sibling link rather than a nested one, so both stay clickable and the
+// markup stays valid.
+---
+
+<li class="shelf-entry">
+  <a
+    class="shelf-card"
+    href={item.url ?? undefined}
+    target={item.url ? '_blank' : undefined}
+    rel={item.url ? 'noopener noreferrer' : undefined}
+  >
+    <span class:list={coverClass} aria-hidden="true">
+      {cover
+        ? <img src={cover} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
+        : (
+            <>
+              {item.year && <span class="shelf-cover__year">{item.year}</span>}
+              <span class="shelf-cover__title">{item.title}</span>
+              <span class="shelf-cover__creator">{item.creator}</span>
+            </>
+          )}
+    </span>
+    <span class="shelf-card__name"><span class="mark-text">{name}</span></span>
+    {byline && <span class="shelf-card__by">{byline}</span>}
+    {item.note && <span class="shelf-card__note">{item.note}</span>}
+    {item.url && <span class="sr-only">（在新窗口打开）</span>}
+  </a>
+  {item.mention && (
+    <a class="shelf-card__mention" href={item.mention.href}>
+      <span class="shelf-card__mention-text">写过：{item.mention.section ?? item.mention.post}</span>
+    </a>
+  )}
+</li>

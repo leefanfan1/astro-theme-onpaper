@@ -16,7 +16,6 @@ import {
   getPostDescription,
   getPostHref,
   getReadingMinutes,
-  getRelatedPosts,
   getTagHref,
   visibleTags,
 } from '@/utils/posts'
@@ -35,18 +34,6 @@ interface Props {
 
 const { post } = Astro.props
 const { Content, headings } = await render(post)
-const allPosts = await getAllPosts()
-const index = allPosts.findIndex(item => item.id === post.id)
-// allPosts runs newest first: the previous article is the older one.
-const previous = allPosts[index + 1]
-const next = allPosts[index - 1]
-const related = getRelatedPosts(allPosts, post, 3).filter(item => item !== previous && item !== next).slice(0, 2)
-// One list to read on with: neighbours first, then articles sharing a tag.
-const readNext = [
-  ...(previous ? [{ label: '上一篇', post: previous, rel: 'prev' }] : []),
-  ...(next ? [{ label: '下一篇', post: next, rel: 'next' }] : []),
-  ...related.map(item => ({ label: '同标签', post: item, rel: undefined })),
-]
 const minutes = getReadingMinutes(post)
 const tags = visibleTags(post.data.tags)
 // Ignore math-looking text inside fenced/inline code examples.
@@ -140,22 +127,6 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
           />
         </div>
 
-        {readNext.length > 0 && (
-          <nav class="read-next" aria-labelledby="read-next-title">
-            <h2 class="read-next__title" id="read-next-title">接着读</h2>
-            <ol>
-              {readNext.map(entry => (
-                <li>
-                  <a href={getPostHref(entry.post)} rel={entry.rel}>
-                    <span class="read-next__label">{entry.label}</span>
-                    <span class="read-next__name"><span class="mark-text">{entry.post.data.title}</span></span>
-                    <time datetime={entry.post.data.published.toISOString()}>{formatDate(entry.post.data.published)}</time>
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        )}
       </div>
     </footer>
   </article>

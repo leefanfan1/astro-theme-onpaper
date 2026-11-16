@@ -157,10 +157,14 @@ html[data-theme="dark"] .mc-disc {
 }
 
 /* Platforms: one tidy row on wide cards, a two-column grid on narrow ones. */
+/* Platforms in an even grid. `flex-wrap` used to leave three on one line and
+   the fourth alone on the next, which reads as a mistake rather than a row of
+   choices; two columns hold all four, and the card's width does not change
+   when a platform is missing. */
 .mc-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.15rem 1.1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.15rem 1rem;
   width: 100%;
   margin-top: 0.85rem;
   padding-top: 0.75rem;
@@ -254,8 +258,6 @@ html[data-theme="dark"] .mc-apple :is(svg, img) {
   .mc-links {
     grid-column: 1 / -1;
     grid-row: 5;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.1rem 0.75rem;
   }
 
@@ -461,12 +463,57 @@ html[data-theme="dark"] .mc-apple :is(svg, img) {
   line-height: 1.4;
 }
 
-.embed-card iframe {
+/* One box cuts the corners, so there is exactly one curve. Rounding the
+   frame and a wrapper both produced two curves a pixel apart, which read as
+   a pale line inside the corner and a sliver of the player's green outside
+   it whenever it resized. The wrapper clips; the frame stays square. */
+.embed-card__frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.embed-card__frame iframe {
+  display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: var(--surface);
+}
+
+/* What showed at the corners was the iframe element's own background: the
+   player draws its card inside a transparent document, so the browser's
+   default iframe canvas (white) is what filled the sliver our rounded clip
+   cut away. Nothing inside the player needed changing — the frame just had
+   to stop being white. It is set to the page colour here, the corners are
+   clipped normally, and the sliver is the same colour as the paper it sits
+   on. */
+.embed-card[data-provider="Spotify"] .embed-card__frame {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+
+.embed-card[data-provider="Spotify"] .embed-card__frame iframe {
+  border-radius: var(--radius-md);
+  /* The player's document is transparent until it paints its card. Left alone,
+     the browser fills that gap with white, which on dark paper is a bright
+     slab for the second or two before the player arrives. The frame's own
+     colour fills it instead; the player paints over it. */
+  background-color: var(--surface);
+  color-scheme: light;
+}
+
+/* Spotify's player is not a video: it renders a card of its own — cover,
+   controls, then the track list — and in a 16:9 box it was drawn 152px tall
+   inside a 342px frame, leaving a grey slab of empty iframe underneath.
+   Giving the frame Spotify's own two-tier height lets the player lay the
+   card out as designed: 352px shows the cover beside the controls and the
+   first three tracks. */
+.embed-card[data-provider="Spotify"] iframe {
+  height: 352px;
+  aspect-ratio: auto;
 }
 
 .embed-card__caption {

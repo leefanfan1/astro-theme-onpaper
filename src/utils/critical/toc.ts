@@ -66,7 +66,28 @@ function initToc() {
     desktop?.toggleAttribute('data-expanded', expanded)
     if (expandable) toggle?.setAttribute('aria-expanded', String(expanded))
     toggle?.setAttribute('aria-label', expanded ? '收起文章目录' : '展开文章目录')
-    revealCurrent()
+    // Scrolling the list to the active chapter belongs to reading progress
+    // (see update); doing it here yanked the rows out from under the pointer
+    // every time the outline expanded.
+    updateEdges()
+  }
+  // The row currently at the top of the list, used to hold the reader's
+  // place while the outline grows or shrinks. Nested headings have no layout
+  // box when the outline is collapsed, so only sized rows qualify.
+  const topRow = () => {
+    if (!viewport) return null
+    const edge = viewport.getBoundingClientRect().top
+    return inlineLinks.find(link => {
+      const rect = link.getBoundingClientRect()
+      return rect.height > 0 && rect.bottom > edge + 1
+    }) ?? null
+  }
+  // Nudge the scroll position so `row` sits where it sat before the change.
+  const holdRow = (row: HTMLAnchorElement | null) => {
+    if (!viewport || !row) return
+    const edge = viewport.getBoundingClientRect().top
+    const drift = row.getBoundingClientRect().top - edge - Number(row.dataset.offsetTop ?? 0)
+    if (Math.abs(drift) > 1) viewport.scrollTop += drift
   }
   const setExpanded = async (value: boolean, immediate = false) => {
     const next = value && expandable
@@ -74,41 +95,56 @@ function initToc() {
     if (!immediate && next === requestedExpanded) return
     requestedExpanded = next
     const version = ++transitionVersion
-    // Preserve the wipe's position when reversing an unfinished animation.
-    const drawn = viewport ? getComputedStyle(viewport).clipPath : 'none'
-    const clip = drawn && drawn !== 'none' ? drawn : 'inset(0 0 0 0)'
+    // The outline animates its own height: the rows slide open and closed at
+    // the bottom edge. The earlier version wiped the whole list to blank and
+    // drew it back, which left a hole where the navigation had been, and
+    // scrolled to the active chapter in between — moving the rows under the
+    // pointer. Nothing here hides text, so there is nothing left to flash.
+    const from = viewport ? viewport.getBoundingClientRect().height : 0
     animation?.cancel()
     animation = undefined
     if (!viewport || immediate || reducedMotion.matches) {
-      viewport?.style.removeProperty('clip-path')
-      desktop?.removeAttribute('data-closing')
+      viewport?.style.removeProperty('height')
       applyExpanded(next)
       return
     }
-    viewport.style.clipPath = clip
-    desktop?.toggleAttribute('data-closing', !next)
-    // Reflow only while invisible. Text never wraps or moves row by row
-    // during an animation, and the same navigation remains in the DOM.
-    // Text is wiped with clip-path rather than faded, so it never changes
-    // antialiasing mid-animation.
-    animation = viewport.animate([{ clipPath: clip }, { clipPath: 'inset(0 0 100% 0)' }], {
-      duration: next ? 75 : 65, easing: 'ease-out', fill: 'forwards',
-    })
+    const anchor = topRow()
+    if (anchor) anchor.dataset.offsetTop = String(Math.round(anchor.getBoundingClientRect().top - viewport.getBoundingClientRect().top))
+    // Growing mounts the nested rows first so the box can reach their height.
+    // Shrinking leaves them mounted and lets the bottom edge clip them, so no
+    // row is pulled out of the page in a single frame.
+    if (next) applyExpanded(true)
+    viewport.style.height = from + 'px'
+    const limit = parseFloat(getComputedStyle(viewport).maxHeight)
+    // Collapsing targets the outline without its nested rows: they are still
+    // mounted (so the edge can clip them), so their height is subtracted
+    // rather than re-measured.
+    const nested = next
+      ? 0
+      : [...viewport.querySelectorAll<HTMLElement>('.toc-desktop__children')]
+          .reduce((sum, group) => sum + group.offsetHeight, 0)
+    const content = viewport.scrollHeight - nested
+    const to = Math.min(content, Number.isFinite(limit) ? limit : content)
+    if (Math.abs(to - from) < 1) {
+      viewport.style.removeProperty('height')
+      if (!next) applyExpanded(false)
+      holdRow(anchor)
+      updateEdges()
+      return
+    }
+    animation = viewport.animate(
+      [{ height: from + 'px' }, { height: to + 'px' }],
+      { duration: next ? 240 : 180, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' },
+    )
     try { await animation.finished } catch { return }
     if (disposed || version !== transitionVersion) return
-    viewport.style.clipPath = 'inset(0 0 100% 0)'
-    animation.cancel()
-    applyExpanded(next)
-    desktop?.removeAttribute('data-closing')
-    animation = viewport.animate([
-      { clipPath: 'inset(0 0 100% 0)' },
-      { clipPath: 'inset(0 0 0 0)' },
-    ], { duration: next ? 260 : 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' })
-    try { await animation.finished } catch { return }
-    if (disposed || version !== transitionVersion) return
-    viewport.style.removeProperty('clip-path')
+    viewport.style.removeProperty('height')
     animation.cancel()
     animation = undefined
+    // Nested rows are only removed once they are already clipped away.
+    if (!next) applyExpanded(false)
+    holdRow(anchor)
+    if (anchor) delete anchor.dataset.offsetTop
     updateEdges()
   }
   const measure = () => {
@@ -126,7 +162,6 @@ function initToc() {
     probe.removeAttribute('data-expandable')
     probe.removeAttribute('data-width-overflow')
     probe.removeAttribute('data-wide')
-    probe.removeAttribute('data-closing')
     probe.removeAttribute('aria-label')
     probe.setAttribute('aria-hidden', 'true')
     probe.inert = true

@@ -2,6 +2,7 @@ import { unified } from '@astrojs/markdown-remark'
 import sitemap from '@astrojs/sitemap'
 import { defineConfig } from 'astro/config'
 import rehypeKatex from 'rehype-katex'
+import rehypeSanitize from 'rehype-sanitize'
 import rehypeSlug from 'rehype-slug'
 import remarkDirective from 'remark-directive'
 import remarkMath from 'remark-math'
@@ -11,6 +12,7 @@ import { devViewsIntegration } from './src/plugins/dev-views.mjs'
 import { rehypeExternalLinks } from './src/plugins/rehype-external-links.mjs'
 import { rehypeMermaid } from './src/plugins/rehype-mermaid.mjs'
 import { rehypeStripEntities } from './src/plugins/rehype-strip-entities.mjs'
+import { rehypeEmbedAllowlist, sanitizeSchema } from './src/plugins/rehype-sanitize-markdown.mjs'
 import { rehypeTaskListLabels } from './src/plugins/rehype-task-list-labels.mjs'
 import { remarkEditorialExtensions } from './src/plugins/remark-editorial-extensions.mjs'
 import { sitemapAlias, sitemapOptions } from './src/plugins/sitemap-extras.mjs'
@@ -44,6 +46,12 @@ export default defineConfig({
         rehypeExternalLinks,
         rehypeStripEntities,
         rehypeTaskListLabels,
+        // Last in the chain: raw HTML in a post is allowed, so it is sanitised
+        // once every plugin has finished adding its own markup (the editorial
+        // cards, KaTeX's MathML, the task-list labels). The schema is the
+        // theme's own vocabulary; see src/plugins/rehype-sanitize-markdown.mjs.
+        [rehypeSanitize, sanitizeSchema],
+        rehypeEmbedAllowlist,
       ],
     }),
     shikiConfig: {

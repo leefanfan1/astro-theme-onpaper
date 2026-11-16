@@ -1,0 +1,113 @@
+---
+import { getCollection, getEntry } from 'astro:content'
+import type { Post } from '@/utils/posts'
+import { formatDate, getAllPosts, stripMarkdown } from '@/utils/posts'
+import { parseNow } from '@/utils/shelf'
+
+// The right column's contents, in one place: the home page renders it beside
+// the list, and /now/ renders the same block as a page of its own on a phone.
+interface Props {
+  /** Tag for the outer element: `aside` beside the list, `div` on its own page. */
+  as?: 'aside' | 'div'
+  headingLevel?: 'h2' | 'h3'
+}
+const { as: Tag = 'aside', headingLevel: Heading = 'h2' } = Astro.props
+
+const allPosts = await getAllPosts()
+const firstPost = allPosts.at(-1)?.data.published
+const characters = allPosts.reduce((sum, post) => sum + (stripMarkdown(post.body ?? '').match(/\p{Script=Han}/gu)?.length ?? 0), 0)
+const words = characters >= 10000
+  ? { value: Number((characters / 10000).toFixed(1)), decimals: 1, suffix: '万' }
+  : { value: Math.round(characters / 100) * 100, decimals: 0, suffix: '' }
+const days = firstPost ? Math.max(1, Math.floor((Date.now() - firstPost.getTime()) / 86400000)) : 0
+const facts = [
+  { label: '文章', value: allPosts.length, decimals: 0, suffix: '', unit: '篇' },
+  { label: '约计字数', ...words, unit: '字' },
+  ...(firstPost ? [{ label: '写了', value: days, decimals: 0, suffix: '', unit: '天', since: firstPost.toISOString() }] : []),
+]
+const hasShelf = (await getCollection('shelf')).some(entry => entry.body?.trim())
+
+const nowPage = await getEntry('pages', 'now')
+const nowEntries = nowPage ? parseNow(nowPage.body ?? '') : []
+---
+
+<Tag id="site-aside" class="home-aside" aria-label="最近与这个站">
+  {nowEntries.length > 0 && (
+    <section class="aside-block now" aria-labelledby="now-title">
+      <Heading class="home-aside__title" id="now-title">最近</Heading>
+      <dl class="now__list">
+        {nowEntries.map(entry => (
+          <div class="now__item">
+            <dt>{entry.label}</dt>
+            <dd>
+              {entry.url
+                ? (
+                    <a class="now__link" href={entry.url} target="_blank" rel="noopener noreferrer">
+                      <span class="now__title">{entry.title}</span>
+                      {entry.creator && <span class="now__creator">{entry.creator}</span>}
+                    </a>
+                  )
+                : (
+                    <>
+                      <span class="now__title">{entry.title}</span>
+                      {entry.creator && <span class="now__creator">{entry.creator}</span>}
+                    </>
+                  )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  )}
+
+  {hasShelf && (
+    <nav class="aside-links aside-links--shelf" aria-label="书架">
+      <a class="aside-link" href="/shelf/">
+        <svg class="aside-link__icon aside-link__icon--shelf" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path class="spine spine--a" d="M5.5 4.5v15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          <path class="spine spine--b" d="M9.5 4.5v15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          <path class="spine spine--c" d="M14 6l3.8 13.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          <path d="M4.5 19.5h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+        </svg>
+        <span>书单 · 片单 · 歌单</span>
+      </a>
+    </nav>
+  )}
+
+  <section class="aside-block site-facts" aria-labelledby="facts-title">
+    <Heading class="home-aside__title" id="facts-title">这个站</Heading>
+    <dl class="facts">
+      {facts.map((fact) => {
+        const text = fact.value.toFixed(fact.decimals) + fact.suffix
+        return (
+          <div class="facts__row">
+            <dt>{fact.label}</dt>
+            <dd>
+              <b
+                data-count={fact.value}
+                data-decimals={fact.decimals}
+                data-suffix={fact.suffix}
+                data-days-since={'since' in fact ? fact.since : undefined}
+                data-final-text={text}
+                style={`min-width:${text.length + 1}ch`}
+              >{text}</b>
+              {fact.unit}
+            </dd>
+          </div>
+        )
+      })}
+    </dl>
+    {firstPost && <p class="facts__since">第一篇写于 {formatDate(firstPost)}</p>}
+  </section>
+
+  <nav class="aside-links" aria-label="更多">
+    <a class="aside-link" href="/rss.xml" target="_blank" rel="noopener noreferrer">
+      <svg class="aside-link__icon aside-link__icon--rss" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path class="wave wave--outer" d="M5 5a14 14 0 0 1 14 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" pathLength="1"></path>
+        <path class="wave wave--inner" d="M5 11a8 8 0 0 1 8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" pathLength="1"></path>
+        <circle cx="6" cy="18" r="1.4" fill="currentColor"></circle>
+      </svg>
+      <span>用 RSS 订阅</span>
+    </a>
+  </nav>
+</Tag>
