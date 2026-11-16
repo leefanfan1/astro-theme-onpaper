@@ -92,13 +92,21 @@ async function readShelf() {
   return files
 }
 
-// How each kind is re-encoded. A poster is 2:3 and the wall draws it about
-// 200px wide, so 800px tall covers a retina screen. A record's cover is square
-// and drawn about 170px wide, so it is stored at 500px; NetEase serves that
-// size itself, and sharp trims the last few KB off it.
+// How each kind is re-encoded, sized from what the wall actually draws.
+//
+// A poster is 2:3 in a column at most 222px wide (a 2560px viewport). That
+// asks a 3x phone for 486px of cover and a 2x wide screen for 444px — 720px
+// tall is about 505px across, which covers both. A 3x screen at 1920 would
+// want 648px, and only a 900px-tall store would satisfy that; it would be
+// larger than what the theme shipped before, so it is not worth the bytes for
+// the one density those displays actually use. Serving each density its own
+// file is the real answer, and needs srcset on the card.
+//
+// A record's cover is square in a column the same width, and NetEase serves a
+// 500px copy itself; sharp trims the last few KB off it.
 const RECIPE = {
-  book: { height: 800, referer: REFERRER.book },
-  film: { height: 800, referer: REFERRER.film },
+  book: { height: 720, referer: REFERRER.book },
+  film: { height: 720, referer: REFERRER.film },
   music: { height: 500, referer: 'https://music.163.com/' },
 }
 
@@ -120,17 +128,33 @@ async function downloadCover(item, pic) {
   if (!/^image\/(jpe?g|png|webp)/.test(type)) throw new Error(`unexpected image type ${type}`)
   const bytes = Buffer.from(await response.arrayBuffer())
   if (bytes.byteLength < 2048 || bytes.byteLength > 8 * 1024 * 1024) throw new Error('image size out of range')
-  // Douban hands back print-sized scans (1600x2400, 600KB); the wall shows
-  // posters about 200px wide, so 800px tall covers a retina screen.
+  // Douban hands back print-sized scans (1600x2400, 600KB); the wall shows a
+  // poster at most 216px wide, so the recipe's height is what a 2x screen can
+  // actually use.
   const reencoded = await sharp(bytes)
     .rotate()
     .resize({ height: recipe.height, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 82, progressive: true, mozjpeg: true })
     .toBuffer()
   // A stable name means a re-run rewrites the same file instead of piling up.
-  const name = createHash('sha256').update(`${item.kind}\n${item.title}`).digest('hex').slice(0, 12)
+  const file = expectedCoverName(item, item.kind)
   await mkdir(outDir, { recursive: true })
-  await writeFile(path.join(outDir, `${name}.jpg`), reencoded)
+  await writeFile(path.join(root, 'public' + file), reencoded)
+  return file
+}
+
+/**
+ * The path this script saves `item`'s cover at, for the current recipe. The
+ * size is part of the name: public/_headers calls /shelf/* immutable, so
+ * changing RECIPE has to produce new files rather than silently retitle the
+ * old ones — and it gives the completeness check a way to spot a cover cut by
+ * an older recipe.
+ */
+function expectedCoverName(item, kind) {
+  const { height } = RECIPE[kind]
+  const name = createHash('sha256').update(`${kind}
+${item.title}
+${height}`).digest('hex').slice(0, 12)
   return `/shelf/${name}.jpg`
 }
 
@@ -139,16 +163,27 @@ async function downloadCover(item, pic) {
  * second run costs no requests. The cover has to be a file under public/shelf/
  * that is still there: a cache entry pointing at a remote URL is what an older
  * run left behind, and that image is not stored yet.
+ *
+ * It also has to be at the size the recipe now asks for. The stored cover's
+ * name carries that size, so a cover saved by an older recipe is recognised and
+ * re-cut rather than kept forever — otherwise changing RECIPE would never reach
+ * the files already on disk.
  */
 function isComplete(item, kind, key, covers) {
   const cover = item.cover || covers[key]
   if (!cover) return false
   const downloaded = isLocalCover(cover) && existsSync(path.resolve(root, 'public' + cover))
+  if (!downloaded) return false
+
+  // A cover the author wrote into the Markdown is theirs to size; only the ones
+  // this script named are checked against the recipe.
+  if (!item.cover && cover !== expectedCoverName(item, kind)) return false
+
   if (kind === 'music') {
     return Boolean(item.creator && item.year && item.douban
-      && /^https:\/\/music\.163\.com\//.test(item.link) && downloaded)
+      && /^https:\/\/music\.163\.com\//.test(item.link))
   }
-  return Boolean(item.creator && item.year && item.url && downloaded)
+  return Boolean(item.creator && item.year && item.url)
 }
 
 /**
@@ -378,9 +413,12 @@ async function main() {
           { key: '豆瓣', value: url },
         ])
 
-        // A cover already downloaded (or written by hand) is left alone.
-        const cached = covers[key] && existsSync(path.resolve(root, 'public' + covers[key]))
-        if (!item.cover && !cached) {
+        // A cover already downloaded at the current size (or written by hand)
+        // is left alone. The completeness check above already decided that a
+        // cover cut by an older recipe has to be re-cut.
+        const current = covers[key] === expectedCoverName(item, file.kind)
+          && existsSync(path.resolve(root, 'public' + covers[key]))
+        if (!item.cover && !current) {
           const pic = detail?.cover || subject.pic || await posterFromPage(file.kind, url)
           const cover = pic ? await downloadCover({ ...item, kind: file.kind }, pic) : ''
           if (cover) {

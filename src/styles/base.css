@@ -1844,11 +1844,17 @@ html[data-theme="dark"] .timeline-item:hover .timeline-title {
   font-weight: 400;
 }
 
-.shelf__title-link {
+/* The heading's own text, whether or not it links: a shelf on its own page
+   has nothing to link to. */
+.shelf__title-link,
+.shelf__title-text {
   display: inline-flex;
   align-items: baseline;
   gap: var(--space-2);
   color: inherit;
+}
+
+.shelf__title-link {
   text-decoration: none;
   transition: color var(--dur-hover) ease;
 }

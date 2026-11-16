@@ -1,0 +1,61 @@
+---
+/**
+ * One shelf: its heading, a wall of covers, and the ones past the first rows
+ * folded behind a summary that opens without JavaScript.
+ *
+ * Shared by /shelf/ (three shelves, twelve covers each) and by the per-shelf
+ * pages, which page through the list rather than folding: a shelf of two
+ * hundred books was one long scroll nobody finishes, and a page that rendered
+ * every cover made the browser fetch the lot whether or not anyone scrolled.
+ */
+import ShelfCard from '@/components/ShelfCard.astro'
+import type { ShelfItem, ShelfKind } from '@/utils/shelf'
+import { COUNT_WORD, VERB, coverOf, inkOf } from '@/utils/shelf-covers'
+
+interface Props {
+  items: ShelfItem[]
+  kind: ShelfKind
+  /** Heading id, used for the section's aria-labelledby and as the anchor. */
+  id: string
+  heading: string
+  /** Where "看全部" leads; without it the heading is plain text. */
+  href?: string
+  /** How many cards show before the fold; 0 shows them all. */
+  visible?: number
+  /** The first card's position on the full list, so inks keep alternating
+   *  across pages instead of restarting at every page. */
+  offset?: number
+}
+
+const { items, kind, id, heading, href, visible = 0, offset = 0 } = Astro.props
+
+const shown = visible > 0 ? items.slice(0, visible) : items
+const folded = visible > 0 ? items.slice(visible) : []
+---
+
+<section class="shelf" aria-labelledby={id} data-kind={kind}>
+  <h2 class="shelf__title" id={id}>
+    {href
+      ? <a class="shelf__title-link" href={href}>{heading}<span>{items.length}</span></a>
+      : <span class="shelf__title-text">{heading}<span>{items.length}</span></span>}
+    {href && <a class="shelf__more" href={href}>看全部</a>}
+  </h2>
+  <ul class="shelf-wall" role="list">
+    {shown.map((item, index) => (
+      <ShelfCard item={item} cover={coverOf(item)} ink={inkOf(offset + index)} verb={VERB[kind]} />
+    ))}
+  </ul>
+  {folded.length > 0 && (
+    <details class="shelf-more">
+      <summary>
+        <span class="shelf-more__label">还有 {folded.length} {COUNT_WORD[kind]}</span>
+        <span class="shelf-more__hint">展开</span>
+      </summary>
+      <ul class="shelf-wall" role="list">
+        {folded.map((item, index) => (
+          <ShelfCard item={item} cover={coverOf(item)} ink={inkOf(offset + shown.length + index)} verb={VERB[kind]} />
+        ))}
+      </ul>
+    </details>
+  )}
+</section>

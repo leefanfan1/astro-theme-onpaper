@@ -1,0 +1,61 @@
+---
+import ShelfKindPage from '@/components/ShelfKindPage.astro'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { getAllPosts } from '@/utils/posts'
+import { loadShelf } from '@/utils/shelf'
+import type { ShelfKind } from '@/utils/shelf'
+import { SHELF_PER_PAGE } from '@/utils/shelf-covers'
+
+// Page two onwards of a shelf: /shelf/books/page/2/. Page one keeps its short
+// address, and `getStaticPaths` returns nothing for it here, so the two routes
+// do not compete for the same path.
+const KINDS: Record<string, { kind: ShelfKind, title: string, heading: string, lead: string }> = {
+  books: { kind: 'book', title: '书单', heading: '书', lead: '读过、想再读，愿意推荐给别人的那些书。' },
+  films: { kind: 'film', title: '片单', heading: '电影', lead: '看过、会重看，愿意推荐给别人的那些电影。' },
+  music: { kind: 'music', title: '歌单', heading: '音乐', lead: '反复听过的专辑和歌，愿意推荐给别人的那些。' },
+}
+
+// Written out rather than read from a module constant: getStaticPaths is
+// bundled on its own, and module-level constants are not in scope there.
+export async function getStaticPaths() {
+  const shelf = await loadShelf(await getAllPosts())
+  const routes = [
+    { route: 'books', kind: 'book' as const },
+    { route: 'films', kind: 'film' as const },
+    { route: 'music', kind: 'music' as const },
+  ]
+  const pageSize = SHELF_PER_PAGE
+  const paths = []
+  for (const { route, kind } of routes) {
+    const total = Math.ceil((shelf[kind] ?? []).length / pageSize)
+    for (let page = 2; page <= total; page++) {
+      paths.push({ params: { kind: route, page: String(page) } })
+    }
+  }
+  return paths
+}
+
+const route = Astro.params.kind!
+const page = Number(Astro.params.page)
+const meta = KINDS[route]
+const shelf = await loadShelf(await getAllPosts())
+const items = shelf[meta.kind] ?? []
+const base = `/shelf/${route}/`
+---
+
+<BaseLayout title={`${meta.title} · 第 ${page} 页`} description={meta.lead}>
+  <header class="page-head">
+    <a class="page-back" href={base}>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      回到{meta.title}第一页
+    </a>
+    <h1 class="page-title">{meta.title}</h1>
+    <p class="page-lead">第 {page} 页</p>
+  </header>
+
+  <ShelfKindPage kind={meta.kind} heading={meta.heading} items={items} page={page} base={base} />
+
+  <p class="shelf-credit">书与电影的封面取自豆瓣，只作个人记录之用；封面与简介的权利归豆瓣、出版方和发行方所有。</p>
+</BaseLayout>
