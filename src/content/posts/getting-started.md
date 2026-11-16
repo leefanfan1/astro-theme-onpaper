@@ -2,7 +2,7 @@
 title: 纸上留白上手指南：命令、配置与发布
 description: 从 npm run dev 到 Cloudflare Pages 部署，整理纸上留白的命令、目录、配置和上线前检查。
 published: 2026-06-16
-updated: 2026-11-07
+updated: 2026-11-16
 tags:
   - 示例
   - 建站
@@ -14,7 +14,7 @@ pin: 1
 
 ## 环境
 
-需要 Node.js 22.12 或更高版本。
+需要 Node.js 22.23.4 或更高版本（Astro 7 的最低要求）。仓库里的 `.node-version` 写的也是这个版本，Cloudflare Pages 会读它。
 
 ```bash
 npm install
@@ -33,9 +33,21 @@ npm run dev
 | `npm run build:clean` | 清理 Astro 内容缓存后构建 |
 | `npm run clean` | 只清理 `.astro` / `node_modules/.astro` 缓存 |
 | `npm run preview` | 预览生产构建 |
+| `npm run covers` | 去豆瓣补书单 / 片单的封面 |
 | `npm run shots` | Playwright 截图检查（需要先启动 dev） |
 | `npm run og` | 从 `public/og.svg` 重新生成分享图 |
 | `npm run music` | 解析并缓存 `::music` 链接 |
+
+测试都要先构建，命令本身会跑 `npm run build`：
+
+| 命令 | 验证什么 |
+| --- | --- |
+| `npm run test:responsiveness` | 脚本延迟下关键控件仍可用、后台预取让路、连续换页取消、翻页遮罩 |
+| `npm run test:performance` | 首屏字体体积、无模块等待、无布局跳动、搜索恢复 |
+| `npm run test:hosted-fonts` | 在线字体来源、动态字形、跨页复用、Chrome / WebKit 一致性 |
+| `npm run test:font-source` | 字体源安全边界、斜体与显示字体文字收集（不访问 CDN） |
+| `npm run test:theme-controls` | 主题动画、控件对齐、切换中搜索、换页清理 |
+
 
 ### 新建文章
 
@@ -111,17 +123,20 @@ npm run build:clean
 
 ```text
 src/
-  config.ts                 站点、导航、配色、字体、功能开关
-  content/posts/            文章
-  content/pages/            about.md 关于页、friends.md 友链页
-  components/               界面组件
-  layouts/BaseLayout.astro  页面外壳、主题和 SEO
-  pages/                    首页、归档、标签、RSS、搜索索引
-  plugins/                  Markdown 指令和构建插件
-  styles/                   全局样式
-  utils/                    文章查询、格式化、音乐解析
-functions/api/views.js      可选的 Cloudflare Pages Function
-public/                     字体、分享图、示例图片、_headers
+  config.ts             站点、导航、配色、字体、开关
+  content.config.ts     posts / pages / shelf 的 schema
+  content/posts/        文章
+  content/pages/        about、friends、now
+  content/shelf/        books、films、music
+  components/           书脊、右栏、书架卡片、目录
+  layouts/              页面外壳、翻页、主题
+  pages/                首页、归档、书架、404、RSS
+  plugins/              指令、Mermaid、外链、消毒
+  styles/               base、prose、extensions
+  utils/                内联运行时、文章、书架
+functions/api/views.js  可选的阅读计数
+public/                 字体、分享图、封面、_headers
+tests/                  五套回归测试
 ```
 
 ## 站点配置
@@ -134,9 +149,12 @@ public/                     字体、分享图、示例图片、_headers
 - `socials`：页脚社交链接
 - `analytics.googleAnalyticsId`：可选 GA4 ID，留空不加载
 - `theme`：默认明暗模式、颜色 token
+- `fonts`：正文 / 显示 / 等宽三套字体栈
 - `features`：搜索、阅读数、音乐卡片、GitHub 卡片、媒体嵌入、数学、Mermaid 开关
 
 部署前至少检查 `url`、`email`、`socials`，它们目前是示例值。
+
+右栏「最近」和书单不在这里，各自是 Markdown，见下面两节。
 
 ### 管理友情链接
 
@@ -153,6 +171,56 @@ https://example.org/
 ```
 
 复制一组三行即可新增友链，删除对应组即可移除，调整上下顺序即可改变展示顺序。无需括号、列表符号或缩进；网址填写完整地址，简介可以省略，也可以写多行。文件顶部的 `title` 和 `description` 分别设置页面标题和搜索摘要。页面会自动将这些内容显示为友链卡片，线上修改后需要重新构建部署。
+
+### 右栏「最近」
+
+`src/content/pages/now.md` 管着首页右栏的三行。每段两行：第一行是标签和名称，第二行是作者 / 歌手，末尾可以跟一个网址——在读、在看填豆瓣条目页，在听填音乐平台。
+
+```text
+在听：《城市》
+张悬 https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy
+```
+
+删掉某一段，那一行就不显示。「这个站」里的篇数、字数和天数由文章自动统计，不用维护。
+
+桌面端右栏就在文章列表旁边；手机上它是收起来的，顶栏最右边那个按钮进 `/now/`。那是同一份内容做成的一个独立页面，有自己的网址和返回按钮，不是弹出的抽屉。两边共用 `src/components/SiteAside.astro`，改一处就都变了。
+
+### 书单、片单、歌单
+
+三份 Markdown，一份清单一个文件：
+
+- `src/content/shelf/books.md`
+- `src/content/shelf/films.md`
+- `src/content/shelf/music.md`
+
+每本 / 每部 / 每张写成一个段落，一行一个字段：
+
+```text
+书名：城南旧事
+作者：林海音
+年份：1960
+豆瓣：https://book.douban.com/subject/3057333/
+一句话：小时候读不懂，长大才知道它写的是告别。
+```
+
+书单用 `书名：` / `作者：`，片单用 `片名：` / `导演：`，歌单用 `名称：` / `歌手：` / `链接：`。名称必填，其余可省；`一句话：` 显示在封面下面；文件开头的 `<!-- -->` 注释不会出现在页面上。
+
+页面有两个层次：
+
+- `/shelf/` 三栏合在一起的海报墙，每栏右上角有「看全部」
+- `/shelf/books/`、`/shelf/films/`、`/shelf/music/` 各自单独一页，可以直接分享
+
+点封面去豆瓣（歌单回到音乐平台）。如果条目标题在某一篇文章里出现过，卡片下面会多一行「写过：…」，跳到那篇文章；文章里有对应小标题的话，直接跳到那一段。某一栏超过 12 项时折进一个 `<details>`，不依赖脚本；要改这个数量，改 `src/pages/shelf.astro` 里的 `VISIBLE`。
+
+封面从豆瓣来，但不在页面里直接引用豆瓣的图床——它有防盗链，浏览器直接请求会返回 418。所以运行：
+
+```bash
+npm run covers
+```
+
+脚本读上面三份 Markdown，给没写 `封面：` 的条目去豆瓣找图：写了 `豆瓣：` 就用那个条目页，没写就按标题搜。封面下载到 `public/shelf/`，路径记进 `src/data/shelf-covers.json`，下载时压到 800px，一张 50–110KB。歌单不用跑，封面沿用音乐卡片缓存里的那张。只补某几本可以 `node scripts/fetch-covers.mjs 城南旧事 一一`。
+
+图片放在自己的站上，也就意味着不依赖豆瓣的可用性。新加条目后跑一次 `npm run covers`，`public/shelf/` 和那份 JSON 一起提交。
 
 ## 在文章里插入卡片
 
@@ -222,13 +290,15 @@ npm run music
 
 ## 分享图
 
-修改 `public/og.svg` 后运行：
+页面默认用 `public/og.png`（1200×630）作为 `og:image` / `twitter:image`。改 `public/og.svg` 之后重新生成：
 
 ```bash
 npm run og
 ```
 
-会生成 `public/og.png`（1200×630）。页面默认使用它作为 `og:image` / `twitter:image`。
+文章不一样：每篇在构建时生成自己的 `/og/<slug>.png`，左边竖排站名，右边日期、标题和摘要前 60 个字。字体只按图里用到的字取子集，缓存在 `node_modules/.cache/onpaper-og/`，所以加文章不用重新跑 `npm run og`。
+
+文章页末尾的「分享卡片」还会画一张带二维码的图，扫码打开当前文章。二维码在浏览器里本地生成（`uqr`），不请求任何外部服务。
 
 ## 阅读计数（可选）
 
@@ -241,12 +311,13 @@ npm run og
 
 KV 的读改写不是原子操作，适合展示型计数，不适合精确统计；需要精确计数时换 Durable Object 或 D1。未绑定 KV 时接口返回 503，文章页会自动隐藏计数，不影响阅读。
 
+`npm run dev` 用内存里的同名接口演示，重启后计数归零。
+
 ## 部署到 Cloudflare Pages
 
 - Build command：`npm run build`
 - Build output directory：`dist`
-- Node version：22.12+
-- 绑定真实域名后检查 HTTPS、canonical、RSS、sitemap 和 `_headers`
+- Node version：22.23.4+（`.node-version` 已写好）
 
 `public/_headers` 定义 CSP、HSTS、缓存等响应头；`astro preview` 不会应用它们，只有部署到 Pages 后才会生效。
 
@@ -257,13 +328,23 @@ npm run build
 npx wrangler pages deploy dist
 ```
 
+## 安全
+
+主题默认允许在文章里写原始 HTML，所以构建时会过一次 `rehype-sanitize`。schema 在 `src/plugins/rehype-sanitize-markdown.mjs`，是这套主题自己的词汇表：卡片的 class、脚本要读的 `data-*`、SVG 的 `viewBox` / `path`，还有 KaTeX 的 MathML。`<script>`、`on*` 事件属性和 `style` 属性都会丢掉；iframe 只认四个白名单域名（YouTube、B 站、Spotify、Vimeo）。
+
+插件链的顺序有讲究：消毒排在最后几个，等 KaTeX、Mermaid、卡片插件都加完自己的标记再检查一遍。`rehypeSlug` 反而排在消毒之后——消毒会给每个 `id` 加 `user-content-` 前缀，防的是文章伪造站内元素的 id；如果标题锚点先被加了前缀，指向某一小节的链接就全都找不到目标了。
+
+**这套消毒真正的意义在换作者的时候。** 只写自己的博客时，能写 HTML 的就是你自己；但主题会被别人拿去用，作者不一定可信。
+
 ## 上线前检查
 
-- [ ] 替换 `siteConfig.url`、邮箱、社交链接，以及 `src/content/pages/friends.md` 中的示例友链
+- [ ] 替换 `siteConfig.url`（**最要紧的一项**）、邮箱、社交链接
+- [ ] 换掉 `src/content/pages/friends.md` 里的示例友链
+- [ ] 换掉 `src/content/pages/now.md` 和 `src/content/shelf/` 下的示例
 - [ ] 更新 `public/og.svg` 里的域名并运行 `npm run og`
 - [ ] 把 `wrangler.toml` 的 `name` 改成真实项目名
 - [ ] 检查 `_headers` 和 CSP
-- [ ] 在域名下检查 canonical、RSS、sitemap
+- [ ] 在域名下检查 canonical、RSS、sitemap 和 404
 - [ ] 在 iPhone Safari 和 Android Chrome 各看一次
 - [ ] 如果开启 GA4，决定是否需要 consent
-- [ ] 如果开放投稿，先处理原始 HTML 的 sanitizer
+- [ ] 如果开放投稿，确认消毒 schema 覆盖了你需要的标记

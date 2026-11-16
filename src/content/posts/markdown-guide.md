@@ -2,7 +2,7 @@
 title: Markdown 语法手册
 description: 纸上留白支持的标题、列表、表格、代码、LaTeX、Mermaid，以及音乐 / GitHub / 视频卡片和嵌入指令的完整速查。
 published: 2026-06-18
-updated: 2026-11-07
+updated: 2026-11-16
 tags:
   - 示例
   - 写作
@@ -52,15 +52,21 @@ draft: false               # true 时只在开发环境可见
 ### 二级章节
 ```
 
-`##` 和 `###` 会进入文章目录：宽屏桌面固定在左侧，窄屏和移动端折叠在正文上方。
+`##` 和 `###` 会进入文章目录：宽屏（1280px 以上）目录停在右侧，随阅读高亮当前小节，鼠标移上去会展开子标题和长标题；更窄的屏幕上，它是正文上方一个可折叠的 `<details>`。
+
+标题的 `id` 由标题文字生成（slug），所以可以写 `#某一小节` 直接跳过去。从别的文章链过来也一样：`/posts/markdown-guide/#音乐卡片`。
 
 ## 行内样式
 
 ```md
-**粗体**、*斜体*、~~删除线~~、`行内代码`、H~2~O
+**粗体**、*斜体*、~~删除线~~、`行内代码`
 ```
 
 中文和西文之间的空格会自动处理，不需要手动敲空格。
+
+上标下标用原始 HTML 写（`H<sub>2</sub>O`、`E=mc<sup>2</sup>`），Markdown 的 `H~2~O` 语法这套主题没有启用。
+
+强调（`*斜体*`）在正文里显示为中文着重号，不是倾斜的拉丁字母——这是中文书籍里标重点的方式，也省掉了一整套斜体字形的下载。
 
 ## 链接与图片
 
@@ -256,9 +262,32 @@ npm run music
 
 ## 原始 HTML
 
-Markdown 里可以直接写 HTML，用于图注、表格等 Markdown 不方便表达的排版。
+Markdown 里可以直接写 HTML，用于图注、表格等 Markdown 不方便表达的排版：
 
-**原始 HTML 被视为作者可信内容。** 不要直接合并不受信任的投稿；如果以后开放多人投稿，需要先加 sanitizer 或禁止 raw HTML。
+```html
+<figure>
+  <img src="/images/sample-rain.svg" alt="雨夜的窗边">
+  <figcaption>图片说明。</figcaption>
+</figure>
+
+H<sub>2</sub>O 和 E=mc<sup>2</sup>
+```
+
+**但它不是直接放进页面的。** 构建时会过一次 `rehype-sanitize`，schema 在 `src/plugins/rehype-sanitize-markdown.mjs`，是这套主题自己的词汇表：
+
+| 允许 | 说明 |
+| --- | --- |
+| 常见排版标签 | `figure`、`figcaption`、`mark`、`kbd`、`details`、`abbr` 等 |
+| 卡片的 class 与 `data-*` | 音乐、GitHub、嵌入卡片依赖的这些，脚本要读 |
+| SVG 基础元素 | 卡片图标用的 `svg` / `path` / `circle` / `rect` / `g` |
+| KaTeX 的 MathML | 公式渲染结果 |
+| iframe | 只限 YouTube、B 站、Spotify、Vimeo 四个域名 |
+
+丢掉的是：`<script>`、`on*` 事件属性、`style` 属性、`javascript:` 一类的地址，以及不在这份名单里的标签（标签会被拆掉，里面的文字留下）。
+
+自己写的 `id` 会被加上 `user-content-` 前缀，防止文章覆盖 `article-toc` 这类站内元素。标题的锚点不受影响，它们是在消毒之后才生成的。
+
+**为什么这么做：** 只写自己的博客时，能写 HTML 的就是你自己。但主题是会被复制走的，下一个使用者不一定可信，所以默认按不可信来处理。如果你确实需要某个标签或属性，加进 schema 的 `tagNames` / `attributes` 即可。
 
 ## 发布检查
 
@@ -267,6 +296,7 @@ Markdown 里可以直接写 HTML，用于图注、表格等 Markdown 不方便�
 - 是否误用了未来日期或 `draft: true`；
 - 图片是否有 alt 和尺寸；
 - 新增 `::music` 后是否运行了 `npm run music`；
-- 修改插件或指令后是否用了 `npm run build:clean`。
+- 修改插件或指令后是否用了 `npm run build:clean`；
+- 用了原始 HTML 的话，确认它在上面的允许名单里——不在名单里的标签会被静默拆掉。
 
 更多命令和配置见[纸上留白上手指南](/posts/getting-started/)。

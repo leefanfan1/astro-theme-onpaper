@@ -40,18 +40,24 @@ export default defineConfig({
         remarkEditorialExtensions,
       ],
       rehypePlugins: [
-        rehypeSlug,
         rehypeKatex,
         rehypeMermaid,
         rehypeExternalLinks,
         rehypeStripEntities,
         rehypeTaskListLabels,
-        // Last in the chain: raw HTML in a post is allowed, so it is sanitised
+        // Near the end of the chain: raw HTML in a post is allowed, so it is
+        // sanitised
         // once every plugin has finished adding its own markup (the editorial
         // cards, KaTeX's MathML, the task-list labels). The schema is the
         // theme's own vocabulary; see src/plugins/rehype-sanitize-markdown.mjs.
         [rehypeSanitize, sanitizeSchema],
         rehypeEmbedAllowlist,
+        // After the sanitizer, not before: hast-util-sanitize prefixes every
+        // `id` it lets through (`user-content-…`) so a post cannot shadow an
+        // element the page scripts rely on. Running slug last keeps heading
+        // anchors at their real slugs, so links into a section — from another
+        // article, or from outside the site — still land.
+        rehypeSlug,
       ],
     }),
     shikiConfig: {
