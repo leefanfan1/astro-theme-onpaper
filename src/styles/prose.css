@@ -27,9 +27,15 @@
   margin-top: 0;
 }
 
+/* No `text-wrap: pretty` here. Safari's implementation shortens earlier
+   lines to hunt for a better final break, and on 15px CJK it gives back 20–90px
+   of the measure on every line of an article — the body text visibly pulls in
+   from the right while the headings above it do not. Chromium lays the same
+   paragraphs out identically with and without it, so it is only ever a Safari
+   bug with no benefit to weigh against it. */
 .prose p {
   margin: 0 0 1.25em;
-  text-wrap: pretty;
+  text-wrap: wrap;
 }
 
 .prose h2,

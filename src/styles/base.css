@@ -254,24 +254,38 @@ pre {
   }
 }
 
-/* Running text avoids leaving a single character on its last line. */
+/* Running text keeps the full measure.
+
+   This used to be `text-wrap: pretty`. Safari implements pretty by shortening
+   earlier lines to hunt for a better break, and on 15px CJK in a 362px column
+   it stopped about 70px short on *every* line — the whole list read as
+   indented, with a wide gap down the right side. Chromium measures the same
+   paragraph identically with pretty and with wrap, so the property was buying
+   nothing there and costing a broken layout in Safari. Dropped. */
 .post-desc,
 .page-lead,
 .friend-link__desc,
 .article-lede {
-  text-wrap: pretty;
+  text-wrap: wrap;
 }
 
-/* Display lines break between phrases (after 、，。：) rather than inside
-   a word, and only fall back to any-character breaks when a phrase is wider
-   than the line. */
+/* Display lines break between phrases (after 、，。：) rather than inside a
+   word, and only fall back to any-character breaks when a phrase is wider
+   than the line.
+
+   `keep-all` is the wrong tool for Chinese headings. A Chinese phrase has no
+   spaces inside it, so "phrase" is often the whole title; when that cannot
+   fit one line the browser breaks at the last point it is still allowed to,
+   which left every line of a phone-width title ~70px short of the measure.
+   Chinese already breaks between any two characters, and evenly, so the
+   headings only need `overflow-wrap` for the one case that matters: a single
+   unbreakable run longer than the line. Latin words stay whole by default. */
 .page-title,
 .post-title,
 .article-title,
 .timeline-title,
 .prose h2,
 .prose h3 {
-  word-break: keep-all;
   overflow-wrap: anywhere;
 }
 
