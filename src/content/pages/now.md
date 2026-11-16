@@ -10,13 +10,21 @@ description: 在听、在读、在看。
 
   每段两行：第一行是标签和名称，第二行是作者 / 歌手，可以跟一个链接。
   在读、在看填豆瓣条目页；在听填音乐平台。两者都点得进去。
+
+  只写第一行也行：`npm run covers` 会按名称去豆瓣 / 网易云找，补上第二行的
+  作者和链接（在听换成网易云），再补一行「年份：」；在听还会多一行「豆瓣：」。
+  这两行只是备忘，右栏不显示年份，也不显示图片。写了的行不会被改。
 -->
 
 在听：《城市》
-张悬 https://open.spotify.com/album/2X2WYTQl5BVInM0StQChCy
+张悬 https://music.163.com/#/album?id=32312
+年份：2009
+豆瓣：https://music.douban.com/subject/3801228/
 
 在读：《城南旧事》
 林海音 https://book.douban.com/subject/3057333/
+年份：1960
 
 在看：《海街日记》
 是枝裕和 https://movie.douban.com/subject/25895901/
+年份：2015

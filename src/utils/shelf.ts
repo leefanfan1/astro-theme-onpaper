@@ -85,15 +85,18 @@ export function parseShelf(content: string, kind: ShelfKind): ShelfItem[] {
       return
     }
     const year = Number(fields.get('年份') ?? fields.get('year') ?? '')
+    // A record's card opens its player, and its `豆瓣` line is reference only;
+    // a book or a film has nothing but the Douban page to open.
+    const link = kind === 'music'
+      ? fields.get('链接') || fields.get('豆瓣') || fields.get('url') || ''
+      : fields.get('豆瓣') || fields.get('链接') || fields.get('url') || ''
     items.push({
       kind,
       title,
       creator: pick(fields, CREATOR_KEYS[kind]),
       ...(Number.isFinite(year) && year > 0 ? { year } : {}),
       ...(fields.get('一句话') ? { note: fields.get('一句话')! } : {}),
-      ...(httpUrl(fields.get('豆瓣') || fields.get('链接') || fields.get('url') || '')
-        ? { url: httpUrl(fields.get('豆瓣') || fields.get('链接') || fields.get('url') || '')! }
-        : {}),
+      ...(httpUrl(link) ? { url: httpUrl(link)! } : {}),
       ...(fields.get('封面') ? { cover: fields.get('封面')! } : {}),
     })
   })

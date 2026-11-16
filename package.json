@@ -22,6 +22,7 @@
     "test:hosted-fonts": "npm run build && npm run test:font-source && node tests/hosted-fonts-regression.mjs && node tests/search-font-isolation.mjs",
     "test:performance": "npm run build && node tests/performance-regression.mjs",
     "test:responsiveness": "npm run build && node tests/navigation-responsiveness.mjs",
+    "test:shelf": "node tests/shelf-metadata.mjs && node tests/shelf-document.mjs && node tests/now-document.mjs",
     "covers": "node scripts/fetch-covers.mjs"
   },
   "dependencies": {

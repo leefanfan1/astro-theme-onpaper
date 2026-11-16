@@ -187,6 +187,14 @@ function charOverlap(a, b) {
   return matchCount / chars.length
 }
 
+/** NetEase dates are epoch milliseconds; the shelf wants a year. */
+function yearOfMs(value) {
+  const ms = Number(value)
+  if (!Number.isFinite(ms) || ms <= 0) return 0
+  const year = new Date(ms).getUTCFullYear()
+  return year >= 1900 && year <= 2100 ? year : 0
+}
+
 function scoreTitle(resultName, originalTitle) {
   if (!originalTitle) return 100
   const rn = resultName.toLowerCase().trim()
@@ -278,7 +286,7 @@ async function searchApple(query, type, originalArtist, originalTitle) {
   return null
 }
 
-async function searchNetease(query, type, originalArtist, originalTitle) {
+export async function searchNetease(query, type, originalArtist, originalTitle) {
   const searchType = type === 'album' ? 10 : 1
   const url = `https://music.163.com/api/cloudsearch/pc?csrf_token=&type=${searchType}&s=${encodeURIComponent(query)}&limit=5`
   let data
@@ -430,7 +438,7 @@ async function resolveApple(url) {
   return { title, artist, cover, type, platform: 'apple' }
 }
 
-async function resolveNetease(url) {
+export async function resolveNetease(url) {
   let match = url.match(/\/(song|album)\/(\d+)/i)
   if (!match) match = url.match(/#\/(song|album)\?id=(\d+)/i)
   if (!match) throw new Error('Could not extract Netease ID from URL')
@@ -449,7 +457,9 @@ async function resolveNetease(url) {
     const title = first.al?.name || ''
     const artist = first.ar?.map?.((a) => a.name).join(', ') || ''
     const cover = first.al?.picUrl || ''
-    return { title, artist, cover, type: 'album', platform: 'netease' }
+    // The release date lives on the album object, not on the song's summary
+    // of it (songs[0].al), so the shelf can offer a year for a record.
+    return { title, artist, cover, year: yearOfMs(data?.album?.publishTime), type: 'album', platform: 'netease' }
   } else {
     const res = await fetchMusic(`https://music.163.com/api/song/detail?id=${id}&ids=[${id}]`, { headers, signal: AbortSignal.timeout(10000) })
     const data = JSON.parse(await readMusicText(res))
@@ -460,6 +470,7 @@ async function resolveNetease(url) {
       title: song.name || '',
       artist,
       cover: song.album?.picUrl || '',
+      year: yearOfMs(song.album?.publishTime),
       type: 'single',
       platform: 'netease',
     }
@@ -565,6 +576,7 @@ export async function resolveMusicUrl(url) {
           const neteaseInfo = await concurrencyLimit(() => resolvers.netease(result.links.netease))
           if (neteaseInfo.artist) result.artist = neteaseInfo.artist
           if (neteaseInfo.cover) result.cover = neteaseInfo.cover
+          if (neteaseInfo.year) result.year = neteaseInfo.year
         } catch { /* keep original */ }
       } else if (result.links.apple && platform !== 'apple') {
         try {
@@ -576,6 +588,7 @@ export async function resolveMusicUrl(url) {
       try {
         const neteaseInfo = await concurrencyLimit(() => resolvers.netease(result.links.netease))
         if (neteaseInfo.cover) result.cover = neteaseInfo.cover
+        if (neteaseInfo.year) result.year = neteaseInfo.year
       } catch { /* keep original cover */ }
     }
   }
