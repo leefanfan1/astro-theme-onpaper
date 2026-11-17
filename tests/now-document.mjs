@@ -185,4 +185,57 @@ const CRLF = String.fromCharCode(13, 10)
   assert.equal(complete(['在听：《城市》', '张悬 https://music.163.com/#/album?id=32312', '年份：2009', '豆瓣：https://music.douban.com/subject/3801228/', '']), true)
 }
 
+{
+  // The book marks are the file's typography, not part of the name. An entry
+  // typed without them — `在听：城市` — names the same record as `在听：《城市》`,
+  // and is written back with them instead of being skipped.
+  const bare = ['在听：城市', ''].join(CRLF)
+  assert.deepEqual(rewriteNow(bare, new Map([
+    ['城市', { kind: 'music', creator: '张悬', year: '2009', douban: 'https://music.douban.com/subject/3801228/', link: 'https://music.163.com/#/album?id=32312' }],
+  ])).text.split(CRLF), [
+    '在听：《城市》',
+    '张悬 https://music.163.com/#/album?id=32312',
+    '年份：2009',
+    '豆瓣：https://music.douban.com/subject/3801228/',
+    '',
+  ])
+  assert.equal(nowEntriesOf(bare)[0].title, '城市')
+  assert.deepEqual(rewriteNow(['在读：城南旧事', ''].join(CRLF), new Map([
+    ['城南旧事', { kind: 'book', creator: '林海音', year: '1960', douban: 'https://book.douban.com/subject/3057333/' }],
+  ])).text.split(CRLF), [
+    '在读：《城南旧事》',
+    '林海音 https://book.douban.com/subject/3057333/',
+    '年份：1960',
+    '',
+  ])
+}
+{
+  // An entry that already holds everything, typed without the marks: the marks
+  // are the only thing left to write, and the rest is left alone.
+  const bare = ['在听：城市', '张悬 https://music.163.com/#/album?id=32312', '年份：2009', '豆瓣：https://music.douban.com/subject/3801228/', ''].join(CRLF)
+  const result = rewriteNow(bare, new Map([
+    ['城市', { kind: 'music', creator: '张悬', year: '2009', douban: 'https://music.douban.com/subject/3801228/', link: 'https://music.163.com/#/album?id=32312' }],
+  ]))
+  assert.deepEqual(result.text.split(CRLF), [
+    '在听：《城市》',
+    '张悬 https://music.163.com/#/album?id=32312',
+    '年份：2009',
+    '豆瓣：https://music.douban.com/subject/3801228/',
+    '',
+  ])
+  assert.deepEqual(result.changed, [{ title: '城市', keys: ['名称'] }])
+  // ...and that entry is not complete until it has them, or a second run
+  // would skip the very line this pass exists to fix.
+  assert.equal(isNowEntryComplete(nowEntriesOf(bare)[0]), false)
+  assert.equal(isNowEntryComplete(nowEntriesOf(result.text)[0]), true)
+}
+{
+  // A marked entry is untouched by the marks rule, and the marks in the middle
+  // of a name are not mistaken for the file's own.
+  const marked = ['在读：《城南旧事》', '林海音 https://book.douban.com/subject/3057333/', '年份：1960', ''].join(CRLF)
+  assert.equal(rewriteNow(marked, new Map([
+    ['城南旧事', { kind: 'book', creator: '林海音', year: '1960', douban: 'https://book.douban.com/subject/3057333/' }],
+  ])).text, marked)
+}
+
 console.log('now-document: ok')
