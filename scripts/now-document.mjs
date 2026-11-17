@@ -104,6 +104,9 @@ export function isNowEntryComplete(entry) {
   if (!credit.trim() || REFERENCE_RE.test(credit)) return false
   const link = credit.match(LINK_RE)?.[0]
   if (!link) return false
+  // The name is what the row draws beside the work. A credit line holding only
+  // the address has no author, and a run has one more thing to write there.
+  if (!credit.replace(LINK_RE, '').trim()) return false
   // A record's row opens the player, so its credit line has to carry the
   // NetEase address the shelf links to.
   if (entry.kind === 'music' && !/^https:\/\/music\.163\.com\//.test(link)) return false
@@ -183,11 +186,27 @@ export function rewriteNow(text, items) {
         block[1] = next
         keys.unshift(addressKey)
       }
+      // The name the author typed stays; a credit line that is nothing but the
+      // address gets the one the lookup found, before it.
+      if (wanted.creator && !block[1].replace(LINK_RE, '').trim()) {
+        block[1] = creditLine(wanted.creator, block[1])
+        keys.unshift('作者')
+      }
     }
-    else if (address && !LINK_RE.test(block[1])) {
-      // Words without an address: the Douban page is added after them.
-      block[1] = creditLine(block[1], address)
-      keys.unshift(addressKey)
+    else {
+      // A credit line that is nothing but the address names no author, and the
+      // column would draw an entry with no one's name on it. The name goes
+      // before the address; a name already there is the author's own.
+      const words = block[1].replace(LINK_RE, '').trim()
+      if (wanted.creator && !words) {
+        block[1] = creditLine(wanted.creator, block[1])
+        keys.unshift('作者')
+      }
+      else if (address && !LINK_RE.test(block[1])) {
+        // Words without an address: the Douban page is added after them.
+        block[1] = creditLine(block[1], address)
+        keys.unshift(addressKey)
+      }
     }
 
     set('年份', wanted.year)
