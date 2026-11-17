@@ -32,7 +32,7 @@
  * exactly as it was: the page then typesets a cover from its title, and the
  * next run tries again.
  */
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
@@ -43,6 +43,7 @@ import { findSubject, posterFromPage, subjectDetail, subjectUrl } from './douban
 import { nowEntriesOf, rewriteNow } from './now-document.mjs'
 import { entriesOf, rewriteDocument } from './shelf-document.mjs'
 import { parseEntry } from './shelf-fields.mjs'
+import { planShelfPrune } from './cover-prune.mjs'
 
 const root = process.cwd()
 const outDir = path.resolve(root, 'public/shelf')
@@ -67,13 +68,22 @@ async function fetchWithTimeout(url, headers = {}) {
   finally { clearTimeout(timer) }
 }
 
-/** The shelf files, each with the entries it holds outside its comments. */
+/**
+ * The shelf files, each with the entries it holds outside its comments, and the
+ * names of the ones that could not be read.
+ *
+ * A missing file is not an empty shelf: the pruning pass below would then read
+ * "these entries are gone" and delete every cover they named. So the caller
+ * gets the names, and removes nothing when there are any.
+ */
 async function readShelf() {
   const files = []
+  const missing = []
   for (const [file, kind] of Object.entries(FILES)) {
     let text
     try { text = await readFile(path.join(shelfDir, file), 'utf8') }
-    catch { continue }
+    catch { missing.push(file); continue }
+
     const entries = entriesOf(text, kind).map(({ lines }) => {
       const { fields, title } = parseEntry(lines)
       return {
@@ -89,7 +99,19 @@ async function readShelf() {
     })
     files.push({ file: path.join(shelfDir, file), kind, text, entries })
   }
-  return files
+  return { files, missing }
+}
+
+/** The file names present in public/shelf/, or none if the folder is not there. */
+async function storedCoverFiles() {
+  try {
+    return (await readdir(outDir, { withFileTypes: true }))
+      .filter(entry => entry.isFile())
+      .map(entry => entry.name)
+  }
+  catch {
+    return []
+  }
 }
 
 // How each kind is re-encoded, sized from what the wall actually draws.
@@ -222,9 +244,12 @@ async function resolveRecord(item, cache) {
     const netease = await resolveNetease(neteaseUrl)
     const links = { ...info?.links, netease: neteaseUrl }
     // The resolver caches under the URL a card would be given; the shelf links
-    // to NetEase, so the NetEase address is cached too.
-    cache[neteaseUrl] = { ...netease, url: neteaseUrl, links }
-    info = { ...info, ...netease, links }
+    // to NetEase, so the NetEase address is cached too. A cover `npm run music`
+    // already downloaded is kept, unless the image itself changed.
+    const previous = cache[neteaseUrl]
+    const coverFile = previous?.cover === netease.cover ? previous.coverFile : undefined
+    cache[neteaseUrl] = { ...netease, url: neteaseUrl, links, ...(coverFile ? { coverFile } : {}) }
+    info = { ...info, ...netease, links, ...(coverFile ? { coverFile } : {}) }
   }
 
   return { info, neteaseUrl }
@@ -314,7 +339,7 @@ async function completeNow(musicCache, shelfFacts) {
 }
 
 async function main() {
-  const files = await readShelf()
+  const { files, missing } = await readShelf()
   let covers = {}
   try { covers = JSON.parse(await readFile(coverCachePath, 'utf8')) }
   catch { /* first run */ }
@@ -343,6 +368,7 @@ async function main() {
 
   let complete = 0
   let coversSaved = 0
+  let coversRemoved = 0
   let failed = 0
   let filesUpdated = 0
 
@@ -452,18 +478,40 @@ async function main() {
     failed += now.failed
   }
 
+  // Covers whose entry the author deleted from a shelf file. The live entry
+  // list is the one just read from disk, so this runs even for a named-entry
+  // run: what was deleted is a property of the files, not of this pass.
+  //
+  // If any shelf file could not be read, that list is partial and "the entry
+  // is gone" would be wrong — so nothing is removed and the run says why.
+  const pruned = planShelfPrune({
+    complete: missing.length === 0,
+    reason: `${missing.join(', ')} could not be read`,
+    entries: files.flatMap(file => file.entries.map(item => ({ kind: file.kind, title: item.title, cover: item.cover }))),
+    covers,
+    files: await storedCoverFiles(),
+  })
+  covers = pruned.covers
+  if (pruned.skipped) console.log(`
+= covers: ${pruned.skipped}; removed nothing.`)
+  for (const { key, cover } of pruned.dropped) console.log(`  - ${key}: ${cover} (entry is gone)`)
+  for (const name of pruned.remove) {
+    await rm(path.resolve(root, 'public/shelf', name), { force: true })
+    console.log(`  - /shelf/${name}`)
+  }
+  coversRemoved = pruned.remove.length
   for (const [file, data] of [[coverCachePath, covers], [musicCachePath, musicCache]]) {
     await mkdir(path.dirname(file), { recursive: true })
     await writeFile(file, `${JSON.stringify(data, null, 2)}\n`, 'utf8')
   }
 
-  if (!failed && !filesUpdated && !coversSaved) {
+  if (!failed && !filesUpdated && !coversSaved && !coversRemoved) {
     console.log(complete === considered
       ? 'Every shelf entry was already complete.'
       : 'Nothing to add: the Douban lookups found nothing new.')
     return
   }
-  console.log(`\nDone: ${filesUpdated} file(s) updated, ${coversSaved} cover(s) saved, ${failed} failed, ${considered} considered.`)
+  console.log(`\nDone: ${filesUpdated} file(s) updated, ${coversSaved} cover(s) saved, ${coversRemoved} cover(s) removed, ${failed} failed, ${considered} considered.`)
   if (failed) console.log('Entries that failed are unchanged; run again to retry.')
 }
 

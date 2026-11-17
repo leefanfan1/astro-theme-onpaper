@@ -199,6 +199,8 @@ npm run music
 
 解析结果会写入 `src/data/music-cache.json`，建议一起提交，之后构建不再请求平台。
 
+封面同时下载到 `public/music/`，缓存里多一行 `"coverFile": "/music/xxxx.jpg"`，卡片用它显示。下载失败的那一张没有 `coverFile`，卡片退回直接引网易云的图，不会空着。`public/_headers` 把 `/music/*` 标成 `immutable`，所以文件名里带着尺寸：改了卡片尺寸再跑一次会生成新文件，不会留下缓存指向的旧图。
+
 ### 手动填写
 
 ```md
