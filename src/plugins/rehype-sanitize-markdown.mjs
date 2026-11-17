@@ -10,15 +10,32 @@
  * handed to other writers — so the pipeline sanitises by default.
  *
  * The allowlist is the theme's own vocabulary: the elements the editorial
- * extensions emit (music / GitHub / embed cards), KaTeX's MathML, Mermaid's
- * container, and ordinary prose markup. No event handlers, no `style`
- * attributes, no `<script>`, and iframes only from the four embed providers
- * the CSP also names.
+ * extensions emit (music / GitHub / embed cards), Mermaid's container, and
+ * ordinary prose markup. No event handlers, no `<script>`, and iframes only
+ * from the four embed providers the CSP also names.
+ *
+ * Inline `style` is allowed, because a writer colours or centres a line that
+ * way and CSS has no other spelling — but only through rehypeStyleAllowlist
+ * below, which keeps a declaration only when its property is known and its
+ * value matches that property's shape. See the note there.
+ *
+ * The order this runs in matters and lives in markdown-pipeline.mjs: the
+ * sanitizer sees the author's HTML, and the markup KaTeX, Mermaid and the
+ * footnote repair add afterwards is the theme's own and is not re-checked.
  */
 import { defaultSchema } from 'rehype-sanitize'
 import { visit } from 'unist-util-visit'
 
 // Classes the theme's plugins and CSS rely on.
+//
+// A class list alone is not enough, because two of the things in the tree are
+// open-ended. Shiki emits a class per grammar scope (`keyword`, `variable`,
+// `punctuator`, …) and the set differs per grammar and theme, so no fixed list
+// can hold them; and an author may reasonably want a class of their own for a
+// stylesheet of theirs to reach. Hence the pattern — a lowercase name — beside
+// the list. An unknown class is inert; a dropped one silently unstyles a code
+// block, which is what happened while this was a fixed list only.
+const OPEN_CLASS = /^[a-z][\w-]*$/
 const CLASS_NAMES = [
   'mc-card', 'mc-inner', 'mc-art', 'mc-disc', 'mc-cover-wrap', 'mc-cover-missing', 'mc-info',
   'mc-type-badge', 'mc-title', 'mc-artist', 'mc-lyric', 'mc-links', 'mc-link', 'mc-link__inner',
@@ -30,6 +47,8 @@ const CLASS_NAMES = [
   'embed-card__caption', 'editorial-note',
   'katex', 'katex-display', 'katex-error', 'mermaid', 'math', 'math-display', 'math-inline',
   'task-list-item', 'contains-task-list', 'footnotes', 'sr-only',
+  // GFM's footnotes: the reference link, the back-reference, the section.
+  'data-footnote-backref', 'data-footnote-ref',
 ]
 
 const MATHML = [
@@ -51,6 +70,48 @@ const EMBED_SRC = [
   'https://open.spotify.com/',
   'https://player.vimeo.com/',
 ]
+
+/**
+ * CSS properties a post may set inline, and the value each may take.
+ *
+ * The theme allows `style` because that is how a writer colours or centres a
+ * line — `<span style="color:red">` — and CSS has no other way to say it. It
+ * is not an open door: `url()` can exfiltrate, `expression()` is script,
+ * `@import` pulls a stylesheet, and a positioned full-screen box is
+ * clickjacking. So a declaration is kept only if its property is listed here
+ * and its value matches that property's pattern; everything else is dropped
+ * with the rest of its declaration, quietly.
+ *
+ * The sanitizer's own `style` entry is a coarse guard that keeps anything
+ * obviously dangerous out of the tree at all. This list is the real filter,
+ * and it runs afterwards (see rehypeStyleAllowlist).
+ */
+const CSS_VALUES = {
+  color: /^[#a-z0-9().,%\s-]+$/i,
+  'background-color': /^[#a-z0-9().,%\s-]+$/i,
+  'font-weight': /^(?:normal|bold|bolder|lighter|[1-9]00)$/i,
+  'font-style': /^(?:normal|italic|oblique)$/i,
+  'font-size': /^[a-z0-9.%\s-]+$/i,
+  'font-family': /^[a-z0-9\s,'"-]+$/i,
+  'text-align': /^(?:left|right|center|justify|start|end)$/i,
+  'text-decoration': /^[a-z\s-]+$/i,
+  'text-indent': /^[a-z0-9.%\s-]+$/i,
+  'letter-spacing': /^[a-z0-9.%-]+$/i,
+  'line-height': /^[a-z0-9.%\s-]+$/i,
+  'vertical-align': /^[a-z0-9.%\s-]+$/i,
+  'white-space': /^(?:normal|nowrap|pre|pre-wrap|pre-line|break-spaces)$/i,
+  'overflow-x': /^(?:auto|hidden|scroll|visible|clip)$/i,
+  'overflow-wrap': /^(?:normal|break-word|anywhere)$/i,
+  'word-wrap': /^(?:normal|break-word)$/i,
+  width: /^[a-z0-9.%\s-]+$/i,
+  height: /^[a-z0-9.%\s-]+$/i,
+  'max-width': /^[a-z0-9.%\s-]+$/i,
+  'min-width': /^[a-z0-9.%\s-]+$/i,
+  opacity: /^(?:0?\.[0-9]+|0|1)$/,
+  // Shiki writes its light/dark pair as custom properties on the block.
+  '--shiki-dark': /^[#a-z0-9().,%\s-]+$/i,
+  '--shiki-dark-bg': /^[#a-z0-9().,%\s-]+$/i,
+}
 
 export const sanitizeSchema = {
   ...defaultSchema,
@@ -74,8 +135,12 @@ export const sanitizeSchema = {
     // post from inventing attributes the scripts might later trust.
     '*': [
       ...(defaultSchema.attributes?.['*'] ?? []),
-      ['className', ...CLASS_NAMES],
+      ['className', OPEN_CLASS, ...CLASS_NAMES],
       'id',
+      // Let through here, filtered by rehypeStyleAllowlist below: the schema
+      // cannot express "this property, with this value shape".
+      'style',
+      'dataLanguage',
       ...DATA_ATTRS,
     ],
     // The card icons: a filled path inside a viewBox-sized svg.
@@ -89,7 +154,7 @@ export const sanitizeSchema = {
     // allowlist, keeping the footnote entry the schema ships with.
     a: [
       ...(defaultSchema.attributes?.a ?? []).filter(entry => !Array.isArray(entry)),
-      ['className', ...CLASS_NAMES, 'data-footnote-backref'],
+      ['className', ...CLASS_NAMES],
       'target',
       'rel',
     ],
@@ -112,6 +177,75 @@ export const sanitizeSchema = {
     src: ['http', 'https'],
     cite: ['http', 'https'],
   },
+}
+
+/**
+ * Filter every inline `style` down to the declarations a post may set.
+ *
+ * Runs after rehype-sanitize, which has already let `style` through and removed
+ * the obviously dangerous values. What remains is parsed declaration by
+ * declaration: an unknown property or a value that does not match its
+ * property's pattern is dropped, and the ones that survive are written back in
+ * a normalised form. A block whose declarations all fail loses the attribute.
+ */
+// Constructs that turn a value into code or a request. Checked before the
+// per-property pattern, because a pattern that allows parentheses and letters
+// (a colour can be `rgba(…)`) would otherwise let these through.
+const CSS_DANGEROUS = /(?:expression\s*\(|url\s*\(|@import|javascript:|vbscript:|behavior\s*:|\[0-9a-f]{1,6}|-moz-binding)/i
+
+export function rehypeStyleAllowlist() {
+  return (tree) => {
+    visit(tree, 'element', (node) => {
+      const raw = node.properties?.style
+      if (typeof raw !== 'string') return
+      const kept = []
+      for (const declaration of raw.split(';')) {
+        const at = declaration.indexOf(':')
+        if (at < 0) continue
+        const property = declaration.slice(0, at).trim().toLowerCase()
+        const value = declaration.slice(at + 1).trim()
+        if (!property || !value) continue
+        if (CSS_DANGEROUS.test(value) || CSS_DANGEROUS.test(property)) continue
+        const pattern = CSS_VALUES[property]
+        if (!pattern || !pattern.test(value)) continue
+        kept.push(`${property}:${value}`)
+      }
+      if (kept.length) node.properties.style = kept.join(';')
+      else delete node.properties.style
+    })
+  }
+}
+
+/**
+ * Put GFM's footnote ids back to a single `user-content-` prefix.
+ *
+ * mdast-util-to-hast names a footnote `fn-1` and its reference `fnref-1`, and
+ * the sanitizer prefixes every id it keeps, producing `user-content-fn-1`. The
+ * ids a footnote link points at are written as fragment hrefs — `#fn-1` — and
+ * the sanitizer prefixes those too, so both halves agree. But the footnote
+ * plugin has already emitted the reference's `id` as `fnref-1` **and** the
+ * sanitizer prefixes it, giving `user-content-user-content-fnref-1`: the
+ * back-reference then points at an id nothing has.
+ *
+ * This collapses a doubled prefix to one, on ids and on the hrefs that name
+ * them, so the note and its back-link land on each other.
+ */
+export function rehypeRestoreFootnoteIds() {
+  return (tree) => {
+    const collapse = value => String(value).replace(/^user-content-user-content-/, 'user-content-')
+    visit(tree, 'element', (node) => {
+      const properties = node.properties ?? {}
+      if (typeof properties.id === 'string') properties.id = collapse(properties.id)
+      for (const name of ['ariaDescribedBy', 'ariaLabelledBy']) {
+        const value = properties[name]
+        if (typeof value === 'string') properties[name] = collapse(value)
+        else if (Array.isArray(value)) properties[name] = value.map(collapse)
+      }
+      if (typeof properties.href === 'string' && properties.href.startsWith('#')) {
+        properties.href = '#' + collapse(properties.href.slice(1))
+      }
+    })
+  }
 }
 
 /**

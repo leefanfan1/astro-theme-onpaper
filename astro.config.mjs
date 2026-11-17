@@ -1,20 +1,10 @@
 import { unified } from '@astrojs/markdown-remark'
 import sitemap from '@astrojs/sitemap'
 import { defineConfig } from 'astro/config'
-import rehypeKatex from 'rehype-katex'
-import rehypeSanitize from 'rehype-sanitize'
-import rehypeSlug from 'rehype-slug'
-import remarkDirective from 'remark-directive'
-import remarkMath from 'remark-math'
 import { siteConfig } from './src/config.ts'
 import { hostedFontIntegration } from './src/plugins/hosted-page-fonts.mjs'
 import { devViewsIntegration } from './src/plugins/dev-views.mjs'
-import { rehypeExternalLinks } from './src/plugins/rehype-external-links.mjs'
-import { rehypeMermaid } from './src/plugins/rehype-mermaid.mjs'
-import { rehypeStripEntities } from './src/plugins/rehype-strip-entities.mjs'
-import { rehypeEmbedAllowlist, sanitizeSchema } from './src/plugins/rehype-sanitize-markdown.mjs'
-import { rehypeTaskListLabels } from './src/plugins/rehype-task-list-labels.mjs'
-import { remarkEditorialExtensions } from './src/plugins/remark-editorial-extensions.mjs'
+import { remarkPlugins, rehypePlugins } from './src/plugins/markdown-pipeline.mjs'
 import { sitemapAlias, sitemapOptions } from './src/plugins/sitemap-extras.mjs'
 
 export default defineConfig({
@@ -33,33 +23,7 @@ export default defineConfig({
   },
   integrations: [sitemap(sitemapOptions()), sitemapAlias(), devViewsIntegration(), hostedFontIntegration(siteConfig.fonts)],
   markdown: {
-    processor: unified({
-      remarkPlugins: [
-        remarkDirective,
-        remarkMath,
-        remarkEditorialExtensions,
-      ],
-      rehypePlugins: [
-        rehypeKatex,
-        rehypeMermaid,
-        rehypeExternalLinks,
-        rehypeStripEntities,
-        rehypeTaskListLabels,
-        // Near the end of the chain: raw HTML in a post is allowed, so it is
-        // sanitised
-        // once every plugin has finished adding its own markup (the editorial
-        // cards, KaTeX's MathML, the task-list labels). The schema is the
-        // theme's own vocabulary; see src/plugins/rehype-sanitize-markdown.mjs.
-        [rehypeSanitize, sanitizeSchema],
-        rehypeEmbedAllowlist,
-        // After the sanitizer, not before: hast-util-sanitize prefixes every
-        // `id` it lets through (`user-content-…`) so a post cannot shadow an
-        // element the page scripts rely on. Running slug last keeps heading
-        // anchors at their real slugs, so links into a section — from another
-        // article, or from outside the site — still land.
-        rehypeSlug,
-      ],
-    }),
+    processor: unified({ remarkPlugins, rehypePlugins }),
     shikiConfig: {
       themes: {
         light: 'github-light-high-contrast',

@@ -331,9 +331,11 @@ npx wrangler pages deploy dist
 
 ## 安全
 
-主题默认允许在文章里写原始 HTML，所以构建时会过一次 `rehype-sanitize`。schema 在 `src/plugins/rehype-sanitize-markdown.mjs`，是这套主题自己的词汇表：卡片的 class、脚本要读的 `data-*`、SVG 的 `viewBox` / `path`，还有 KaTeX 的 MathML。`<script>`、`on*` 事件属性和 `style` 属性都会丢掉；iframe 只认四个白名单域名（YouTube、B 站、Spotify、Vimeo）。
+主题默认允许在文章里写原始 HTML，所以构建时会过一次 `rehype-sanitize`。schema 在 `src/plugins/rehype-sanitize-markdown.mjs`，是这套主题自己的词汇表：卡片的 class、脚本要读的 `data-*`、SVG 的 `viewBox` / `path`，还有 KaTeX 的 MathML。`<script>` 和 `on*` 事件属性都会丢掉；iframe 只认四个白名单域名（YouTube、B 站、Spotify、Vimeo）。
 
-插件链的顺序有讲究：消毒排在最后几个，等 KaTeX、Mermaid、卡片插件都加完自己的标记再检查一遍。`rehypeSlug` 反而排在消毒之后——消毒会给每个 `id` 加 `user-content-` 前缀，防的是文章伪造站内元素的 id；如果标题锚点先被加了前缀，指向某一小节的链接就全都找不到目标了。
+行内的 `style` 可以用，比如 `<span style="color:red">红</span>` 或 `<div style="text-align:center">`——CSS 没有别的写法能表达这些。但不是照单全收：只有 `color`、`font-weight`、`text-align` 这类字号排版的属性会保留，值也要匹配该属性的形状；`url()`、`expression()`、`position` 之类的声明会被单独丢掉，不影响同一行里其余的声明。完整名单在同一个文件的 `CSS_VALUES` 里。
+
+插件链的完整顺序在 `src/plugins/markdown-pipeline.mjs`，`astro.config.mjs` 只是把它交给 Astro。要点是：清洗只管作者写的那部分 HTML，KaTeX、Mermaid、代码高亮、脚注这些主题自己生成的标记排在它之后，不会被再过滤一遍——否则彩色文字、代码高亮的配色、公式排版都会在不声不响中丢掉样式。`rehypeSlug` 排在最后，因为消毒会给每个 `id` 加 `user-content-` 前缀，标题锚点必须在那之后才生成，指向某一小节的链接才能找到目标。
 
 **这套消毒真正的意义在换作者的时候。** 只写自己的博客时，能写 HTML 的就是你自己；但主题会被别人拿去用，作者不一定可信。
 

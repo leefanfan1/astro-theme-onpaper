@@ -18,8 +18,14 @@ export function rehypeMermaid() {
           const code = child.children?.find(c => c.type === 'element' && c.tagName === 'code')
           const classes = code?.properties?.className ?? []
           const isMermaid = classes.some(c => String(c).includes('mermaid'))
-            || child.properties?.['data-language'] === 'mermaid'
-            || code?.properties?.['data-language'] === 'mermaid'
+            // hast spells a data attribute in camelCase; `data-language` on
+            // the element is `dataLanguage` here. Asking for the hyphenated
+            // name never matched, so every ```mermaid fence stayed a code
+            // block and the diagram never rendered.
+            || child.properties?.dataLanguage === 'mermaid'
+            || code?.properties?.dataLanguage === 'mermaid'
+            || child.properties?.className?.some?.(name => String(name).includes('language-mermaid'))
+            || code?.properties?.className?.some?.(name => String(name).includes('language-mermaid'))
           if (code && isMermaid) {
             const source = textOf(code).trim()
             node.children[i] = {

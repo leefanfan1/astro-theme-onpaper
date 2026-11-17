@@ -962,7 +962,7 @@ html[data-theme="dark"] .theme-toggle .moon {
 
 .now__list {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
   margin: 0;
 }
 
@@ -990,20 +990,26 @@ html[data-theme="dark"] .theme-toggle .moon {
   line-height: 1.6;
 }
 
-/* The title and the creator are two inline boxes in one line box, side by
-   side while they fit and wrapping as a pair when they do not. Each is
-   `min-width: 0` so a long one can break inside its share instead of
-   running past the column. */
-.now__item dd > .now__link {
+/* An entry always sets in two lines: the work, then who made it.
+   The column is 13rem and the longest title in the shelf runs to seven
+   characters, so a title and a name on one line only fit when both are short —
+   and fitting sometimes is what made the list look unfinished: three rows of
+   one, two and one lines, with the name dropped under the title in the middle.
+   A stable two-line beat reads as a ledger instead of as a list that ran out
+   of room. */
+.now__item dd > .now__link,
+.now__item dd > .now__row {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.1rem 0.5rem;
+  gap: 0 0.5rem;
   min-width: 0;
   color: inherit;
   text-decoration: none;
 }
 
+/* `flex-basis: 100%` forces the break: the creator starts every second line,
+   left-aligned with the title, whatever the title's length. */
 .now__title {
   flex: 0 1 auto;
   min-width: 0;
@@ -1012,16 +1018,14 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .now__creator {
-  flex: 0 1 auto;
+  flex: 0 0 100%;
   min-width: 0;
+  /* Tight to its title — they are one entry — and the gap in .now__list is
+     what separates entries from each other. */
+  margin-top: 0.1rem;
   color: var(--ink-faint);
   font-size: var(--text-xs);
-}
-
-/* When the pair is too wide, the creator takes the second line whole and the
-   title keeps the first; neither is cut. */
-.now__creator {
-  white-space: nowrap;
+  line-height: 1.4;
 }
 
 @media (hover: hover) and (pointer: fine) {

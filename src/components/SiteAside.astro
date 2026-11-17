@@ -48,10 +48,13 @@ const nowEntries = nowPage ? parseNow(nowPage.body ?? '') : []
                     </a>
                   )
                 : (
-                    <>
+                    // The same two boxes as the link branch, in the same
+                    // wrapper, so a row without an address sets exactly like
+                    // one with: title, then creator on its own line.
+                    <span class="now__row">
                       <span class="now__title">{entry.title}</span>
                       {entry.creator && <span class="now__creator">{entry.creator}</span>}
-                    </>
+                    </span>
                   )}
             </dd>
           </div>
