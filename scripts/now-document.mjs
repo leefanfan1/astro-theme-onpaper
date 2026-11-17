@@ -20,6 +20,9 @@ const LINK_RE = /https?:\/\/\S+/
 // The lines this script adds for reference. They are not the credit line, even
 // when an older run put one of them second.
 const REFERENCE_RE = /^\s*(年份|豆瓣|链接)\s*[：:]/
+// `在读：《城南旧事》` — or the same entry typed without the marks, which is
+// completed with them rather than skipped as unreadable.
+const LABEL_RE = /^([^：:]{1,4})\s*[：:]\s*(?:《(.+)》|(.+?))\s*$/
 
 /** A credit line: the creator, and the address the row opens, in that order. */
 function creditLine(creator, url) {
@@ -55,7 +58,7 @@ export function nowEntriesOf(text) {
     const start = i
     while (i < lines.length && lines[i].trim()) i += 1
     const block = lines.slice(start, i)
-    const head = block[0].match(/^([^：:]{1,4})\s*[：:]\s*《(.+)》\s*$/)
+    const head = block[0].match(LABEL_RE)
     if (!head) continue
     const kind = LABEL_KIND[head[1].trim()]
     if (!kind) continue
@@ -70,7 +73,10 @@ export function nowEntriesOf(text) {
       start,
       kind,
       label: head[1].trim(),
-      title: head[2].trim(),
+      // The marks are the file's typography, not part of the name: an entry
+      // typed `在听：城市` names the same record as `在听：《城市》`.
+      title: (head[2] ?? head[3]).trim(),
+      marked: head[2] !== undefined,
       creator: credit.replace(LINK_RE, '').trim(),
       url: credit.match(LINK_RE)?.[0] ?? '',
       lines: block,
@@ -91,6 +97,9 @@ export function nowEntriesOf(text) {
  * nothing on a second run.
  */
 export function isNowEntryComplete(entry) {
+  // Without its marks the label line is not what the column's examples show,
+  // and it is the one thing a run can still add to an otherwise full entry.
+  if (!entry.marked) return false
   const credit = entry.lines[1] ?? ''
   if (!credit.trim() || REFERENCE_RE.test(credit)) return false
   const link = credit.match(LINK_RE)?.[0]
@@ -122,6 +131,14 @@ export function rewriteNow(text, items) {
 
     const block = [...entry.lines]
     const keys = []
+    // The label line's marks are this file's typography. An entry typed
+    // without them names the same work, so they are written rather than the
+    // entry being skipped — or completed and left looking unlike its
+    // neighbours.
+    if (!entry.marked) {
+      block[0] = `${entry.label}：《${entry.title}》`
+      keys.push('名称')
+    }
     // `match` returns null on a miss, and `null >= 0` is true — compare the
     // result explicitly, not with an ordering operator.
     const index = key => block.findIndex(line => line.match(new RegExp(`^\\s*${key}\\s*[：:]`)) !== null)
