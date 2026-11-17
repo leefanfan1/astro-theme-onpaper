@@ -17,6 +17,14 @@
  */
 const LABEL_KIND = { 在读: 'book', 在看: 'film', 在听: 'music' }
 const LINK_RE = /https?:\/\/\S+/
+// The lines this script adds for reference. They are not the credit line, even
+// when an older run put one of them second.
+const REFERENCE_RE = /^\s*(年份|豆瓣|链接)\s*[：:]/
+
+/** A credit line: the creator, and the address the row opens, in that order. */
+function creditLine(creator, url) {
+  return [creator, url].map(value => String(value ?? '').trim()).filter(Boolean).join(' ')
+}
 
 /**
  * The entries of now.md: `{ kind, label, title, creator, url, start, lines }`,
@@ -52,7 +60,12 @@ export function nowEntriesOf(text) {
     const kind = LABEL_KIND[head[1].trim()]
     if (!kind) continue
 
-    const credit = block[1] ?? ''
+    // The second line is the credit unless it is a reference line: an entry
+    // that holds only `年份：` was written by a pass that predates the credit
+    // line, and reading that as the creator would search Douban for an author
+    // named `年份：2012`.
+    const second = block[1] ?? ''
+    const credit = REFERENCE_RE.test(second) ? '' : second
     found.push({
       start,
       kind,
@@ -68,9 +81,32 @@ export function nowEntriesOf(text) {
 }
 
 /**
+ * Whether an entry already holds everything `npm run covers` would write: a
+ * credit line with the address its row opens, the reference `年份`, and — for a
+ * record — the separate `豆瓣` line. An entry with only a year line is not
+ * complete: that is what an older run left behind, and the column draws the
+ * year as the entry's author until a credit line is put above it.
+ *
+ * `fetch-covers.mjs` asks this before any request, so a complete entry costs
+ * nothing on a second run.
+ */
+export function isNowEntryComplete(entry) {
+  const credit = entry.lines[1] ?? ''
+  if (!credit.trim() || REFERENCE_RE.test(credit)) return false
+  const link = credit.match(LINK_RE)?.[0]
+  if (!link) return false
+  // A record's row opens the player, so its credit line has to carry the
+  // NetEase address the shelf links to.
+  if (entry.kind === 'music' && !/^https:\/\/music\.163\.com\//.test(link)) return false
+  if (!entry.lines.some(line => /^\s*年份\s*[：:]/.test(line))) return false
+  return entry.kind !== 'music' || entry.lines.some(line => /^\s*豆瓣\s*[：:]/.test(line))
+}
+
+/**
  * @param text  The file's contents.
  * @param items Map of entry title -> `{ kind, creator, year, douban, link }`.
- *              `link` replaces the address on a record's credit line.
+ *              The credit line is filled from `creator` and the address, and
+ *              a record's `link` replaces the address already there.
  * @returns The new contents and which entries changed, in file order.
  */
 export function rewriteNow(text, items) {
@@ -105,14 +141,36 @@ export function rewriteNow(text, items) {
       keys.push(key)
     }
 
-    // A record's credit line carries its player address, and the column opens
-    // exactly that; the shelf's `链接` is the same thing.
-    if (entry.kind === 'music' && wanted.link && block[1] && LINK_RE.test(block[1])) {
-      const next = block[1].replace(LINK_RE, wanted.link)
-      if (next !== block[1]) {
-        block[1] = next
-        keys.unshift('链接')
+    // The credit line — the row's second line — carries the creator and the
+    // address the row opens: a record's player, a book's or film's Douban page.
+    // A label line on its own gets one; an entry that only has reference lines
+    // gets one above them, so the column never draws `年份：1960` as the author.
+    const address = entry.kind === 'music' ? wanted.link : wanted.douban
+    // What the address is called in this file's own words: a record's row opens
+    // its player, a book's or film's opens its Douban page.
+    const addressKey = entry.kind === 'music' ? '链接' : '豆瓣'
+    const hasCredit = Boolean(block[1]?.trim()) && !REFERENCE_RE.test(block[1])
+    if (!hasCredit) {
+      const line = creditLine(wanted.creator, address)
+      if (line) {
+        block.splice(1, 0, line)
+        keys.unshift(addressKey)
       }
+    }
+    else if (entry.kind === 'music') {
+      // A record's row opens the player, so its address is replaced with the
+      // one the shelf links to. A book's or film's address is the page the
+      // author chose, and is left as they wrote it.
+      const next = LINK_RE.test(block[1]) ? block[1].replace(LINK_RE, address) : creditLine(block[1], address)
+      if (address && next !== block[1]) {
+        block[1] = next
+        keys.unshift(addressKey)
+      }
+    }
+    else if (address && !LINK_RE.test(block[1])) {
+      // Words without an address: the Douban page is added after them.
+      block[1] = creditLine(block[1], address)
+      keys.unshift(addressKey)
     }
 
     set('年份', wanted.year)

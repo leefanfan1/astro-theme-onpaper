@@ -40,7 +40,7 @@ import process from 'node:process'
 import sharp from 'sharp'
 import { isDoubanImage, isLocalCover, isNeteaseImage, largeCover, neteaseCover } from './cover-source.mjs'
 import { findSubject, posterFromPage, subjectDetail, subjectUrl } from './douban.mjs'
-import { nowEntriesOf, rewriteNow } from './now-document.mjs'
+import { isNowEntryComplete, nowEntriesOf, rewriteNow } from './now-document.mjs'
 import { entriesOf, rewriteDocument } from './shelf-document.mjs'
 import { parseEntry } from './shelf-fields.mjs'
 import { planShelfPrune } from './cover-prune.mjs'
@@ -270,11 +270,9 @@ async function completeNow(musicCache, shelfFacts) {
   let complete = 0
   let failed = 0
   for (const entry of nowEntriesOf(text)) {
-    // Already complete: a year line, and for a record its Douban page. A
-    // second run then costs no requests.
-    const hasYear = entry.lines.some(line => /^\s*年份\s*[：:]/.test(line))
-    const hasDouban = entry.lines.some(line => /^\s*豆瓣\s*[：:]/.test(line))
-    if (hasYear && (entry.kind !== 'music' || hasDouban)) {
+    // Already complete: a credit line pointing at the work, a year line, and
+    // for a record its Douban page. A second run then costs no requests.
+    if (isNowEntryComplete(entry)) {
       console.log(`  = ${entry.label}《${entry.title}》 (complete)`)
       complete += 1
       continue
@@ -293,6 +291,9 @@ async function completeNow(musicCache, shelfFacts) {
         }).catch(() => null)
         updates.set(entry.title, {
           kind: 'music',
+          // The credit line is the creator and the player address; the shelf's
+          // resolver is the one that knows the artist.
+          creator: info.artist || entry.creator,
           year: info.year ? String(info.year) : '',
           douban: subject ? subjectUrl('music', subject.id) : '',
           link: neteaseUrl,
@@ -313,6 +314,9 @@ async function completeNow(musicCache, shelfFacts) {
       const year = shelfFacts.get(entry.title)?.year || detail?.year || subject.year || ''
       updates.set(entry.title, {
         kind: entry.kind,
+        // The mobile-subject endpoint names the author or director properly;
+        // the search hit is the fallback when it refuses.
+        creator: detail?.creator || subject.creator || entry.creator,
         year: year ? String(year) : '',
         douban: subjectUrl(entry.kind, subject.id),
       })
