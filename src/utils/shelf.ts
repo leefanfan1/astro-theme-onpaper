@@ -125,11 +125,15 @@ export function parseNow(content: string): NowEntry[] {
     if (!lines.length) continue
     const head = lines[0].match(/^([^：:]{1,4})\s*[：:]\s*(.+)$/)
     if (!head) continue
-    const credit = lines[1] ?? ''
+    // The second line is the credit — unless it is a reference line, which is
+    // what a file completed before the credit line existed holds. Reading
+    // `年份：1960` as the credit would draw it as the entry's author.
+    const second = lines[1] ?? ''
+    const credit = /^\s*(年份|豆瓣|链接)\s*[：:]/.test(second) ? '' : second
     // One link on the credit line is the work's own page; a separate
     // `豆瓣：` line lets a record point at both its player and Douban.
     const links = [...lines.join(' ').matchAll(/https?:\/\/\S+/g)].map(match => match[0])
-    const douban = httpUrl(lines.slice(2).find(line => /^豆瓣\s*[：:]/.test(line))?.replace(/^豆瓣\s*[：:]\s*/, '') ?? '') ?? ''
+    const douban = httpUrl(lines.find(line => /^豆瓣\s*[：:]/.test(line))?.replace(/^豆瓣\s*[：:]\s*/, '') ?? '') ?? ''
     entries.push({
       label: head[1].trim(),
       title: head[2].trim(),
