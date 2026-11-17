@@ -213,19 +213,49 @@ export async function findSubject(kind, { title, creator, year, url }) {
 }
 
 /**
+ * The mobile-subject JSON, one path at a time.
+ *
+ * A film and a TV series share movie.douban.com and the same id space, but not
+ * the same endpoint: a series answers on `/tv/`, and asking `/movie/` for it
+ * answers with a redirect to `/tv/`. `get()` refuses redirects on purpose —
+ * it follows no host it did not ask for — so a series came back as nothing and
+ * its director was silently left out of films.md. The series path is tried
+ * only after the film one has failed, so a film costs the single request it
+ * always did.
+ */
+const DETAIL_PATHS = {
+  book: ['book'],
+  film: ['movie', 'tv'],
+  music: ['music'],
+}
+
+async function detailOf(kind, id, route) {
+  try {
+    const response = await get(`https://m.douban.com/rexxar/api/v2/${route}/${id}?for_mobile=1`, {
+      'User-Agent': UA_MOBILE,
+      Referer: `https://m.douban.com/${route}/`,
+      Accept: 'application/json',
+    })
+    if (!response.ok) return null
+    return await response.json()
+  }
+  catch { return null }
+}
+
+/**
  * Author / director / singer, year and cover from the mobile-subject JSON.
  * Returns null when the endpoint refuses (it answers `need_login` at times).
  */
 export async function subjectDetail(kind, id) {
   if (!/^\d+$/.test(String(id))) return null
   try {
-    const response = await get(`https://m.douban.com/rexxar/api/v2/${REXXAR[kind]}/${id}?for_mobile=1`, {
-      'User-Agent': UA_MOBILE,
-      Referer: `https://m.douban.com/${REXXAR[kind]}/`,
-      Accept: 'application/json',
-    })
-    if (!response.ok) return null
-    const data = await response.json()
+    let data = null
+    for (const route of DETAIL_PATHS[kind] ?? []) {
+      data = await detailOf(kind, id, route)
+      if (data?.title) break
+      data = null
+    }
+    if (!data) return null
     const creator = kind === 'book'
       ? (data.author ?? [])[0]
       : kind === 'film'

@@ -238,4 +238,54 @@ const CRLF = String.fromCharCode(13, 10)
   ])).text, marked)
 }
 
+{
+  // A credit line with the address but no name — what a hand-typed entry looks
+  // like when the author pastes only the Douban page. The column draws the
+  // credit line as the creator, so the name has to be written into it; adding
+  // only the year leaves the row with an address and no author for good.
+  const bare = ['在读：《我与地坛》', 'https://book.douban.com/subject/5910656/', ''].join(CRLF)
+  assert.deepEqual(rewriteNow(bare, new Map([
+    ['我与地坛', { kind: 'book', creator: '史铁生', year: '1991', douban: 'https://book.douban.com/subject/5910656/' }],
+  ])).text.split(CRLF), [
+    '在读：《我与地坛》',
+    '史铁生 https://book.douban.com/subject/5910656/',
+    '年份：1991',
+    '',
+  ])
+  // Not complete until it has both, or the next run skips it.
+  assert.equal(isNowEntryComplete(nowEntriesOf(bare)[0]), false)
+}
+{
+  // A record the same way: the name is put before the player address.
+  const bare = ['在听：《城市》', 'https://music.163.com/#/album?id=32312', ''].join(CRLF)
+  assert.deepEqual(rewriteNow(bare, new Map([
+    ['城市', { kind: 'music', creator: '张悬', year: '2009', douban: 'https://music.douban.com/subject/3801228/', link: 'https://music.163.com/#/album?id=32312' }],
+  ])).text.split(CRLF), [
+    '在听：《城市》',
+    '张悬 https://music.163.com/#/album?id=32312',
+    '年份：2009',
+    '豆瓣：https://music.douban.com/subject/3801228/',
+    '',
+  ])
+}
+{
+  // A name alone is unchanged, and a name the author typed is never replaced
+  // by the one the lookup found.
+  const named = ['在读：《我与地坛》', '史铁生 https://book.douban.com/subject/5910656/', '年份：1991', ''].join(CRLF)
+  assert.equal(rewriteNow(named, new Map([
+    ['我与地坛', { kind: 'book', creator: '史铁生', year: '1991', douban: 'https://book.douban.com/subject/5910656/' }],
+  ])).text, named)
+  const own = ['在读：《我与地坛》', '史铁生 著 https://book.douban.com/subject/5910656/', ''].join(CRLF)
+  assert.equal(rewriteNow(own, new Map([
+    ['我与地坛', { kind: 'book', creator: '史铁生', year: '1991', douban: 'https://book.douban.com/subject/5910656/' }],
+  ])).text.split(CRLF)[1], '史铁生 著 https://book.douban.com/subject/5910656/')
+}
+{
+  // Completeness, in each direction: an address without a name is not enough.
+  const complete = lines => isNowEntryComplete(nowEntriesOf(lines.join(CRLF))[0])
+  assert.equal(complete(['在读：《我与地坛》', 'https://book.douban.com/subject/5910656/', '年份：1991', '']), false)
+  assert.equal(complete(['在读：《我与地坛》', '史铁生 https://book.douban.com/subject/5910656/', '年份：1991', '']), true)
+  assert.equal(complete(['在听：《城市》', 'https://music.163.com/#/album?id=32312', '年份：2009', '豆瓣：https://music.douban.com/subject/3801228/', '']), false)
+}
+
 console.log('now-document: ok')
