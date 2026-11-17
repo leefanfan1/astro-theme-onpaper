@@ -11,6 +11,7 @@
  */
 
 import { resolveMusicUrl } from '../utils/music-resolver.mjs'
+import { cardCoverUrl } from '../utils/music-cover.mjs'
 import { MUSIC_PLATFORM_META } from './music-platform-icons.mjs'
 
 const MUSIC_TYPES = {
@@ -33,36 +34,9 @@ function isHttpUrl(value) {
   return /^https?:\/\//i.test(String(value ?? ''))
 }
 
-// The cover is emitted as an escaped <img src>. Keep it https-only and reject
-// obvious URL/attribute breakers as defense in depth.
-function safeCoverUrl(value) {
-  try {
-    const url = new URL(String(value ?? ''))
-    if (url.protocol !== 'https:') return ''
-    if (/["'()\\\s<>]/.test(url.href)) return ''
-    return url.href
-  }
-  catch {
-    return ''
-  }
-}
-
-function sizedCoverUrl(value) {
-  const safe = safeCoverUrl(value)
-  if (!safe) return ''
-  try {
-    const url = new URL(safe)
-    // NetEase serves a small resized cover for this query parameter. The card
-    // is at most ~140px wide, so a 600px source still covers 3x screens.
-    if (/^p\d+\.music\.126\.net$/.test(url.hostname)) {
-      url.searchParams.set('param', '600y600')
-    }
-    return url.href
-  }
-  catch {
-    return ''
-  }
-}
+// The card prefers the copy `npm run music` saved under public/music/, falls
+// back to the remote cover sized for the card, and accepts a local path the
+// author wrote. The rule and its host allowlist live in one tested place.
 
 function html(value) {
   return { type: 'html', value }
@@ -70,7 +44,7 @@ function html(value) {
 
 function musicCardHtml({ title, artist, type, cover, lyric, links }) {
   const typeLabel = MUSIC_TYPES[type] || (type === 'album' ? '专辑' : '单曲')
-  const coverUrl = sizedCoverUrl(cover)
+  const coverUrl = cardCoverUrl(cover)
   const hasCover = Boolean(coverUrl)
   const coverClass = hasCover ? 'mc-cover-wrap' : 'mc-cover-wrap mc-cover-missing'
   const coverHtml = hasCover
@@ -114,7 +88,9 @@ async function renderMusic(attrs) {
       title: info.title,
       artist: info.artist,
       type: info.type,
-      cover: info.cover,
+      // The downloaded copy when `npm run music` has one; otherwise the
+      // remote cover, sized in musicCardHtml.
+      cover: info.coverFile || info.cover,
       links: info.links || {},
     }))
   }

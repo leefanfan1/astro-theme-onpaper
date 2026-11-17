@@ -218,9 +218,10 @@ https://example.org/
 npm run covers
 ```
 
-脚本读上面三份 Markdown，给没写 `封面：` 的条目去豆瓣找图：写了 `豆瓣：` 就用那个条目页，没写就按标题搜。封面下载到 `public/shelf/`，路径记进 `src/data/shelf-covers.json`，下载时压到 800px，一张 50–110KB。歌单不用跑，封面沿用音乐卡片缓存里的那张。只补某几本可以 `node scripts/fetch-covers.mjs 城南旧事 一一`。
+脚本读上面三份 Markdown，给没写 `封面：` 的条目去豆瓣找图：写了 `豆瓣：` 就用那个条目页，没写就按标题搜。封面下载到 `public/shelf/`，路径记进 `src/data/shelf-covers.json`，下载时压到 800px，一张 50–110KB。歌单的封面同样存到本地（500px 的方图）。只补某几本可以 `node scripts/fetch-covers.mjs 城南旧事 一一`。
 
 图片放在自己的站上，也就意味着不依赖豆瓣的可用性。新加条目后跑一次 `npm run covers`，`public/shelf/` 和那份 JSON 一起提交。
+删条目也是同一条命令：从书单 / 片单 / 歌单里删掉一段，再跑一次 `npm run covers`，那一张封面会在 `public/shelf/` 和 `src/data/shelf-covers.json` 里同时消失。你自己放进目录的图（文件名不是脚本生成的 12 位十六进制）不会被动；三份 Markdown 只要有一份读不到，这一轮就不删，免得目录被清空。
 
 ## 在文章里插入卡片
 

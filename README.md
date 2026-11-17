@@ -289,6 +289,8 @@ npm run covers
 
 书和电影走豆瓣：先看条目里有没有 `豆瓣：`；没有就按「名称 + 作者/导演」搜，取标题、年份、作者都对得上的那个条目（只对上标题不算，同名书太多）。然后从豆瓣移动端接口取作者 / 导演、出版年、封面，补 `作者` / `导演`、`年份`、`豆瓣` 三行。封面下载到 `public/shelf/`，路径记进 `src/data/shelf-covers.json`，压到 800px，一张 50–110KB。
 
+音乐卡片的封面也存本地，见下面「音乐卡片」。
+
 歌单沿用音乐卡片那套解析（`src/utils/music-resolver.mjs`）：有 `链接：` 就解析它，没有就去网易云按「名称 + 歌手」搜。解析结果补进 `src/data/music-cache.json`，同时补 `歌手`、`年份`，把 `链接：` 换成网易云的专辑 / 单曲页（卡片点开就是它），封面从网易云取、下载到 `public/shelf/` 并记进 `src/data/shelf-covers.json`，另外写一行 `豆瓣：` 备查 —— 这行页面上不显示。
 
 补过的条目下次运行直接跳过，不再请求网络。只补某几本 / 某几部：
@@ -304,6 +306,18 @@ node scripts/fetch-covers.mjs 城南旧事 一一
 尺寸按实际显示来存，别存原图。墙上的封面最宽 216px（2560px 视口下 222px），按 2 倍屏算需要约 444px 宽：书影海报是 2:3，存 720px 高（约 505px 宽，一张 5–90KB）；唱片封面是方的，存 500px（一张 7–35KB）。3 倍屏在 1920px 视口下想要 648px，只有存到 900px 才够，那比换下来之前还大，所以没那样做；真要覆盖，得给卡片加 `srcset`，按屏幕密度各取所需。
 
 封面文件名里带着尺寸，所以改了 `scripts/fetch-covers.mjs` 里的 `RECIPE` 再跑一次，会生成新文件并更新缓存，不会留下 `immutable` 缓存指向的旧图。
+
+### 删掉条目，图片也会跟着删
+
+从 `books.md` / `films.md` / `music.md` 里删掉一段，再跑 `npm run covers`，那一条的封面就一起清掉：`src/data/shelf-covers.json` 里对应的那一行去掉，`public/shelf/` 里的图片文件删掉，控制台打一行 `- 书名: /shelf/xxx.jpg`。不跑脚本，图片就还留着 —— 删文件是脚本的活，页面构建不碰。
+
+不删的东西：
+
+- 你在条目里手写的 `封面：/shelf/xxx.jpg` 指向的图，只要那一条还在，就还在。
+- 文件名不是脚本生成的那种 12 位十六进制的图（比如你自己放进 `public/shelf/` 的），一律不碰。
+- 三份 Markdown 只要有一份读不到，这一轮什么都不删，只提示 `= covers: books.md could not be read; removed nothing.` —— 不然文件改名一次，整个封面目录就空了。
+
+`npm run music` 对 `public/music/` 做同样的事：某篇文章里的 `::music{url=...}` 删掉后，那张卡片的封面文件会被删掉。判据是「文章里还写着的链接」，不是缓存里的条目 —— 缓存会一直留着删过的链接，那是给 `npm run covers` 认歌用的，不影响封面。
 
 ### 右栏「最近」
 
@@ -371,6 +385,20 @@ draft: false               # true 时只在 dev 可见
 构建时先读 `src/data/music-cache.json`，没缓存才去 Spotify 取元数据，再到 Apple Music / 网易云 / QQ 音乐按标题、艺人、类型打分，每个平台取最高分且过阈值的结果。推荐从 Spotify 链接开始，跨平台匹配最准。
 
 新增或修改链接后运行 `npm run music` 写回缓存，建议一起提交，之后构建不再请求平台。
+
+封面也一起存到本地：
+
+```bash
+npm run music
+```
+
+解析完之后，每张卡片的封面按 600×600 下载、重编码成 JPEG 存进 `public/music/`，缓存里多一行 `"coverFile": "/music/xxxx.jpg"`，卡片引这张本地图。文件名是链接和尺寸的哈希，所以重复跑不会攒出一堆副本，换个尺寸会生成新名字（`public/_headers` 把 `/music/*` 标成 `immutable`，同名换内容会被缓存挡住）。
+
+下载只从网易云（`p*.music.126.net`）、Spotify（`i.scdn.co`）、Apple（`is*-ssl.mzstatic.com`）这三个图床取，且不跟随重定向 —— 允许的主机名单在 `src/utils/music-cover.mjs`，有测试。取不到的那一张不写 `coverFile`，卡片退回直接引远端的图，页面不会空。
+
+构建期不会去下载封面，下载只发生在 `npm run music` 里。所以缓存里还没有 `coverFile` 的链接（比如你写完之后还没跑脚本），卡片显示的还是网易云的远程地址；跑一次就换成同源的本地图。
+
+手动 `::music-card` 的 `cover` 也可以写本地路径，`/music/xxx.jpg` 和 `/shelf/xxx.jpg` 都认。
 
 > [!TIP]
 > 卡片里的四个平台图标是固定的 2×2 网格，不会因为宽度变成 3+1。
