@@ -23,21 +23,6 @@
   }
 }
 
-/* A paragraph holding an inline code span sets flush left.
-   Justification has to spread a line's leftover width somewhere. In solid CJK
-   that is between the characters, which is what `inter-character` is for. But
-   an address set inline is one unbreakable token — a 332px URL in a 608px
-   column — so the line before it ends early and the whole remainder has to go
-   between the characters ahead of it. `以 DeepSeek 官方接口为例` came out with its
-   letters pulled 70px apart on the real page, the words visibly splayed while
-   the next line ran short.
-   There is nowhere for that slack to go in a line like this, so the paragraph
-   is not justified. Scoped to the paragraph rather than the kind of markup:
-   prose without code keeps its justified edge, which is most of an article. */
-.prose p:has(code) {
-  text-align: left;
-}
-
 .prose > *:first-child {
   margin-top: 0;
 }
@@ -249,11 +234,19 @@
   font-family: var(--font-mono);
   font-size: 0.86em;
   letter-spacing: 0;
-  /* Only a guard: an address wider than the column breaks instead of running
-     past it. One that fits stays whole, which matters for a URL a reader may
-     want to copy. Justification, not this, is what used to stretch the line —
-     see `.prose p:has(code)` above. */
-  overflow-wrap: break-word;
+  /* An address set inline is one unbreakable token — a 332px URL in a 608px
+     column — so a justified line holding one ends early, and `inter-character`
+     then spreads the whole remainder between the characters ahead of it:
+     `以 DeepSeek 官方接口为例` came out with its letters pulled 70px apart. Left
+     aligning those paragraphs fixed the letter spacing and left a third of the
+     line blank instead, which reads as a page that ran out of paper.
+     Letting the token break is the one answer that keeps both: the line fills
+     the measure and the characters keep their natural spacing. Only a span
+     that cannot fit a line of its own is cut, so `useState` and
+     `getServerSideProps` set whole; an address is split mid-word at worst,
+     which is what any code editor does with the same string in a narrow
+     window. */
+  word-break: break-all;
 }
 
 .prose pre {
