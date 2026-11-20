@@ -1,5 +1,6 @@
 ---
 import { render } from 'astro:content'
+import { t } from '@/i18n'
 import katexCss from 'katex/dist/katex.min.css?url'
 import ArticleActions from '@/components/ArticleActions.astro'
 import ArticleEnhancements from '@/components/ArticleEnhancements.astro'
@@ -83,11 +84,11 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
   <ReadingProgress />
 
   <article class="article">
-    <a class="article-home" href="/" data-article-back aria-label="返回上一页">
+    <a class="article-home" href="/" data-article-back aria-label={t('common.back')}>
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg>
-      <span>返回</span>
+      <span>{t('common.back')}</span>
     </a>
 
     <header class="article-header">
@@ -97,12 +98,12 @@ const jsonLdHtml = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
     <div class="article-meta">
       <time datetime={post.data.published.toISOString()}>{formatDate(post.data.published)}</time>
       {post.data.updated && post.data.updated.getTime() !== post.data.published.getTime() && (
-        <span>更新于 {formatDate(post.data.updated)}</span>
+        <span>{t('article.updated')} {formatDate(post.data.updated)}</span>
       )}
-      <span>约 {minutes} 分钟读完</span>
+      <span>{t('article.readingTime', [minutes])}</span>
       <ViewCount slug={post.id} />
       {tags.length > 0 && (
-        <ul class="article-tags" aria-label="文章标签">
+        <ul class="article-tags" aria-label={t('article.tags')}>
           {tags.map(tag => <li><a href={getTagHref(tag)}>{tag}</a></li>)}
         </ul>
       )}

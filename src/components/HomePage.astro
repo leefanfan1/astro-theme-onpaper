@@ -1,4 +1,6 @@
 ---
+import { t } from '@/i18n'
+import T from '@/components/T.astro'
 import Pagination from '@/components/Pagination.astro'
 import PostList from '@/components/PostList.astro'
 import SiteAside from '@/components/SiteAside.astro'
@@ -24,9 +26,9 @@ const isFirst = page === 1
 
 {isFirst
   ? <h1 class="sr-only">{siteConfig.title}：{siteConfig.subtitle}</h1>
-  : <h1 class="sr-only">文章，第 {page} 页</h1>}
+  : <h1 class="sr-only"><T k="home.pageTitle" args={[page]} /></h1>}
 
-<section class="post-list-section" aria-label={isFirst ? '文章列表' : `第 ${page} 页文章`}>
+<section class="post-list-section" aria-label={isFirst ? t('home.allPosts') : t('home.pageTitle', [page])}>
   <PostList posts={posts} featurePinned={isFirst} />
 </section>
 
@@ -36,7 +38,7 @@ const isFirst = page === 1
 
 <SiteAside />
 
-<span class="sr-only">共 {totalPosts} 篇文章</span>
+<span class="sr-only"><T k="home.totalPosts" args={[totalPosts]} /></span>
 
 <script>
   // The right column arrives as if being written into a ledger: the heading

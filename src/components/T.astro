@@ -1,0 +1,29 @@
+---
+/**
+ * A piece of interface text.
+ *
+ * The language is settled when the site is built, from
+ * `siteConfig.i18n.defaultLang`, so this renders one string and nothing else:
+ * no attribute, no runtime script, no second copy of the text in the page. A
+ * reader gets the language the site was built in, and switching means changing
+ * one line of configuration and rebuilding.
+ *
+ *   <T k="search.hint" />
+ *   <T k="search.results" args={[matches.length]} />
+ *   <T k="tags.year" args={[2024]} as="time" />
+ */
+import { t } from '@/i18n'
+
+interface Props {
+  /** Dot path into the dictionary, e.g. `search.hint`. */
+  k: string
+  /** Arguments for entries that are functions of their numbers. */
+  args?: readonly unknown[]
+  /** Element to render as. Default `span`. */
+  as?: string
+}
+
+const { k, args = [], as = 'span' } = Astro.props
+const Tag = as
+---
+<Tag>{t(k, args)}</Tag>

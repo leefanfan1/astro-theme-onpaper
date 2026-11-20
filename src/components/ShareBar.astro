@@ -7,6 +7,8 @@ import ThreadsIcon from '@/assets/icons/threads-icon.svg'
 import XIcon from '@/assets/icons/twitter-icon.svg'
 import WechatIcon from '@/assets/icons/wechat-icon.svg'
 import WeiboIcon from '@/assets/icons/weibo-icon.svg'
+import { t } from '@/i18n'
+import T from '@/components/T.astro'
 
 interface Props {
   title: string
@@ -22,30 +24,30 @@ const weiboHref = `https://service.weibo.com/share/share.php?title=${encodedTitl
 const threadsHref = `https://www.threads.net/intent/post?text=${encodeURIComponent(`${title} ${url}`)}`
 ---
 
-<div class="share-bar" aria-label="分享这篇文章">
-  <span class="share-bar__label">分享到</span>
+<div class="share-bar" aria-label={t('share.article')}>
+  <span class="share-bar__label"><T k="share.label" /></span>
 
-  <a class="share-button" href={xHref} target="_blank" rel="noopener noreferrer" aria-label="分享到 X" title="X">
+  <a class="share-button" href={xHref} target="_blank" rel="noopener noreferrer" aria-label={t('share.x')} title="X">
     <XIcon fill="currentColor" aria-hidden="true" />
   </a>
-  <a class="share-button" href={telegramHref} target="_blank" rel="noopener noreferrer" aria-label="分享到 Telegram" title="Telegram">
+  <a class="share-button" href={telegramHref} target="_blank" rel="noopener noreferrer" aria-label={t('share.telegram')} title="Telegram">
     <TelegramIcon fill="currentColor" aria-hidden="true" />
   </a>
-  <a class="share-button" href={weiboHref} target="_blank" rel="noopener noreferrer" aria-label="分享到微博" title="微博">
+  <a class="share-button" href={weiboHref} target="_blank" rel="noopener noreferrer" aria-label={t('share.weibo')} title={t('share.weiboTitle')}>
     <WeiboIcon fill="currentColor" aria-hidden="true" />
   </a>
-  <a class="share-button" href={threadsHref} target="_blank" rel="noopener noreferrer" aria-label="分享到 Threads" title="Threads">
+  <a class="share-button" href={threadsHref} target="_blank" rel="noopener noreferrer" aria-label={t('share.threads')} title="Threads">
     <ThreadsIcon fill="currentColor" aria-hidden="true" />
   </a>
 
-  <button class="share-button" type="button" data-share-native aria-label="分享到 Instagram" title="Instagram">
+  <button class="share-button" type="button" data-share-native aria-label={t('share.instagram')} title="Instagram">
     <InstagramIcon fill="currentColor" aria-hidden="true" />
   </button>
-  <button class="share-button" type="button" data-share-native aria-label="分享到微信" title="微信">
+  <button class="share-button" type="button" data-share-native aria-label={t('share.wechat')} title={t('share.wechatTitle')}>
     <WechatIcon fill="currentColor" aria-hidden="true" />
   </button>
 
-  <button class="share-button" type="button" data-share-copy aria-label="复制链接" title="复制链接">
+  <button class="share-button" type="button" data-share-copy aria-label={t('share.copy')} title={t('share.copy')}>
     <LinkIcon class="share-icon share-icon--link" fill="currentColor" aria-hidden="true" />
     <CheckIcon class="share-icon share-icon--check" fill="currentColor" aria-hidden="true" />
   </button>
@@ -192,14 +194,14 @@ const threadsHref = `https://www.threads.net/intent/post?text=${encodeURICompone
       await navigator.clipboard.writeText(window.location.href)
       button?.classList.add('copied')
       if (status) {
-        status.textContent = '已复制'
+        status.textContent = t('share.copied')
         window.setTimeout(() => { status.textContent = '' }, 1800)
       }
       window.setTimeout(() => button?.classList.remove('copied'), 1800)
     }
     catch {
       if (status) {
-        status.textContent = '复制失败'
+        status.textContent = t('share.copyFailed')
         window.setTimeout(() => { status.textContent = '' }, 1800)
       }
     }

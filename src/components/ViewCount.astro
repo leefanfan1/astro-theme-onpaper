@@ -1,4 +1,5 @@
 ---
+import { t } from '@/i18n'
 import { siteConfig } from '@/config'
 
 interface Props {
@@ -11,7 +12,7 @@ const { slug } = Astro.props
 {
   siteConfig.features.views && (
     <span class="view-count" data-view-count data-slug={slug} hidden aria-live="polite">
-      <b data-view-value>—</b> 次阅读
+      <b data-view-value>—</b> {t('article.viewSuffix')}
     </span>
   )
 }

@@ -1,4 +1,8 @@
-<button class="back-to-top" type="button" data-back-to-top aria-label="回到顶部" title="回到顶部">
+---
+import { t } from '@/i18n'
+---
+
+<button class="back-to-top" type="button" data-back-to-top aria-label={t('article.backToTop')} title={t('article.backToTop')}>
   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M12 19V5M6.5 10.5 12 5l5.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
   </svg>

@@ -3,6 +3,8 @@ import { getCollection, getEntry } from 'astro:content'
 import type { Post } from '@/utils/posts'
 import { formatDate, getAllPosts, stripMarkdown } from '@/utils/posts'
 import { parseNow } from '@/utils/shelf'
+import { t } from '@/i18n'
+import T from '@/components/T.astro'
 
 // The right column's contents, in one place: the home page renders it beside
 // the list, and /now/ renders the same block as a page of its own on a phone.
@@ -17,13 +19,13 @@ const allPosts = await getAllPosts()
 const firstPost = allPosts.at(-1)?.data.published
 const characters = allPosts.reduce((sum, post) => sum + (stripMarkdown(post.body ?? '').match(/\p{Script=Han}/gu)?.length ?? 0), 0)
 const words = characters >= 10000
-  ? { value: Number((characters / 10000).toFixed(1)), decimals: 1, suffix: '万' }
+  ? { value: Number((characters / 10000).toFixed(1)), decimals: 1, suffix: t('facts.tenThousand') }
   : { value: Math.round(characters / 100) * 100, decimals: 0, suffix: '' }
 const days = firstPost ? Math.max(1, Math.floor((Date.now() - firstPost.getTime()) / 86400000)) : 0
 const facts = [
-  { label: '文章', value: allPosts.length, decimals: 0, suffix: '', unit: '篇' },
-  { label: '约计字数', ...words, unit: '字' },
-  ...(firstPost ? [{ label: '写了', value: days, decimals: 0, suffix: '', unit: '天', since: firstPost.toISOString() }] : []),
+  { label: t('facts.posts'), value: allPosts.length, decimals: 0, suffix: '', unit: t('facts.unit') },
+  { label: t('facts.words'), ...words, unit: t('facts.wordUnit') },
+  ...(firstPost ? [{ label: t('facts.written'), value: days, decimals: 0, suffix: '', unit: t('facts.days'), since: firstPost.toISOString() }] : []),
 ]
 const hasShelf = (await getCollection('shelf')).some(entry => entry.body?.trim())
 
@@ -31,10 +33,10 @@ const nowPage = await getEntry('pages', 'now')
 const nowEntries = nowPage ? parseNow(nowPage.body ?? '') : []
 ---
 
-<Tag id="site-aside" class="home-aside" aria-label="最近与这个站">
+<Tag id="site-aside" class="home-aside" aria-label={t('aside.label')}>
   {nowEntries.length > 0 && (
     <section class="aside-block now" aria-labelledby="now-title">
-      <Heading class="home-aside__title" id="now-title">最近</Heading>
+      <Heading class="home-aside__title" id="now-title"><T k="aside.now" /></Heading>
       <dl class="now__list">
         {nowEntries.map(entry => (
           <div class="now__item">
@@ -64,7 +66,7 @@ const nowEntries = nowPage ? parseNow(nowPage.body ?? '') : []
   )}
 
   {hasShelf && (
-    <nav class="aside-links aside-links--shelf" aria-label="书架">
+    <nav class="aside-links aside-links--shelf" aria-label={t('aside.shelf')}>
       <a class="aside-link" href="/shelf/">
         <svg class="aside-link__icon aside-link__icon--shelf" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path class="spine spine--a" d="M5.5 4.5v15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
@@ -72,13 +74,13 @@ const nowEntries = nowPage ? parseNow(nowPage.body ?? '') : []
           <path class="spine spine--c" d="M14 6l3.8 13.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
           <path d="M4.5 19.5h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
         </svg>
-        <span>书单 · 片单 · 歌单</span>
+        <span><T k="shelf.allLists" /></span>
       </a>
     </nav>
   )}
 
   <section class="aside-block site-facts" aria-labelledby="facts-title">
-    <Heading class="home-aside__title" id="facts-title">这个站</Heading>
+    <Heading class="home-aside__title" id="facts-title"><T k="aside.facts" /></Heading>
     <dl class="facts">
       {facts.map((fact) => {
         const text = fact.value.toFixed(fact.decimals) + fact.suffix

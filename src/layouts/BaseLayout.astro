@@ -1,4 +1,6 @@
 ---
+import { htmlLang as i18nHtmlLang, ogLocale as i18nOgLocale, t } from '@/i18n'
+import T from '@/components/T.astro'
 import { criticalRuntime } from '@/utils/critical-runtime.mjs'
 import { ClientRouter } from 'astro:transitions'
 import BackToTop from '@/components/BackToTop.astro'
@@ -43,7 +45,10 @@ const ogImageType = image.endsWith('.png')
     : image.endsWith('.jpg') || image.endsWith('.jpeg')
       ? 'image/jpeg'
       : undefined
-const ogLocale = siteConfig.lang.replace('-', '_')
+// Both follow the interface language, so an English build declares
+// itself English to browsers, screen readers and social cards.
+const pageLang = i18nHtmlLang()
+const pageOgLocale = i18nOgLocale()
 const { light, dark } = siteConfig.theme
 const gaId = siteConfig.analytics.googleAnalyticsId.trim()
 
@@ -80,7 +85,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 
 <!doctype html>
 <html
-  lang={siteConfig.lang}
+  lang={pageLang}
   data-default-mode={siteConfig.theme.defaultMode}
   data-theme={siteConfig.theme.defaultMode === 'auto' ? undefined : siteConfig.theme.defaultMode}
 >
@@ -104,7 +109,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale" content={pageOgLocale} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content={String(imageWidth)} />
     <meta property="og:image:height" content={String(imageHeight)} />
@@ -195,7 +200,7 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
   <body>
     <!-- Keep email links readable when Cloudflare decoding scripts are unavailable. -->
     <Fragment set:html="<!--email_off-->" />
-    <a class="skip-link" href="#main">跳到正文</a>
+    <a class="skip-link" href="#main"><T k="skip.toContent" /></a>
 
     <MobileBar />
 
@@ -208,7 +213,15 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
     </div>
 
     <!-- Labels inserted by copy controls must be ready before their first paint. -->
-    <span hidden aria-hidden="true" data-font-ui-text>复制已失败</span>
+    <span
+      hidden
+      aria-hidden="true"
+      data-font-ui-text
+      data-code-copy={t('code.copy')}
+      data-code-copy-label={t('code.copyLabel')}
+      data-code-copied={t('code.copied')}
+      data-code-failed={t('code.failed')}
+    >{t('code.copied')}{t('code.failed')}</span>
     <div class="page-turn" aria-hidden="true" transition:persist="page-turn"><div class="page-turn__sheet"></div></div>
     <div class="route-ink" aria-hidden="true" transition:persist="route-ink"><span></span></div>
     <Search />
@@ -275,6 +288,21 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
 
       // The button that was pressed confirms the copy itself, then settles
       // back. A quick blur bridges the label swap instead of a hard cut.
+      /**
+       * The copy button's four sentences, read off the page. The server wrote
+       * them from the dictionary; a script cannot import one, and keeping a
+       * second copy here is how the two drift apart.
+       */
+      function copyLabels() {
+        const host = document.querySelector<HTMLElement>('[data-font-ui-text]')
+        return {
+          copy: host?.dataset.codeCopy ?? '',
+          copyLabel: host?.dataset.codeCopyLabel ?? '',
+          copied: host?.dataset.codeCopied ?? '',
+          failed: host?.dataset.codeFailed ?? '',
+        }
+      }
+
       function swapLabel(button: HTMLButtonElement, state: 'copied' | 'failed' | '', label: string) {
         if (state) button.dataset.state = state
         else delete button.dataset.state
@@ -303,22 +331,23 @@ html[data-theme="dark"]{${tokensToCss(dark)}color-scheme:dark}
           const code = pre.querySelector('code')
           if (!code) continue
           pre.dataset.copyReady = 'true'
+          const labels = copyLabels()
           const button = document.createElement('button')
           button.type = 'button'
           button.className = 'code-copy'
-          button.textContent = '复制'
-          button.setAttribute('aria-label', '复制代码')
+          button.textContent = labels.copy
+          button.setAttribute('aria-label', labels.copyLabel)
           let resetTimer: number | undefined
           button.addEventListener('click', async () => {
             window.clearTimeout(resetTimer)
             try {
               await navigator.clipboard.writeText(code.textContent ?? '')
-              swapLabel(button, 'copied', '已复制')
+              swapLabel(button, 'copied', labels.copied)
             }
             catch {
-              swapLabel(button, 'failed', '复制失败')
+              swapLabel(button, 'failed', labels.failed)
             }
-            resetTimer = window.setTimeout(() => swapLabel(button, '', '复制'), 1800)
+            resetTimer = window.setTimeout(() => swapLabel(button, '', labels.copy), 1800)
           })
           pre.append(button)
         }

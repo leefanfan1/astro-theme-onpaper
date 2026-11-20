@@ -1,4 +1,7 @@
 ---
+import { siteConfig } from '@/config'
+import { t } from '@/i18n'
+
 // /page/1/ is the home page under another name. Astro's redirect writes a
 // meta refresh with a two-second wait; this one goes straight there, and the
 // visible link still works when scripting is off.
@@ -9,13 +12,13 @@ const target = Astro.url.searchParams.toString() ? `/?${Astro.url.searchParams}`
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <title>跳转到首页 · 纸上留白</title>
+    <title>{t('redirect.title', [siteConfig.title])}</title>
     <meta name="robots" content="noindex,follow" />
     <link rel="canonical" href={new URL('/', Astro.site).href} />
     <meta http-equiv="refresh" content={`0;url=${target}`} />
     <script is:inline define:vars={{ target }}>location.replace(target)</script>
   </head>
   <body>
-    <p><a href={target}>正在回到首页…</a></p>
+    <p><a href={target}>{t('redirect.going')}</a></p>
   </body>
 </html>

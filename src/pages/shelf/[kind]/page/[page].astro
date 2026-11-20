@@ -1,4 +1,5 @@
 ---
+import { t } from '@/i18n'
 import ShelfKindPage from '@/components/ShelfKindPage.astro'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getAllPosts } from '@/utils/posts'
@@ -10,9 +11,9 @@ import { SHELF_PER_PAGE } from '@/utils/shelf-covers'
 // address, and `getStaticPaths` returns nothing for it here, so the two routes
 // do not compete for the same path.
 const KINDS: Record<string, { kind: ShelfKind, title: string, heading: string, lead: string }> = {
-  books: { kind: 'book', title: '书单', heading: '书', lead: '读过、想再读，愿意推荐给别人的那些书。' },
-  films: { kind: 'film', title: '片单', heading: '电影', lead: '看过、会重看，愿意推荐给别人的那些电影。' },
-  music: { kind: 'music', title: '歌单', heading: '音乐', lead: '反复听过的专辑和歌，愿意推荐给别人的那些。' },
+  books: { kind: 'book', title: t('shelf.booksTitle'), heading: t('shelf.bookHeading'), lead: t('shelf.booksLead') },
+  films: { kind: 'film', title: t('shelf.filmsTitle'), heading: t('shelf.filmHeading'), lead: t('shelf.filmsLead') },
+  music: { kind: 'music', title: t('shelf.musicTitle'), heading: t('shelf.musicHeading'), lead: t('shelf.musicLead') },
 }
 
 // Written out rather than read from a module constant: getStaticPaths is
@@ -43,16 +44,16 @@ const items = shelf[meta.kind] ?? []
 const base = `/shelf/${route}/`
 ---
 
-<BaseLayout title={`${meta.title} · 第 ${page} 页`} description={meta.lead}>
+<BaseLayout title={t('shelf.pagedTitle', [meta.title, page])} description={meta.lead}>
   <header class="page-head">
     <a class="page-back" href={base}>
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
       </svg>
-      回到{meta.title}第一页
+      {t('shelf.backToFirst', [meta.title])}
     </a>
     <h1 class="page-title">{meta.title}</h1>
-    <p class="page-lead">第 {page} 页</p>
+    <p class="page-lead">{t('shelf.pageOf', [page])}</p>
   </header>
 
   <ShelfKindPage kind={meta.kind} heading={meta.heading} items={items} page={page} base={base} />

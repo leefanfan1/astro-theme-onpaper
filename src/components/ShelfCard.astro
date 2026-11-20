@@ -1,4 +1,6 @@
 ---
+import { t } from '@/i18n'
+import T from '@/components/T.astro'
 import type { ShelfItem } from '@/utils/shelf'
 
 interface Props {
@@ -41,11 +43,11 @@ const coverClass = ['shelf-cover', ...(cover ? [] : ['shelf-cover--set', `ink-${
     <span class="shelf-card__name"><span class="mark-text">{name}</span></span>
     {byline && <span class="shelf-card__by">{byline}</span>}
     {item.note && <span class="shelf-card__note">{item.note}</span>}
-    {item.url && <span class="sr-only">（在新窗口打开）</span>}
+    {item.url && <span class="sr-only"><T k="friends.opensNewWindow" /></span>}
   </a>
   {item.mention && (
     <a class="shelf-card__mention" href={item.mention.href}>
-      <span class="shelf-card__mention-text">写过：{item.mention.section ?? item.mention.post}</span>
+      <span class="shelf-card__mention-text">{t('shelf.wroteAboutShort')}：{item.mention.section ?? item.mention.post}</span>
     </a>
   )}
 </li>

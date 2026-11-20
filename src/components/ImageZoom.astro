@@ -1,17 +1,21 @@
-<dialog class="image-zoom" data-image-zoom aria-label="查看大图">
-  <button class="image-zoom__close" type="button" data-image-zoom-close aria-label="关闭大图（×）">×</button>
+---
+import { t } from '@/i18n'
+---
 
-  <div class="image-zoom__stage" data-image-zoom-stage title="滚轮缩放，拖动平移，双击切换">
+<dialog class="image-zoom" data-image-zoom aria-label={t('zoom.open')}>
+  <button class="image-zoom__close" type="button" data-image-zoom-close aria-label={t('zoom.close')}>×</button>
+
+  <div class="image-zoom__stage" data-image-zoom-stage title={t('zoom.stage')}>
     <img data-image-zoom-img alt="" draggable="false" />
   </div>
 
   <p class="image-zoom__caption" data-image-zoom-caption></p>
 
-  <div class="image-zoom__tools" role="group" aria-label="图片缩放">
-    <button type="button" data-image-zoom-out aria-label="缩小（−）">−</button>
+  <div class="image-zoom__tools" role="group" aria-label={t('zoom.group')}>
+    <button type="button" data-image-zoom-out aria-label={t('zoom.out')}>−</button>
     <output class="image-zoom__level" data-image-zoom-level>100%</output>
-    <button type="button" data-image-zoom-in aria-label="放大（+）">+</button>
-    <button class="image-zoom__reset" type="button" data-image-zoom-reset aria-label="还原到原始大小（1:1）">1:1</button>
+    <button type="button" data-image-zoom-in aria-label={t('zoom.in')}>+</button>
+    <button class="image-zoom__reset" type="button" data-image-zoom-reset aria-label={t('zoom.reset')}>1:1</button>
   </div>
 </dialog>
 
@@ -581,7 +585,7 @@
       img.dataset.zoomable = 'true'
       img.tabIndex = 0
       img.setAttribute('role', 'button')
-      img.setAttribute('aria-label', `放大图片：${img.alt || '文章图片'}`)
+      img.setAttribute('aria-label', t('zoom.enlarged', [img.alt || t('zoom.fallbackAlt')]))
     }
   }
 
