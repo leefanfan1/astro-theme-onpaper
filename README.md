@@ -10,6 +10,8 @@
 
 [预览](#预览) · [特性](#特性) · [快速开始](#快速开始) · [书单](#书单--片单--歌单) · [写文章](#写文章) · [Markdown](#markdown-扩展) · [部署](#部署到-cloudflare-pages) · [设计](#设计说明)
 
+**中文** · [English](README.en.md)
+
 </div>
 
 ---
@@ -79,6 +81,9 @@ npm run dev
 | `npm run test:hosted-fonts` | 在线字体来源、动态字形、跨页复用、Chrome / WebKit 一致性 |
 | `npm run test:font-source` | 字体源安全边界、斜体收集、显示字体文字收集（不访问 CDN） |
 | `npm run test:theme-controls` | 主题动画、控件对齐、切换中搜索、换页清理 |
+| `npm run test:render` | Markdown 与行内 HTML：消毒、脚注、KaTeX、Mermaid、代码高亮 |
+| `npm run test:i18n` | 中英字典键一一对应、无空文案、英文里不漏中文 |
+| `npm run test:shelf` | 书单 / 片单 / 歌单与「最近」的解析、封面抓取与清理、剧集导演 |
 
 ### 新建文章
 
@@ -171,6 +176,10 @@ export const siteConfig = {
   postsPerPage: 4,
   tocOpen: false, // 文章目录默认收起
 
+  i18n: {
+    defaultLang: 'zh', // 'zh' | 'en'，构建时决定界面用哪种语言
+  },
+
   nav: [
     { label: '文章', href: '/' },
     { label: '归档', href: '/tags/' },
@@ -206,6 +215,14 @@ export const siteConfig = {
 ```
 
 </details>
+
+### 界面语言
+
+界面上的固定文案全在 `src/i18n/` 里，`zh.ts` 和 `en.ts` 一份对一份。`siteConfig.i18n.defaultLang` 决定构建时用哪一份——改这一行再重新构建，整站界面就换语言，文章内容不动。`<html lang>` 和 `og:locale` 也跟着变，所以英文构建会如实告诉浏览器、读屏软件和链接预览自己是什么语言。
+
+页面上没有语言切换控件。一个用一种语言写的站，不需要一个按了也不改变内容的按钮；而且一份文案只输出一次，不用为了切换多带一段运行时脚本。
+
+想中英文各做一个站，就用两个设置各构建一次，分别部署。组件里取文案用 `t('search.hint')`，标记里用 `<T k="search.hint" />`。文章本身的语言另算，写在每篇文章 frontmatter 的 `lang:` 上，界面语言不会过滤文章。
 
 ### 改配色
 
