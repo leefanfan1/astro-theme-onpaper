@@ -13,12 +13,35 @@ interface SearchItem {
   content: string
 }
 
+/**
+ * The few sentences this script writes for itself, taken from the page.
+ *
+ * They are rendered by src/components/Search.astro from the dictionary, in
+ * whichever language the site is built for, and re-rendered by the toggle.
+ * Kept here as data attributes rather than a second copy of the strings, so
+ * there is one place to change a translation.
+ */
+let messages: Record<string, string> = {}
+
+function readMessages() {
+  const host = document.querySelector<HTMLElement>('[data-search-messages]')
+  messages = {
+    hint: host?.dataset.hint ?? '',
+    indexing: host?.dataset.indexing ?? '',
+    indexFailed: host?.dataset.indexFailed ?? '',
+    indexFailedShort: host?.dataset.indexFailedShort ?? '',
+    results: host?.dataset.results ?? '',
+    noResults: host?.dataset.noResults ?? '',
+  }
+}
+
 let dialog: HTMLDialogElement | null = null
 let input: HTMLInputElement | null = null
 let resultsEl: HTMLElement | null = null
 let statusEl: HTMLElement | null = null
 
 function refreshElements() {
+  readMessages()
   dialog = document.querySelector<HTMLDialogElement>('[data-search-dialog]')
   input = document.querySelector<HTMLInputElement>('#search-input')
   resultsEl = document.querySelector<HTMLElement>('[data-search-results]')
@@ -143,32 +166,32 @@ async function render(rawQuery: string) {
   if (!resultsEl || !statusEl) return
   const query = rawQuery.trim()
   if (!query) {
-    renderMessage('输入关键词，搜索标题、摘要、标签和正文。')
+    renderMessage(messages.hint)
     statusEl.textContent = ''
     return
   }
 
-  renderMessage('正在建立索引…')
+  renderMessage(messages.indexing)
   let items: SearchItem[]
   try {
     items = await loadIndex()
   }
   catch {
     if (current !== renderVersion) return
-    renderMessage('搜索索引加载失败，请刷新页面重试。')
-    statusEl.textContent = '搜索索引加载失败'
+    renderMessage(messages.indexFailed)
+    statusEl.textContent = messages.indexFailedShort
     return
   }
 
   if (current !== renderVersion) return
   const tokens = query.split(/\s+/).filter(Boolean)
   const matches = search(items, query)
-  statusEl.textContent = `${matches.length} 条搜索结果`
+  statusEl.textContent = messages.results.replace('{n}', String(matches.length))
   const results = document.createDocumentFragment()
   if (!matches.length) {
     const message = document.createElement('p')
     message.className = 'search-hint'
-    message.textContent = `没有找到与“${query}”相关的文章。`
+    message.textContent = messages.noResults.replace('{q}', query)
     results.append(message)
   }
   for (const { item } of matches) {

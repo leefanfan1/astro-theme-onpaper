@@ -1,4 +1,6 @@
 ---
+import { t } from '@/i18n'
+import T from '@/components/T.astro'
 import type { Post } from '@/utils/posts'
 import {
   formatDate,
@@ -39,10 +41,10 @@ const entries = posts.map((post) => {
       <li class:list={['post-item', pinned && 'post-item--featured']}>
         <div class="post-meta">
           {showYear && <span class="post-year" aria-hidden="true">{year}</span>}
-          {pinned && <span class="post-pin">置顶</span>}
+          {pinned && <span class="post-pin"><T k="home.pinned" /></span>}
           <time datetime={post.data.published.toISOString()}>
             {pinned ? formatDate(post.data.published) : formatMonthDay(post.data.published)}
-            {!pinned && <span class="sr-only">，{year} 年</span>}
+            {!pinned && <span class="sr-only">{t('tagIndex.separator')}{t('tags.year', [year])}</span>}
           </time>
         </div>
 
@@ -52,7 +54,7 @@ const entries = posts.map((post) => {
           </h2>
           {excerpt && <p class="post-desc">{excerpt}</p>}
           {tags.length > 0 && (
-            <ul class="post-tags" aria-label="标签">
+            <ul class="post-tags" aria-label={t('article.tags')}>
               {tags.map(tag => <li><a href={getTagHref(tag)}>{tag}</a></li>)}
             </ul>
           )}

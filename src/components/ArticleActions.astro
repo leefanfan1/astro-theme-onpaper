@@ -1,5 +1,7 @@
 ---
+import T from '@/components/T.astro'
 import { siteConfig } from '@/config'
+import { t } from '@/i18n'
 
 interface Props {
   title: string
@@ -17,36 +19,47 @@ const card = JSON.stringify({
   site: siteConfig.title,
   author: siteConfig.author,
   colors: { paper: light.paper, spine: light.surface, ink: light.ink, soft: light.inkSoft, faint: light.inkFaint, accent: light.accent },
+  // The card is drawn in canvas, which cannot read the dictionary; the
+  // strings it paints are handed over with the rest of its data.
+  labels: {
+    scanToRead: t('card.scanToRead'),
+    cited: t('card.cited'),
+    citeFailed: t('card.citeFailed'),
+    cite: t('card.cite'),
+    generating: t('card.generating'),
+    failed: t('card.failed'),
+    altPrefix: t('card.dialogTitle'),
+  },
 })
 ---
 
 <div class="article-actions" data-article-actions data-card={card}>
   <button class="article-action" type="button" data-cite>
-    <span data-cite-label>复制引用</span>
+    <span data-cite-label><T k="card.cite" /></span>
   </button>
   <button class="article-action" type="button" data-card-open aria-haspopup="dialog">
-    分享卡片
+    <T k="card.button" />
   </button>
   <button class="article-action" type="button" data-print>
-    打印 / 存成 PDF
+    <T k="card.print" />
   </button>
   <!-- Labels written at runtime, listed so this page's font subset has them. -->
-  <span hidden aria-hidden="true">已复制复制失败正在生成卡片生成失败请重试扫码读全文</span>
+  <span hidden aria-hidden="true">{t('card.cited')}{t('card.citeFailed')}{t('card.generating')}{t('card.failed')}{t('card.scanToRead')}</span>
 </div>
 
 <dialog class="card-dialog" data-card-dialog aria-labelledby="card-dialog-title">
   <div class="card-dialog__head">
-    <h2 id="card-dialog-title">分享卡片</h2>
-    <button class="card-dialog__close" type="button" data-card-close aria-label="关闭分享卡片">关闭</button>
+    <h2 id="card-dialog-title"><T k="card.dialogTitle" as="span" /></h2>
+    <button class="card-dialog__close" type="button" data-card-close aria-label={t('card.close')}><T k="card.closeShort" /></button>
   </div>
-  <p class="card-dialog__hint">先在正文里选中一段话再打开，卡片会用你选中的句子；否则用文章摘要。</p>
+  <p class="card-dialog__hint"><T k="card.hint" /></p>
   <div class="card-dialog__preview" data-card-preview>
-    <p class="card-dialog__status" data-card-status>正在生成卡片…</p>
+    <p class="card-dialog__status" data-card-status><T k="card.generating" /></p>
     <img data-card-image alt="" hidden />
   </div>
   <div class="card-dialog__actions">
-    <p class="card-dialog__tip">手机上长按图片即可保存。</p>
-    <a class="card-dialog__save" data-card-save download hidden>保存图片</a>
+    <p class="card-dialog__tip"><T k="card.tip" /></p>
+    <a class="card-dialog__save" data-card-save download hidden><T k="card.save" /></a>
   </div>
 </dialog>
 
@@ -54,9 +67,16 @@ const card = JSON.stringify({
   import { encode } from 'uqr'
   import { prepareTextFonts } from '@/utils/fonts'
 
+  interface CardLabels {
+    scanToRead: string, cited: string, citeFailed: string, cite: string
+    generating: string, failed: string, altPrefix: string
+  }
+
   interface CardData {
     title: string, url: string, date: string, description: string, slug: string, site: string, author: string
     colors: { paper: string, spine: string, ink: string, soft: string, faint: string, accent: string }
+    /** Sentences the card paints, resolved from the dictionary on the server. */
+    labels: CardLabels
   }
 
   // Remember the last passage selected inside the article: on phones,
@@ -109,7 +129,7 @@ const card = JSON.stringify({
 
   // The QR code on a white tile, with a caption under it. Always dark on
   // white, the only way round every scanner reads.
-  function drawQr(c: CanvasRenderingContext2D, link: string, x: number, y: number, size: number, ink: string, font: string) {
+  function drawQr(c: CanvasRenderingContext2D, link: string, x: number, y: number, size: number, ink: string, font: string, scanLabel: string) {
     const { data: modules, size: count } = encode(link, { ecc: 'M', border: 0 })
     const pad = 14
     // A long link means more modules: keep each at least 3px, letting the
@@ -133,7 +153,7 @@ const card = JSON.stringify({
     c.font = font
     c.textAlign = 'center'
     c.textBaseline = 'top'
-    c.fillText('扫码读全文', x + size / 2, y + size - 4)
+    c.fillText(scanLabel, x + size / 2, y + size - 4)
     c.textAlign = 'left'
   }
 
@@ -155,7 +175,7 @@ const card = JSON.stringify({
     // Make sure every glyph on the card is loaded before drawing it.
     const probe = document.createElement('div')
     probe.hidden = true
-    probe.textContent = [data.site, data.title, quote, data.author, data.date, shownLink, '扫码读全文…'].join(' ')
+    probe.textContent = [data.site, data.title, quote, data.author, data.date, shownLink, `${data.labels.scanToRead}…`].join(' ')
     document.body.append(probe)
     try { await prepareTextFonts(probe) }
     catch {}
@@ -220,7 +240,7 @@ const card = JSON.stringify({
     c.fillRect(left, H - 140, footWidth, 2)
     c.fillStyle = colors.faint
     c.fillText(fit(c, shownLink, footWidth), left, H - 116)
-    drawQr(c, link, qrX, qrY, qrSize, colors.ink, fonts.qr)
+    drawQr(c, link, qrX, qrY, qrSize, colors.ink, fonts.qr, data.labels.scanToRead)
     return canvas
   }
 
@@ -236,9 +256,9 @@ const card = JSON.stringify({
       const text = `《${data.title}》，${data.author}，${data.site}，${data.date}\n${pageUrl()}`
       try {
         await navigator.clipboard.writeText(text)
-        flash(label, '已复制', '复制引用')
+        flash(label, data.labels.cited, data.labels.cite)
       }
-      catch { flash(label, '复制失败', '复制引用') }
+      catch { flash(label, data.labels.citeFailed, data.labels.cite) }
     })
 
     actions.querySelector('[data-print]')!.addEventListener('click', () => window.print())
@@ -261,7 +281,7 @@ const card = JSON.stringify({
       image.hidden = true
       save.hidden = true
       status.hidden = false
-      status.textContent = '正在生成卡片…'
+      status.textContent = data.labels.generating
       dialog.showModal()
       try {
         const canvas = await drawCard(data, quote)
@@ -269,7 +289,7 @@ const card = JSON.stringify({
         if (!blob || !dialog.open) return
         objectUrl = URL.createObjectURL(blob)
         image.src = objectUrl
-        image.alt = `分享卡片：${data.title}`
+        image.alt = `${data.labels.altPrefix}: ${data.title}`
         save.href = objectUrl
         save.download = `${data.slug}.png`
         image.hidden = false
@@ -277,7 +297,7 @@ const card = JSON.stringify({
         status.hidden = true
       }
       catch {
-        status.textContent = '生成失败，请重试。'
+        status.textContent = data.labels.failed
       }
     })
   }

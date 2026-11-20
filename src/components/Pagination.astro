@@ -1,4 +1,7 @@
 ---
+import { t } from '@/i18n'
+import T from '@/components/T.astro'
+
 interface Props {
   currentPage: number
   totalPages: number
@@ -8,7 +11,7 @@ interface Props {
   label?: string
 }
 
-const { currentPage, totalPages, base: listBase, label = '分页' } = Astro.props
+const { currentPage, totalPages, base: listBase, label = t('pagination.label') } = Astro.props
 const base = (listBase ?? import.meta.env.BASE_URL).replace(/\/$/, '')
 
 function pageHref(page: number) {
@@ -23,22 +26,22 @@ const pages = Array.from({ length: totalPages }, (_, index) => index + 1)
     <nav class="pagination" aria-label={label}>
       <span class="pagination__side">
         {currentPage > 1
-          ? <a href={pageHref(currentPage - 1)} rel="prev">上一页</a>
-          : <span class="pagination__disabled" aria-hidden="true">上一页</span>}
+          ? <a href={pageHref(currentPage - 1)} rel="prev"><T k="pagination.previous" /></a>
+          : <span class="pagination__disabled" aria-hidden="true"><T k="pagination.previous" /></span>}
       </span>
 
       <span class="pagination__pages">
         {pages.map(page => (
           page === currentPage
             ? <span class="pagination__current" aria-current="page">{page}</span>
-            : <a href={pageHref(page)} aria-label={`第 ${page} 页`}>{page}</a>
+            : <a href={pageHref(page)} aria-label={t('pagination.page', [page])}>{page}</a>
         ))}
       </span>
 
       <span class="pagination__side pagination__side--next">
         {currentPage < totalPages
-          ? <a href={pageHref(currentPage + 1)} rel="next">下一页</a>
-          : <span class="pagination__disabled" aria-hidden="true">下一页</span>}
+          ? <a href={pageHref(currentPage + 1)} rel="next"><T k="pagination.next" /></a>
+          : <span class="pagination__disabled" aria-hidden="true"><T k="pagination.next" /></span>}
       </span>
     </nav>
   )

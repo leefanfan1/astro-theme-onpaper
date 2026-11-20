@@ -1,27 +1,28 @@
 ---
 import ThemeToggle from '@/components/ThemeToggle.astro'
 import { siteConfig } from '@/config'
-import { isNavActive } from '@/utils/nav'
+import { t } from '@/i18n'
+import { isNavActive, navItems as resolveNav } from '@/utils/nav'
 
 const pathname = Astro.url.pathname
-const nav = siteConfig.nav.map(item => ({ ...item, active: isNavActive(item.href, pathname) }))
+const nav = resolveNav(pathname)
 ---
 
 <header class="mobile-bar" data-mobile-bar>
   <div class="mobile-bar__inner">
     <div class="mobile-bar__top">
-      <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} 首页`} data-wordmark>
+      <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} ${t('common.siteHome')}`} data-wordmark>
         <span class="rail-wordmark__cn" aria-hidden="true">{[...siteConfig.title].map(char => <span>{char}</span>)}</span>
       </a>
       <div class="mobile-bar__actions">
-        <button class="text-button text-button--icon" type="button" data-search-trigger aria-haspopup="dialog" aria-label="打开搜索">
+        <button class="text-button text-button--icon" type="button" data-search-trigger aria-haspopup="dialog" aria-label={t('common.search')}>
           <svg class="text-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.6"></circle>
             <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
           </svg>
         </button>
         <ThemeToggle />
-        <a class="text-button text-button--icon" href="/now/" aria-label="最近与这个站">
+        <a class="text-button text-button--icon" href="/now/" aria-label={t('now.pageTitle')}>
           <svg class="text-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <rect x="3.5" y="5" width="17" height="14" rx="1.6" stroke="currentColor" stroke-width="1.6"></rect>
             <path d="M14 5v14" stroke="currentColor" stroke-width="1.6"></path>
@@ -29,7 +30,7 @@ const nav = siteConfig.nav.map(item => ({ ...item, active: isNavActive(item.href
         </a>
       </div>
     </div>
-    <nav class="mobile-nav" aria-label="主导航" data-nav-indicator="x">
+    <nav class="mobile-nav" aria-label={t('nav.home')} data-nav-indicator="x">
       {nav.map(item => (
         <a href={item.href} aria-current={item.active ? 'page' : undefined}>{item.label}</a>
       ))}

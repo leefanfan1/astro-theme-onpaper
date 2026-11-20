@@ -1,4 +1,5 @@
 ---
+import { t } from '@/i18n'
 import ShelfWall from '@/components/ShelfWall.astro'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getAllPosts } from '@/utils/posts'
@@ -10,9 +11,9 @@ import type { ShelfKind } from '@/utils/shelf'
 // public/shelf/) or the music cache; an item with neither gets a cover
 // typeset from its title.
 const groups: Array<{ id: string, title: string, kind: ShelfKind }> = [
-  { id: 'books', title: '书', kind: 'book' },
-  { id: 'films', title: '电影', kind: 'film' },
-  { id: 'music', title: '音乐', kind: 'music' },
+  { id: 'books', title: t('shelf.bookHeading'), kind: 'book' },
+  { id: 'films', title: t('shelf.filmHeading'), kind: 'film' },
+  { id: 'music', title: t('shelf.musicHeading'), kind: 'music' },
 ]
 
 const shelf = await loadShelf(await getAllPosts())
@@ -26,12 +27,12 @@ const lists = groups
 const VISIBLE = 12
 ---
 
-<BaseLayout title="书单 · 片单 · 歌单" description="读过、看过、反复听过，愿意推荐给别人的那些。">
+<BaseLayout title={t('shelf.indexTitle')} description={t('shelf.lead')}>
   <header class="page-head">
-    <h1 class="page-title">书单 · 片单 · 歌单</h1>
-    <p class="page-lead">读过、看过、反复听过，愿意推荐给别人的那些。</p>
+    <h1 class="page-title">{t('shelf.indexTitle')}</h1>
+    <p class="page-lead">{t('shelf.lead')}</p>
     {lists.length > 1 && (
-      <nav class="shelf-index" aria-label="分类">
+      <nav class="shelf-index" aria-label={t('shelf.categories')}>
         {lists.map(group => (
           <a href={`#shelf-${group.id}`}>{group.title}<span>{group.items.length}</span></a>
         ))}
@@ -51,5 +52,5 @@ const VISIBLE = 12
     />
   ))}
 
-  <p class="shelf-credit">书与电影的封面取自豆瓣，只作个人记录之用；封面与简介的权利归豆瓣、出版方和发行方所有。</p>
+  <p class="shelf-credit">{t('shelf.credit')}</p>
 </BaseLayout>

@@ -1,10 +1,12 @@
 ---
 import ThemeToggle from '@/components/ThemeToggle.astro'
 import { siteConfig } from '@/config'
-import { isNavActive } from '@/utils/nav'
+import { t } from '@/i18n'
+import T from '@/components/T.astro'
+import { isNavActive, navItems as resolveNav } from '@/utils/nav'
 
 const pathname = Astro.url.pathname
-const nav = siteConfig.nav.map(item => ({ ...item, active: isNavActive(item.href, pathname) }))
+const nav = resolveNav(pathname)
 // Set vertically, the subtitle breaks where its punctuation pauses; the
 // full sentence (with punctuation) stays available to screen readers.
 const subtitleLines = siteConfig.subtitle.split(/[，。、；！？,.;!?\s]+/).filter(Boolean)
@@ -12,9 +14,9 @@ const subtitleLines = siteConfig.subtitle.split(/[，。、；！？,.;!?\s]+/).
 
 <!-- The spine: the site's name stands upright on its own panel, like the
      title on a book's spine. Everything in it shares one centre line. -->
-<aside class="site-rail" aria-label="站点信息与导航">
+<aside class="site-rail" aria-label={t('aside.label')}>
   <div class="rail-masthead">
-    <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} 首页`} data-wordmark>
+    <a class="rail-wordmark" href="/" aria-label={`${siteConfig.title} ${t('common.siteHome')}`} data-wordmark>
       <span class="rail-wordmark__cn" aria-hidden="true" style={`--chars:${[...siteConfig.title].length}`}>{[...siteConfig.title].map(char => <span>{char}</span>)}</span>
     </a>
     <p class="rail-subtitle">
@@ -23,7 +25,7 @@ const subtitleLines = siteConfig.subtitle.split(/[，。、；！？,.;!?\s]+/).
     </p>
   </div>
 
-  <nav aria-label="主导航">
+  <nav aria-label={t('nav.home')}>
     <ul class="rail-nav" data-nav-indicator="y">
       {nav.map(item => (
         <li>
@@ -39,7 +41,7 @@ const subtitleLines = siteConfig.subtitle.split(/[，。、；！？,.;!?\s]+/).
         <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="1.6"></circle>
         <path d="m15.5 15.5 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
       </svg>
-      <span class="text-button__label">搜索</span>
+      <span class="text-button__label"><T k="common.search" /></span>
     </button>
     <ThemeToggle />
   </div>

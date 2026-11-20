@@ -1,14 +1,15 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import { t } from '@/i18n'
 ---
 
 <BaseLayout title="404" noindex>
   <header class="page-head page-head--404">
-    <h1 class="page-title">这一页<br />留白了。</h1>
-    <p class="page-lead">你要找的页面可能被移走了，也可能从来没有写下来。可以从文章列表或归档重新找起。</p>
+    <h1 class="page-title">{t('notFound.heading')}</h1>
+    <p class="page-lead">{t('notFound.lead')}</p>
     <p class="page-actions">
-      <a href="/">回到文章列表</a>
-      <a href="/tags/">查看归档</a>
+      <a href="/">{t('notFound.toPosts')}</a>
+      <a href="/tags/">{t('notFound.toArchive')}</a>
     </p>
   </header>
 </BaseLayout>

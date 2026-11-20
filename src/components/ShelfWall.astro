@@ -8,6 +8,8 @@
  * hundred books was one long scroll nobody finishes, and a page that rendered
  * every cover made the browser fetch the lot whether or not anyone scrolled.
  */
+import { t } from '@/i18n'
+import T from '@/components/T.astro'
 import ShelfCard from '@/components/ShelfCard.astro'
 import type { ShelfItem, ShelfKind } from '@/utils/shelf'
 import { COUNT_WORD, VERB, coverOf, inkOf } from '@/utils/shelf-covers'
@@ -38,7 +40,7 @@ const folded = visible > 0 ? items.slice(visible) : []
     {href
       ? <a class="shelf__title-link" href={href}>{heading}<span>{items.length}</span></a>
       : <span class="shelf__title-text">{heading}<span>{items.length}</span></span>}
-    {href && <a class="shelf__more" href={href}>看全部</a>}
+    {href && <a class="shelf__more" href={href}><T k="shelfMore.all" /></a>}
   </h2>
   <ul class="shelf-wall" role="list">
     {shown.map((item, index) => (
@@ -48,8 +50,8 @@ const folded = visible > 0 ? items.slice(visible) : []
   {folded.length > 0 && (
     <details class="shelf-more">
       <summary>
-        <span class="shelf-more__label">还有 {folded.length} {COUNT_WORD[kind]}</span>
-        <span class="shelf-more__hint">展开</span>
+        <span class="shelf-more__label">{t('shelfMore.more')} {folded.length} {t(`shelfMore.unit.${kind}`)}</span>
+        <span class="shelf-more__hint"><T k="shelfMore.expand" /></span>
       </summary>
       <ul class="shelf-wall" role="list">
         {folded.map((item, index) => (

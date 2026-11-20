@@ -31,7 +31,9 @@
     try {
       const mermaid = await loadMermaid()
       for (const block of blocks) {
-        if (!block.dataset.source || block.dataset.source.endsWith('复制')) {
+        // The copy button is the only child appended to a code block, and its
+        // label changes as it confirms; skip it by class, not by its text.
+        if (!block.dataset.source || block.querySelector('.code-copy')) {
           block.querySelectorAll('.code-copy').forEach(button => button.remove())
           block.dataset.source = block.textContent?.trim() ?? ''
         }

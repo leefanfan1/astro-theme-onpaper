@@ -1,6 +1,7 @@
 ---
 import TagIndex from '@/components/TagIndex.astro'
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import { t } from '@/i18n'
 import {
   formatMonthDay,
   getAllPosts,
@@ -12,12 +13,16 @@ import {
 const posts = await getAllPosts()
 const tags = getAllTags(posts)
 const years = groupByYear(posts)
+const span = years.length > 1
+  ? t('tags.yearsToNow', [years.at(-1)![0]])
+  : t('tags.year', [years[0]?.[0] ?? ''])
+const total = t('tags.total', [posts.length])
 ---
 
-<BaseLayout title="归档" description="按时间排列的全部文章，以及一份按标签整理的索引。">
+<BaseLayout title={t('tags.title')} description={t('tags.description')}>
   <header class="page-head">
-    <h1 class="page-title">归档</h1>
-    <p class="page-lead">{years.length > 1 ? `${years.at(-1)![0]} 年至今` : `${years[0]?.[0] ?? ''} 年`}，共 {posts.length} 篇。</p>
+    <h1 class="page-title">{t('tags.title')}</h1>
+    <p class="page-lead">{span}{total}</p>
   </header>
 
   <TagIndex {tags} />
@@ -27,7 +32,7 @@ const years = groupByYear(posts)
       <section class="year-block" aria-labelledby={`year-${year}`}>
         <div class="year-heading">
           <h2 id={`year-${year}`}>{year}</h2>
-          <span>{yearPosts.length} 篇</span>
+          <span>{t('tags.count', [yearPosts.length])}</span>
         </div>
         <ol class="timeline">
           {yearPosts.map(post => (

@@ -47,18 +47,37 @@ export const siteConfig = {
   url: 'https://onpaper.example.com',
   lang: 'zh-CN',
   locale: 'zh_CN',
+
+  /**
+   * 界面语言。
+   *
+   * `defaultLang` 决定构建时 HTML 写的是哪种语言：'zh' 或 'en'。文案在
+   * src/i18n/ 下，两份字典一一对应。改这一行，整站界面就换一种语言，
+   * 文章内容不受影响。
+   *
+   * 语言只在构建期确定，页面上没有切换控件——读者看到的就是这个站被构建
+   * 成的那种语言。想给中英文各做一个站，就部署两份，各改这一行。
+   */
+  i18n: {
+    defaultLang: 'zh' as 'zh' | 'en',
+  },
+
   startYear: 2024,
   // 首页每页文章数（不含置顶）
   postsPerPage: 4,
   // 文章详情页是否默认展开目录
   tocOpen: false,
 
+  /**
+   * 导航。`key` 指向 src/i18n/ 里的 nav.*，界面语言变了标签跟着变；
+   * `label` 只在没写 key 时兜底，用于加自定义导航项。
+   */
   nav: [
-    { label: '文章', href: '/' },
-    { label: '归档', href: '/tags/' },
-    { label: '关于', href: '/about/' },
-    { label: '友链', href: '/friends/' },
-  ],
+    { key: 'home', href: '/' },
+    { key: 'tags', href: '/tags/' },
+    { key: 'about', href: '/about/' },
+    { key: 'friends', href: '/friends/' },
+  ] as Array<{ key?: string, label?: string, href: string }>,
 
   socials: [
     { label: 'RSS', href: '/rss.xml', external: true },

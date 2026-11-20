@@ -1,5 +1,12 @@
 ---
+import { t } from '@/i18n'
+
 const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
+const title = t('search.title')
+const placeholder = t('search.placeholder')
+const keyword = t('search.keyword')
+const closeEsc = t('search.closeEsc')
+const hint = t('search.hint')
 ---
 
 <dialog
@@ -7,7 +14,7 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
   id="search-dialog"
   data-search-dialog
   data-index-url={searchIndexUrl}
-  aria-label="搜索文章"
+  aria-label={title}
 >
   <div class="search-dialog__bar">
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -17,22 +24,32 @@ const searchIndexUrl = `${import.meta.env.BASE_URL}search.json`
     <input
       type="search"
       id="search-input"
-      placeholder="搜索标题、标签或正文…"
+      placeholder={placeholder}
       autocomplete="off"
       autocapitalize="off"
       spellcheck="false"
       enterkeyhint="search"
-      aria-label="搜索关键词"
+      aria-label={keyword}
     />
-    <button class="search-close" type="button" data-search-close aria-label="关闭搜索（Esc）">
+    <button class="search-close" type="button" data-search-close aria-label={closeEsc}>
       Esc
     </button>
   </div>
   <!-- Keep dynamic UI labels in the initial font set, including on weak networks. -->
-  <span hidden aria-hidden="true" data-search-font-text>正在建立索引…搜索索引加载失败，请刷新页面重试。没有找到与“”相关的文章。条搜索结果</span>
+  <span
+    hidden
+    aria-hidden="true"
+    data-search-messages
+    data-hint={t('search.hint')}
+    data-indexing={t('search.indexing')}
+    data-index-failed={t('search.indexFailed')}
+    data-index-failed-short={t('search.indexFailedShort')}
+    data-results={t('search.resultsTemplate')}
+    data-no-results={t('search.noResultsTemplate')}
+  >{t('search.indexing')}{t('search.indexFailed')}{t('search.noResultsTemplate')}</span>
   <div class="sr-only" data-search-status aria-live="polite"></div>
   <div class="search-results" data-search-results>
-    <p class="search-hint">输入关键词，搜索标题、摘要、标签和正文。</p>
+    <p class="search-hint">{hint}</p>
   </div>
 </dialog>
 

@@ -11,6 +11,12 @@ const posts = defineCollection({
     tags: z.array(z.string()).default([]),
     pin: z.number().int().min(0).max(99).default(0),
     draft: z.boolean().default(false),
+    /**
+     * 文章本身的语言。界面语言由 src/i18n/ 决定，这份字段只描述文章用哪种
+     * 语言写成——用来给 `<html lang>` 之外的阅读工具（RSS 阅读器、翻译、
+     * 未来的语言过滤）一个依据。不写就是站点的默认语言。
+     */
+    lang: z.enum(['zh', 'en']).default('zh'),
   }),
 })
 

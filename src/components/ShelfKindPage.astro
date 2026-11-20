@@ -1,4 +1,6 @@
 ---
+import { t } from '@/i18n'
+import T from '@/components/T.astro'
 /**
  * The body of one shelf's own page — heading, the wall, pagination.
  *
@@ -36,8 +38,8 @@ const shown = items.slice(offset, offset + SHELF_PER_PAGE)
         offset={offset}
       />
     )
-  : <p class="empty-state">这一份清单还是空的。</p>}
+  : <p class="empty-state"><T k="shelfMore.empty" /></p>}
 
 {totalPages > 1 && (
-  <Pagination currentPage={page} totalPages={totalPages} base={base} label={`${heading}的分页`} />
+  <Pagination currentPage={page} totalPages={totalPages} base={base} label={t('shelfMore.pagination', [heading])} />
 )}

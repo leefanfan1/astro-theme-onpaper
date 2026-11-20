@@ -1,10 +1,11 @@
 ---
+import { t } from '@/i18n'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { getEntry } from 'astro:content'
 import { parseFriends } from '@/utils/friends'
 
 const page = await getEntry('pages', 'friends')
-if (!page) throw new Error('缺少友情链接内容：src/content/pages/friends.md')
+if (!page) throw new Error(t('friends.missing'))
 const friends = parseFriends(page.body ?? '')
 
 function displayDomain(url: string) {
@@ -23,7 +24,7 @@ function displayDomain(url: string) {
 >
   <header class="page-head">
     <h1 class="page-title">{page.data.title}</h1>
-    <p class="page-lead">一些常去串门的个人博客。排名不分先后，愿大家都能慢慢写下去。</p>
+    <p class="page-lead">{t('friends.lead')}</p>
   </header>
 
   <ul class="friend-list">
@@ -42,7 +43,7 @@ function displayDomain(url: string) {
             <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M5.5 10.5 10.5 5.5M6.5 5.5h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
-            <span class="sr-only">（在新窗口打开）</span>
+            <span class="sr-only">{t('friends.opensNewWindow')}</span>
           </span>
         </a>
       </li>
