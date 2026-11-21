@@ -18,13 +18,13 @@ A Chinese personal blog theme: the margin is part of the page. Reading is organi
 
 ## Preview
 
-The pictures below are generated from the live build rather than assembled by hand: `npm run docs:shots` takes the screenshots, draws the window and phone chrome, and lays out the grid.
+The pictures below are generated from the live English build rather than assembled by hand: `npm run docs:shots` takes the screenshots, draws the window and phone chrome, and lays out the grid. The Chinese README shows the matching set in `docs/zh/`, taken from a Chinese build.
 
-![OnPaper: light home page, dark home page, an article with its outline, and the shelf](docs/showcase.png)
+![OnPaper: light home page, dark home page, an article with its outline, and the shelf](docs/en/showcase.png)
 
 <div align="center">
 
-![Mobile: the home page and "Recently"](docs/mobile.png)
+![Mobile: the home page and "Recently"](docs/en/mobile.png)
 
 </div>
 
@@ -34,7 +34,7 @@ The pictures below are generated from the live build rather than assembled by ha
 
 </div>
 
-![Search dialog, music card and GitHub card](docs/details.png)
+![Search dialog, music card and GitHub card](docs/en/details.png)
 
 ---
 
@@ -72,7 +72,7 @@ Open <http://127.0.0.1:4321/>.
 | `npm run music` | Resolve and cache the links in `::music` cards |
 | `npm run og` | Regenerate `public/og.png` from `public/og.svg` |
 | `npm run shots` | Playwright screenshot check (run `npm run dev` first) |
-| `npm run docs:shots` | Rebuild the pictures in `docs/` from the current build |
+| `npm run docs:shots` | Rebuild the pictures in `docs/en/` from the current build (a Chinese build writes `docs/zh/`) |
 | `npm run clean` | Clear only the `.astro` cache |
 
 Tests (each builds first):

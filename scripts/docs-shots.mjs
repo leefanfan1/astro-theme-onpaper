@@ -1,8 +1,11 @@
 /**
- * The images in docs/, built rather than assembled by hand.
+ * The images in docs/zh/ and docs/en/, built rather than assembled by hand.
  *
- *   node scripts/docs-shots.mjs            # the language the site is built in
- *   node scripts/docs-shots.mjs --lang=en  # sets siteConfig.i18n.defaultLang
+ * Run it once against a Chinese build and once against an English one; each
+ * writes into the folder for its language.
+ *
+ *   npm run build && (cd dist && python -m http.server 4300)
+ *   BASE_URL=http://localhost:4300 node scripts/docs-shots.mjs   # → docs/zh/
  *
  * The three pictures the README shows are composites: a browser frame or a
  * phone body drawn around a real screenshot, laid out on a grid. This script
@@ -19,7 +22,11 @@ import { chromium } from 'playwright'
 import sharp from 'sharp'
 
 const base = process.env.BASE_URL || 'http://localhost:4300'
-const outDir = 'docs'
+// The pictures are in two sets: the Chinese README shows a Chinese site and
+// the English README an English one. Which set this run writes into is decided
+// by the language the build actually renders, a few lines below, so the two
+// never overwrite each other.
+let outDir = 'docs'
 
 // The interface language, read from the built HTML rather than passed in: what
 // matters is what the screenshots will actually show.
@@ -123,7 +130,9 @@ const homePhone = await shot('/', { width: 390, height: 844, scheme: 'light' })
 const nowPhone = await shot('/now/', { width: 390, height: 844, scheme: 'light' })
 
 const lang = homeLight.lang
-console.log(`interface language: ${lang}`)
+outDir = `docs/${lang}`
+await mkdir(outDir, { recursive: true })
+console.log(`interface language: ${lang} → ${outDir}/`)
 
 const L = lang === 'zh'
   ? { home: 'HOME / 首页', dark: 'HOME / 首页 · 深色', article: 'ARTICLE / 文章与目录', shelf: 'SHELF / 书单 · 片单 · 歌单', homePhone: 'HOME / 首页', nowPhone: 'NOW / 最近与这个站' }
@@ -223,4 +232,4 @@ const details = await compose({
 await writeFile(`${outDir}/details.png`, details)
 
 await browser.close()
-console.log('wrote docs/showcase.png, docs/mobile.png, docs/details.png')
+console.log(`wrote ${outDir}/showcase.png, ${outDir}/mobile.png, ${outDir}/details.png`)

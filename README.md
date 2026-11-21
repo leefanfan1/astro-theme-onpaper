@@ -18,13 +18,13 @@
 
 ## 预览
 
-下面三张图由脚本从真实构建生成，不是手工拼的：`npm run docs:shots` 负责截图、画窗口和手机外壳、排版。
+下面三张图由脚本从中文构建生成，不是手工拼的：`npm run docs:shots` 负责截图、画窗口和手机外壳、排版。中文图在 `docs/zh/`，英文版 README 用的是 `docs/en/` 里由英文构建生成的一套。
 
-![纸上留白：浅色首页、深色首页、带目录的文章页、书单页](docs/showcase.png)
+![纸上留白：浅色首页、深色首页、带目录的文章页、书单页](docs/zh/showcase.png)
 
 <div align="center">
 
-![移动端：首页与「最近与这个站」](docs/mobile.png)
+![移动端：首页与「最近与这个站」](docs/zh/mobile.png)
 
 </div>
 
@@ -34,7 +34,7 @@
 
 </div>
 
-![搜索对话框、音乐卡片与 GitHub 卡片](docs/details.png)
+![搜索对话框、音乐卡片与 GitHub 卡片](docs/zh/details.png)
 
 ---
 
@@ -72,7 +72,7 @@ npm run dev
 | `npm run music` | 解析并缓存 `::music` 里的链接 |
 | `npm run og` | 从 `public/og.svg` 重新生成 `public/og.png` |
 | `npm run shots` | Playwright 截图检查（需先 `npm run dev`） |
-| `npm run docs:shots` | 用当前构建重新生成 `docs/` 里的三张图 |
+| `npm run docs:shots` | 用当前构建重新生成 `docs/zh/` 里的三张图（英文站写到 `docs/en/`） |
 | `npm run clean` | 只清理 `.astro` 缓存 |
 
 测试（每条都会先构建）：
