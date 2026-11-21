@@ -30,6 +30,13 @@ const REFERENCE_KEYS = {
 const LINK_RE = /https?:\/\/\S+/
 // The lines this script adds for reference. They are not the credit line, even
 // when an older run put one of them second.
+// Every spelling of the reference fields, Chinese and English.
+const FIELD_SPELLINGS = {
+  year: ['年份', 'year'],
+  douban: ['豆瓣', 'douban'],
+  link: ['链接', 'link'],
+}
+
 // `年份：` / `year:`, `豆瓣：` / `douban:`, `链接：` / `link:` — either spelling.
 const REFERENCE_RE = /^\s*(年份|豆瓣|链接|year|douban|link)\s*[：:]/i
 // `在读：《城南旧事》` — or the same entry typed without the marks, which is
@@ -124,8 +131,12 @@ export function isNowEntryComplete(entry) {
   // A record's row opens the player, so its credit line has to carry the
   // NetEase address the shelf links to.
   if (entry.kind === 'music' && !/^https:\/\/music\.163\.com\//.test(link)) return false
-  if (!entry.lines.some(line => /^\s*年份\s*[：:]/.test(line))) return false
-  return entry.kind !== 'music' || entry.lines.some(line => /^\s*豆瓣\s*[：:]/.test(line))
+  // Either spelling counts. A column completed in English holds `year:` and
+  // `douban:`; testing only for the Chinese keys made every English entry look
+  // unfinished, so each run re-fetched it and wrote the lines again.
+  const has = key => entry.lines.some(line => new RegExp(`^\s*(?:${(FIELD_SPELLINGS[key] ?? [key]).join('|')})\s*[：:]`, 'i').test(line))
+  if (!has('year')) return false
+  return entry.kind !== 'music' || has('douban')
 }
 
 /**

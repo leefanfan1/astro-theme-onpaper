@@ -998,7 +998,11 @@ html[data-theme="dark"] .theme-toggle .moon {
    starts that line — never a half-cut title beside a half-cut name. */
 .now__item {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr);
+  /* The label column takes the width of its longest word. `2.5rem` fits the
+     two characters of 在听; an English build says `Listening`, which at a fixed
+     2.5rem overflowed into the title and the two overlapped. `max-content`
+     instead, with the title column free to take the rest. */
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: baseline;
   gap: 0 var(--space-2);
 }
@@ -1250,7 +1254,9 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .aside-page .now__item {
-  grid-template-columns: 3.25rem minmax(0, 1fr);
+  /* Same rule as the column's own: the label takes what it needs, so a page
+     in either language lines up. */
+  grid-template-columns: max-content minmax(0, 1fr);
 }
 
 .aside-page .facts__row {

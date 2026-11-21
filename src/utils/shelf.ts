@@ -139,13 +139,16 @@ export function parseNow(content: string): NowEntry[] {
   for (const block of text.split(/\n{2,}/)) {
     const lines = block.split('\n').map(line => line.trim()).filter(Boolean)
     if (!lines.length) continue
-    const head = lines[0].match(/^([^：:]{1,4})\s*[：:]\s*(.+)$/)
+    // The label is short in Chinese (在听) and longer in English (Listening).
+    const head = lines[0].match(/^([^：:]{1,12})\s*[：:]\s*(.+)$/)
     if (!head) continue
     // The second line is the credit — unless it is a reference line, which is
     // what a file completed before the credit line existed holds. Reading
     // `年份：1960` as the credit would draw it as the entry's author.
     const second = lines[1] ?? ''
-    const credit = /^\s*(年份|豆瓣|链接)\s*[：:]/.test(second) ? '' : second
+    // Reference lines may be written in English; reading `year: 2009` as the
+    // credit would draw it as the entry's creator.
+    const credit = /^\s*(年份|豆瓣|链接|year|douban|link)\s*[：:]/i.test(second) ? '' : second
     // One link on the credit line is the work's own page; a separate
     // `豆瓣：` line lets a record point at both its player and Douban.
     const links = [...lines.join(' ').matchAll(/https?:\/\/\S+/g)].map(match => match[0])
