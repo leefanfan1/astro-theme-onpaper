@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "纸上留白 / OnPaper — an original Chinese editorial blog theme for Astro and Cloudflare Pages.",
+  "description": "纸上留白 / OnPaper — 中文个人博客的 Astro 主题：把页边当作页面的一部分。/ An Astro theme for personal blogs: the margin is part of the page.",
   "engines": {
     "node": ">=22.23.4"
   },
