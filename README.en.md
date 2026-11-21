@@ -18,8 +18,6 @@ A Chinese personal blog theme: the margin is part of the page. Reading is organi
 
 ## Preview
 
-The pictures below are generated from the live English build rather than assembled by hand: `npm run docs:shots` takes the screenshots, draws the window and phone chrome, and lays out the grid. The Chinese README shows the matching set in `docs/zh/`, taken from a Chinese build.
-
 ![OnPaper: light home page, dark home page, an article with its outline, and the shelf](docs/en/showcase.png)
 
 <div align="center">

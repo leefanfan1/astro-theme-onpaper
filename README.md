@@ -18,8 +18,6 @@
 
 ## 预览
 
-下面三张图由脚本从中文构建生成，不是手工拼的：`npm run docs:shots` 负责截图、画窗口和手机外壳、排版。中文图在 `docs/zh/`，英文版 README 用的是 `docs/en/` 里由英文构建生成的一套。
-
 ![纸上留白：浅色首页、深色首页、带目录的文章页、书单页](docs/zh/showcase.png)
 
 <div align="center">
