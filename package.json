@@ -24,6 +24,9 @@
     "test:responsiveness": "npm run build && node tests/navigation-responsiveness.mjs",
     "test:render": "node tests/markdown-render.mjs",
     "test:i18n": "node tests/i18n.mjs",
+    "test:font-gate": "npm run build && node tests/font-gate.mjs",
+    "test:shelf-keys": "node tests/shelf-english-keys.mjs",
+    "docs:shots": "node scripts/docs-shots.mjs",
     "test:shelf": "node tests/shelf-metadata.mjs && node tests/shelf-document.mjs && node tests/now-document.mjs && node tests/cover-source.mjs && node tests/cover-prune.mjs && node tests/music-cover.mjs && node tests/douban-detail.mjs",
     "covers": "node scripts/fetch-covers.mjs"
   },
