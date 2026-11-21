@@ -381,10 +381,17 @@
     window.clearTimeout(retryTimer)
     if (!main) return
     if (arePageFontsLoaded(document.body)) { activateFonts(); return }
-    root.dataset.fontState = 'loading'
     // One grace period per page, not per attempt: a hung request must not be
     // able to hold the page invisible through its retries.
+    //
+    // This has to be checked *before* the state is set to `loading`, because
+    // `html[data-font-state="loading"] body { opacity: 0 }` is what hides the
+    // page until the fonts arrive. Checked after, as it was, a page whose fonts
+    // could not be fetched would set `loading` — hiding everything — and then
+    // return, leaving it hidden for good: the retry timer re-entered here and
+    // did the same thing again, so the article never appeared at all.
     if (document.documentElement.classList.contains('fonts-unavailable')) return
+    root.dataset.fontState = 'loading'
     armGiveUp()
     try {
       await preparePageFonts(document.body, retryFailed)

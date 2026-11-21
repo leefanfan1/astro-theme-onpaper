@@ -1,6 +1,6 @@
 <div align="center">
 
-# 纸上留白 · OnPaper
+# OnPaper · 纸上留白
 
 **Leave a little air between the words.**
 
@@ -17,6 +17,8 @@ A Chinese personal blog theme: the margin is part of the page. Reading is organi
 ---
 
 ## Preview
+
+The pictures below are generated from the live build rather than assembled by hand: `npm run docs:shots` takes the screenshots, draws the window and phone chrome, and lays out the grid.
 
 ![OnPaper: light home page, dark home page, an article with its outline, and the shelf](docs/showcase.png)
 
@@ -40,7 +42,7 @@ A Chinese personal blog theme: the margin is part of the page. Reading is organi
 
 | | |
 | :--- | :--- |
-| **✦ Typography first**<br>Noto Sans SC for body and interface; Newsreader + heavy Noto Serif SC for headings, the site name and numerals. Emphasis uses the Chinese 着重号 dot, not italics. | **◐ Reading**<br>Outline, reading progress, image lightbox, back to top, share bar; copy a citation, generate a share card, print to PDF at the end of a post. |
+| **✦ Typography first**<br>Noto Sans SC for body and interface; Newsreader + heavy Noto Serif SC for headings, the site name and numerals. Emphasis uses the Chinese emphasis dot (着重号) under each character, not italics. | **◐ Reading**<br>Outline, reading progress, image lightbox, back to top, share bar; copy a citation, generate a share card, print to PDF at the end of a post. |
 | **▯ Margin layout**<br>On desktop: a spine at the left, margin notes beside the text, and an outline or aside on wide screens. Narrow screens fold each column back above the text without losing anything. | **◯ Search**<br><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd> or <kbd>/</kbd> opens it. Titles, tags and body text are indexed at build time, and matches are highlighted. |
 | **◑ Theme**<br>Light, dark or follow the system, revealed as a circle from the button and remembered. Cold white paper with blue-black ink; night is a deep blue-black rather than pure black. | **✎ Markdown extensions**<br>KaTeX, Mermaid, music cards (one link, four platforms), GitHub cards, Spotify / Bilibili / YouTube embeds. |
 | **▤ Shelf**<br>Books, films and music as three Markdown files, with a poster wall of real Douban covers. Each item has its own page, and items mentioned in a post carry a "wrote about it" link. | **◎ Sharing**<br>Every post gets its own share image at build time (title plus the first 60 characters), and the share card holds a locally generated QR code. |
@@ -70,6 +72,7 @@ Open <http://127.0.0.1:4321/>.
 | `npm run music` | Resolve and cache the links in `::music` cards |
 | `npm run og` | Regenerate `public/og.png` from `public/og.svg` |
 | `npm run shots` | Playwright screenshot check (run `npm run dev` first) |
+| `npm run docs:shots` | Rebuild the pictures in `docs/` from the current build |
 | `npm run clean` | Clear only the `.astro` cache |
 
 Tests (each builds first):
@@ -84,6 +87,8 @@ Tests (each builds first):
 | `npm run test:render` | Markdown and inline HTML: sanitising, footnotes, KaTeX, Mermaid, shiki |
 | `npm run test:i18n` | The two dictionaries match key for key, no empty copy, no Chinese leaking into English |
 | `npm run test:shelf` | Shelf and "Recently" parsing, cover fetching, pruning, series directors |
+| `npm run test:shelf-keys` | A shelf written with English field names reads the same as one written in Chinese |
+| `npm run test:font-gate` | The page stays visible when the font host is unreachable |
 
 ### Creating a post
 
@@ -101,7 +106,7 @@ title: A Walk Without a Map
 description: ''
 published: 2026-11-07
 tags:
-  - _未分类
+  - _uncategorised
 pin: 0
 ---
 
@@ -125,7 +130,7 @@ A few notes:
 
 - Slugs use lowercase Latin letters, digits and hyphens only
 - A non-Latin title goes in `title=...`, never in the slug position
-- Without `tags`, the placeholder `_未分类` is written; it keeps the frontmatter a list and never appears in posts, tag pages, search or RSS
+- Without `tags`, a placeholder tag is written; it keeps the frontmatter a list and never appears in posts, tag pages, search or RSS. The placeholder is `_未分类` in a Chinese build and `_uncategorised` in an English one
 - An existing file is never overwritten
 
 ---
@@ -270,14 +275,26 @@ Three Markdown files, one list per file:
 Each book, film or record is one paragraph, one field per line:
 
 ```text
-书名：城南旧事
-作者：林海音
-年份：1960
-豆瓣：https://book.douban.com/subject/3057333/
-一句话：小时候读不懂，长大才知道它写的是告别。
+title: My Memories of Old Beijing
+author: Lin Haiyin
+year: 1960
+douban: https://book.douban.com/subject/3057333/
+note: I did not understand it as a child; only later did I see it is about goodbye.
 ```
 
-Books use `书名：` / `作者：`, films `片名：` / `导演：`, records `名称：` / `歌手：` / `链接：`. The title is required and the rest is optional; `一句话：` appears under the cover; the `<!-- -->` comment at the top of each file never reaches the page.
+Every field can be written in English or in Chinese; the theme's own files and everything `npm run covers` writes use the Chinese keys, and both spellings read the same.
+
+| Field | English | Chinese |
+| --- | --- | --- |
+| Title (required) | `title:` | `书名:` / `片名:` / `名称:` |
+| Creator | `author:` / `director:` / `artist:` | `作者:` / `导演:` / `歌手:` |
+| Year | `year:` | `年份:` |
+| Douban page | `douban:` | `豆瓣:` |
+| Player / other link | `link:` | `链接:` |
+| Cover | `cover:` | `封面:` |
+| One-line note | `note:` | `一句话:` |
+
+The title is required and the rest is optional; `note:` appears under the cover; the `<!-- -->` comment at the top of each file never reaches the page.
 
 A title alone is enough — `npm run covers` fills in the rest (see below).
 
@@ -305,7 +322,7 @@ The script reads the three Markdown files and the "Recently" column (`src/conten
 
 1. **Fill, never overwrite.** A field you wrote is left alone. The book says 1960 and Douban says this edition is 2008 — 1960 stays.
 2. **Only absent lines are added**, in the order the file's own comment documents. Lines you wrote are kept byte for byte, including the spacing around the colon, and a CRLF file stays CRLF.
-3. **If the lookup finds nothing, nothing changes.** The console prints one line, `x 书名: no Douban match`, and the next run tries again.
+3. **If the lookup finds nothing, nothing changes.** The console prints one line, `x 城南旧事: no Douban match`, and the next run tries again.
 
 Books and films go through Douban: an entry's own `豆瓣：` line first, then a search on "title + author/director", accepting only a hit whose title, year and creator agree (a matching title alone is not enough — too many books share one). The mobile subject API then supplies creator, publication year and cover, and `作者` / `导演`, `年份` and `豆瓣` are written in.
 
@@ -318,7 +335,7 @@ Records reuse the music card's resolver (`src/utils/music-resolver.mjs`): a `链
 An entry that has been completed is skipped on the next run without any network request. To fill only a few:
 
 ```bash
-node scripts/fetch-covers.mjs 城南旧事 一一
+node scripts/fetch-covers.mjs 'My Memories of Old Beijing' 'Yi Yi'
 ```
 
 With arguments it handles only those entries and leaves the "Recently" column alone.
@@ -346,10 +363,10 @@ What it will not remove:
 `src/content/pages/now.md` holds three rows. The address at the end of the second line is what the row opens (a Douban subject page for a book or film, a music platform for a record):
 
 ```text
-在听：《城市》
-张悬 https://music.163.com/#/album?id=32312
-年份：2009
-豆瓣：https://music.douban.com/subject/3801228/
+Listening：《City》
+Deserts Chang https://music.163.com/#/album?id=32312
+year：2009
+douban：https://music.douban.com/subject/3801228/
 ```
 
 The first line alone is enough; `npm run covers` fills in the creator, the link and the year the same way it does the shelf. Those extra lines are reference only — the column shows no year and no picture, and the second line's link is the whole of the interaction.

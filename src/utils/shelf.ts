@@ -41,6 +41,20 @@ const CREATOR_KEYS: Record<ShelfKind, string[]> = {
 }
 
 /**
+ * The remaining fields, each in both spellings.
+ *
+ * The theme's own files are written in Chinese and `npm run covers` writes
+ * Chinese keys back, but a shelf in English is a reasonable thing to want —
+ * and until these aliases existed, `year: 1960` silently read as no year at
+ * all. Every field has both, so either way of writing a shelf works.
+ */
+const YEAR_KEYS = ['年份', 'year']
+const NOTE_KEYS = ['一句话', 'note']
+const COVER_KEYS = ['封面', 'cover']
+const DOUBAN_KEYS = ['豆瓣', 'douban']
+const LINK_KEYS = ['链接', 'link', 'url']
+
+/**
  * Only http(s) links become hrefs. A shelf line is hand-written Markdown, and
  * `javascript:` there would run in the reader's page — the same reason
  * friends.ts validates its URLs rather than trusting the file.
@@ -84,20 +98,22 @@ export function parseShelf(content: string, kind: ShelfKind): ShelfItem[] {
       if (fields.size) console.warn(`[shelf] ${kind}.md 第 ${index + 1} 段缺少「${TITLE_KEYS[kind][0]}：」一行，已跳过。`)
       return
     }
-    const year = Number(fields.get('年份') ?? fields.get('year') ?? '')
+    const year = Number(pick(fields, YEAR_KEYS) || 0)
     // A record's card opens its player, and its `豆瓣` line is reference only;
     // a book or a film has nothing but the Douban page to open.
+    // A record's card opens its player; a book or a film opens its Douban
+    // page. The other spelling is the fallback, as before.
     const link = kind === 'music'
-      ? fields.get('链接') || fields.get('豆瓣') || fields.get('url') || ''
-      : fields.get('豆瓣') || fields.get('链接') || fields.get('url') || ''
+      ? pick(fields, LINK_KEYS) || pick(fields, DOUBAN_KEYS) || ''
+      : pick(fields, DOUBAN_KEYS) || pick(fields, LINK_KEYS) || ''
     items.push({
       kind,
       title,
       creator: pick(fields, CREATOR_KEYS[kind]),
       ...(Number.isFinite(year) && year > 0 ? { year } : {}),
-      ...(fields.get('一句话') ? { note: fields.get('一句话')! } : {}),
+      ...(pick(fields, NOTE_KEYS) ? { note: pick(fields, NOTE_KEYS) } : {}),
       ...(httpUrl(link) ? { url: httpUrl(link)! } : {}),
-      ...(fields.get('封面') ? { cover: fields.get('封面')! } : {}),
+      ...(pick(fields, COVER_KEYS) ? { cover: pick(fields, COVER_KEYS) } : {}),
     })
   })
   return items
@@ -123,13 +139,16 @@ export function parseNow(content: string): NowEntry[] {
   for (const block of text.split(/\n{2,}/)) {
     const lines = block.split('\n').map(line => line.trim()).filter(Boolean)
     if (!lines.length) continue
-    const head = lines[0].match(/^([^：:]{1,4})\s*[：:]\s*(.+)$/)
+    // The label is short in Chinese (在听) and longer in English (Listening).
+    const head = lines[0].match(/^([^：:]{1,12})\s*[：:]\s*(.+)$/)
     if (!head) continue
     // The second line is the credit — unless it is a reference line, which is
     // what a file completed before the credit line existed holds. Reading
     // `年份：1960` as the credit would draw it as the entry's author.
     const second = lines[1] ?? ''
-    const credit = /^\s*(年份|豆瓣|链接)\s*[：:]/.test(second) ? '' : second
+    // Reference lines may be written in English; reading `year: 2009` as the
+    // credit would draw it as the entry's creator.
+    const credit = /^\s*(年份|豆瓣|链接|year|douban|link)\s*[：:]/i.test(second) ? '' : second
     // One link on the credit line is the work's own page; a separate
     // `豆瓣：` line lets a record point at both its player and Douban.
     const links = [...lines.join(' ').matchAll(/https?:\/\/\S+/g)].map(match => match[0])

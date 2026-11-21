@@ -182,9 +182,6 @@ export const zh = {
     pageTitle: '最近与这个站',
     description: '在听、在读、在看，以及这个站的一些数字。',
     lead: '在听、在读、在看，以及这个站写下的那些数字。',
-    listening: '在听',
-    reading: '在读',
-    watching: '在看',
   },
 
   tags: {

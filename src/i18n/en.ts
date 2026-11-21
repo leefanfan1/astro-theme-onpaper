@@ -181,9 +181,6 @@ export const en: ZhDictionary = {
     pageTitle: 'Recently, and this site',
     description: 'Listening, reading, watching — and a few numbers about this site.',
     lead: 'Listening, reading, watching, and the numbers this site has written down.',
-    listening: 'Listening',
-    reading: 'Reading',
-    watching: 'Watching',
   },
 
   tags: {

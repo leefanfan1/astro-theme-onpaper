@@ -18,6 +18,8 @@
 
 ## 预览
 
+下面三张图由脚本从真实构建生成，不是手工拼的：`npm run docs:shots` 负责截图、画窗口和手机外壳、排版。
+
 ![纸上留白：浅色首页、深色首页、带目录的文章页、书单页](docs/showcase.png)
 
 <div align="center">
@@ -70,6 +72,7 @@ npm run dev
 | `npm run music` | 解析并缓存 `::music` 里的链接 |
 | `npm run og` | 从 `public/og.svg` 重新生成 `public/og.png` |
 | `npm run shots` | Playwright 截图检查（需先 `npm run dev`） |
+| `npm run docs:shots` | 用当前构建重新生成 `docs/` 里的三张图 |
 | `npm run clean` | 只清理 `.astro` 缓存 |
 
 测试（每条都会先构建）：
@@ -84,6 +87,8 @@ npm run dev
 | `npm run test:render` | Markdown 与行内 HTML：消毒、脚注、KaTeX、Mermaid、代码高亮 |
 | `npm run test:i18n` | 中英字典键一一对应、无空文案、英文里不漏中文 |
 | `npm run test:shelf` | 书单 / 片单 / 歌单与「最近」的解析、封面抓取与清理、剧集导演 |
+| `npm run test:shelf-keys` | 用英文字段名写的书单，读出来和中文写的一样 |
+| `npm run test:font-gate` | 字体源不可达时页面仍然可见 |
 
 ### 新建文章
 

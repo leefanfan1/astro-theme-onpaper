@@ -204,6 +204,32 @@ pre {
   transform: none;
 }
 
+/* When the webfonts cannot be fetched, the page falls back to the system
+   faces the configured stacks already name. This has to be an explicit rule:
+   every face is declared `font-display: block`, which tells the browser to
+   hide text until the font arrives rather than draw a substitute — the right
+   trade for a theme that cares about its type, but it means a blocked or
+   unreachable font host leaves the page a blank sheet of paper. The loader
+   adds this class after its grace period; without the rule here, that class
+   did nothing.
+
+   The stacks below mirror the tails of siteConfig.fonts, so a reader who never
+   gets Noto Sans SC still gets a sane sans, and a reader who never gets
+   Newsreader still gets a serif. */
+html.fonts-unavailable body,
+html.fonts-unavailable input,
+html.fonts-unavailable textarea,
+html.fonts-unavailable button,
+html.fonts-unavailable select {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif !important;
+}
+
+/* The serif is used through a class of its own, so it needs its own override
+   rather than inheriting from body. */
+html.fonts-unavailable :is(h1, h2, h3, h4, h5, h6, blockquote, .rail-wordmark, .post-title, .page-title, .article-title) {
+  font-family: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif !important;
+}
+
 /* ---------------------------------------------------------
    Shell: spine + page grid (centred in the space beside the spine)
    --------------------------------------------------------- */
@@ -972,7 +998,11 @@ html[data-theme="dark"] .theme-toggle .moon {
    starts that line — never a half-cut title beside a half-cut name. */
 .now__item {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr);
+  /* The label column takes the width of its longest word. `2.5rem` fits the
+     two characters of 在听; an English build says `Listening`, which at a fixed
+     2.5rem overflowed into the title and the two overlapped. `max-content`
+     instead, with the title column free to take the rest. */
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: baseline;
   gap: 0 var(--space-2);
 }
@@ -1224,7 +1254,9 @@ html[data-theme="dark"] .theme-toggle .moon {
 }
 
 .aside-page .now__item {
-  grid-template-columns: 3.25rem minmax(0, 1fr);
+  /* Same rule as the column's own: the label takes what it needs, so a page
+     in either language lines up. */
+  grid-template-columns: max-content minmax(0, 1fr);
 }
 
 .aside-page .facts__row {

@@ -15,14 +15,35 @@
  *
  * Like the shelf, nothing written here overwrites what the author typed.
  */
-const LABEL_KIND = { 在读: 'book', 在看: 'film', 在听: 'music' }
+// Both spellings, so an English "Recently" column is completed the same way
+// a Chinese one is.
+const LABEL_KIND = {
+  在读: 'book', 在看: 'film', 在听: 'music',
+  Reading: 'book', Watching: 'film', Listening: 'music',
+}
+// The key the reference lines are written with, per kind. A column in English
+// gets `year:` / `douban:` so the file reads as one language.
+const REFERENCE_KEYS = {
+  zh: { year: '年份', douban: '豆瓣', link: '链接', name: '作者', colon: '：' },
+  en: { year: 'year', douban: 'douban', link: 'link', name: 'author', colon: ': ' },
+}
 const LINK_RE = /https?:\/\/\S+/
 // The lines this script adds for reference. They are not the credit line, even
 // when an older run put one of them second.
-const REFERENCE_RE = /^\s*(年份|豆瓣|链接)\s*[：:]/
+// Every spelling of the reference fields, Chinese and English.
+const FIELD_SPELLINGS = {
+  year: ['年份', 'year'],
+  douban: ['豆瓣', 'douban'],
+  link: ['链接', 'link'],
+}
+
+// `年份：` / `year:`, `豆瓣：` / `douban:`, `链接：` / `link:` — either spelling.
+const REFERENCE_RE = /^\s*(年份|豆瓣|链接|year|douban|link)\s*[：:]/i
 // `在读：《城南旧事》` — or the same entry typed without the marks, which is
 // completed with them rather than skipped as unreadable.
-const LABEL_RE = /^([^：:]{1,4})\s*[：:]\s*(?:《(.+)》|(.+?))\s*$/
+// The label is short in Chinese (在听) and longer in English (Listening), so
+// the budget is on characters, not on a guess at the language.
+const LABEL_RE = /^([^：:]{1,12})\s*[：:]\s*(?:《(.+)》|(.+?))\s*$/
 
 /** A credit line: the creator, and the address the row opens, in that order. */
 function creditLine(creator, url) {
@@ -110,8 +131,12 @@ export function isNowEntryComplete(entry) {
   // A record's row opens the player, so its credit line has to carry the
   // NetEase address the shelf links to.
   if (entry.kind === 'music' && !/^https:\/\/music\.163\.com\//.test(link)) return false
-  if (!entry.lines.some(line => /^\s*年份\s*[：:]/.test(line))) return false
-  return entry.kind !== 'music' || entry.lines.some(line => /^\s*豆瓣\s*[：:]/.test(line))
+  // Either spelling counts. A column completed in English holds `year:` and
+  // `douban:`; testing only for the Chinese keys made every English entry look
+  // unfinished, so each run re-fetched it and wrote the lines again.
+  const has = key => entry.lines.some(line => new RegExp(`^\s*(?:${(FIELD_SPELLINGS[key] ?? [key]).join('|')})\s*[：:]`, 'i').test(line))
+  if (!has('year')) return false
+  return entry.kind !== 'music' || has('douban')
 }
 
 /**
@@ -153,22 +178,29 @@ export function rewriteNow(text, items) {
         // `年份` and `豆瓣` are reference lines: an existing one is kept.
         if (block[at].match(/[：:]\s*(.+?)\s*$/)[1].trim() === next) return
         if (key !== '链接') return
-        block[at] = `${key}：${next}`
+        block[at] = `${key}${spelling.colon}${next}`
         keys.push(key)
         return
       }
-      block.push(`${key}：${next}`)
+      block.push(`${key}${spelling.colon}${next}`)
       keys.push(key)
     }
+
+    // Write in the spelling this file already uses, so an English column gains
+    // `year:` and a Chinese one `年份：` — never a mix. The label line is the
+    // clearest signal; a file with only reference lines is read from those.
+    const spelling = /[一-龥]/.test(block[0]) || block.some(line => /^\s*(年份|豆瓣|链接)\s*[：:]/.test(line))
+      ? REFERENCE_KEYS.zh
+      : REFERENCE_KEYS.en
 
     // The credit line — the row's second line — carries the creator and the
     // address the row opens: a record's player, a book's or film's Douban page.
     // A label line on its own gets one; an entry that only has reference lines
-    // gets one above them, so the column never draws `年份：1960` as the author.
+    // gets one above them, so the column never draws the year as the author.
     const address = entry.kind === 'music' ? wanted.link : wanted.douban
     // What the address is called in this file's own words: a record's row opens
     // its player, a book's or film's opens its Douban page.
-    const addressKey = entry.kind === 'music' ? '链接' : '豆瓣'
+    const addressKey = entry.kind === 'music' ? spelling.link : spelling.douban
     const hasCredit = Boolean(block[1]?.trim()) && !REFERENCE_RE.test(block[1])
     if (!hasCredit) {
       const line = creditLine(wanted.creator, address)
@@ -190,7 +222,7 @@ export function rewriteNow(text, items) {
       // address gets the one the lookup found, before it.
       if (wanted.creator && !block[1].replace(LINK_RE, '').trim()) {
         block[1] = creditLine(wanted.creator, block[1])
-        keys.unshift('作者')
+        keys.unshift(spelling.name)
       }
     }
     else {
@@ -200,7 +232,7 @@ export function rewriteNow(text, items) {
       const words = block[1].replace(LINK_RE, '').trim()
       if (wanted.creator && !words) {
         block[1] = creditLine(wanted.creator, block[1])
-        keys.unshift('作者')
+        keys.unshift(spelling.name)
       }
       else if (address && !LINK_RE.test(block[1])) {
         // Words without an address: the Douban page is added after them.
@@ -209,10 +241,10 @@ export function rewriteNow(text, items) {
       }
     }
 
-    set('年份', wanted.year)
+    set(spelling.year, wanted.year)
     // Only a record needs a separate Douban line; the others' credit line is
     // their Douban page already.
-    if (entry.kind === 'music') set('豆瓣', wanted.douban)
+    if (entry.kind === 'music') set(spelling.douban, wanted.douban)
 
     if (!keys.length) continue
     lines.splice(entry.start, entry.lines.length, ...block)

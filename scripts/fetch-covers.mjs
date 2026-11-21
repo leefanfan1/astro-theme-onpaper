@@ -42,7 +42,7 @@ import { isDoubanImage, isLocalCover, isNeteaseImage, largeCover, neteaseCover }
 import { findSubject, posterFromPage, subjectDetail, subjectUrl } from './douban.mjs'
 import { isNowEntryComplete, nowEntriesOf, rewriteNow } from './now-document.mjs'
 import { entriesOf, rewriteDocument } from './shelf-document.mjs'
-import { parseEntry } from './shelf-fields.mjs'
+import { FIELD_KEYS, parseEntry } from './shelf-fields.mjs'
 import { planShelfPrune } from './cover-prune.mjs'
 
 const root = process.cwd()
@@ -56,8 +56,19 @@ const TIMEOUT = 12000
 
 const FILES = { 'books.md': 'book', 'films.md': 'film', 'music.md': 'music' }
 const REFERRER = { book: 'https://book.douban.com/', film: 'https://movie.douban.com/', music: 'https://music.douban.com/' }
-// The key each kind's creator goes under, as written in the Markdown.
+// The key each kind's creator goes under, as written in the Markdown. Both
+// spellings are read; see fieldValue.
 const CREATOR_KEY = { book: '作者', film: '导演', music: '歌手' }
+const CREATOR_KEYS = { book: ['作者', 'author'], film: ['导演', 'director'], music: ['歌手', 'artist'] }
+
+/** The first spelling of any of these keys that the block uses, or ''. */
+function valueOf(fields, ...keys) {
+  for (const key of keys) {
+    const value = fields.get(key)
+    if (value) return value
+  }
+  return ''
+}
 
 async function fetchWithTimeout(url, headers = {}) {
   const controller = new AbortController()
@@ -88,13 +99,13 @@ async function readShelf() {
       const { fields, title } = parseEntry(lines)
       return {
         title: title(kind),
-        creator: fields.get(CREATOR_KEY[kind]) ?? '',
-        year: Number(fields.get('年份') ?? '') || 0,
-        cover: fields.get('封面') ?? '',
+        creator: valueOf(fields, ...(CREATOR_KEYS[kind] ?? [])),
+        year: Number(valueOf(fields, ...(FIELD_KEYS.年份 ?? []))) || 0,
+        cover: valueOf(fields, ...(FIELD_KEYS.封面 ?? [])),
         // `url` is the Douban page for every kind; `link` is a record's player.
-        url: fields.get('豆瓣') ?? '',
-        link: fields.get('链接') ?? '',
-        douban: fields.get('豆瓣') ?? '',
+        url: valueOf(fields, ...(FIELD_KEYS.豆瓣 ?? [])),
+        link: valueOf(fields, ...(FIELD_KEYS.链接 ?? [])),
+        douban: valueOf(fields, ...(FIELD_KEYS.豆瓣 ?? [])),
       }
     })
     files.push({ file: path.join(shelfDir, file), kind, text, entries })
