@@ -539,6 +539,40 @@ CSP, HSTS, `X-Frame-Options`, `Permissions-Policy` and long-lived static caching
 
 > Astro's own `security.csp` was tried and blocks the inline styles Shiki emits, so hand-written static headers are used instead.
 
+### Caching HTML at the edge
+
+Cloudflare Pages serves HTML with `Cache-Control: public, max-age=0, must-revalidate`, so every visit goes back to the origin. That is slow for anyone far from it. The edge cache is configured at Cloudflare, not in this repository — `public/_headers` only sets response headers, which affect the browser's cache, not Cloudflare's.
+
+Add a rule under **Caching → Cache Rules**, or write one through the API to the `http_request_cache_settings` phase:
+
+- **Match**: this site's host, and any path not starting with `/api/`. The view counter reads KV per request and must not be cached.
+- **Edge TTL**: override origin, 1 hour.
+- **Browser TTL**: override origin, 5 minutes.
+- **Serve stale**: on, so a failed origin fetch still serves the last good page.
+
+```json
+{
+  "description": "Cache HTML at the edge",
+  "expression": "(http.host eq \"example.com\" and not starts_with(http.request.uri.path, \"/api/\"))",
+  "action": "set_cache_settings",
+  "action_parameters": {
+    "cache": true,
+    "edge_ttl": { "mode": "override_origin", "default": 3600 },
+    "browser_ttl": { "mode": "override_origin", "default": 300 },
+    "serve_stale": {}
+  },
+  "enabled": true
+}
+```
+
+Three things that catch people out:
+
+- `serve_stale` accepts only the empty object `{}`. `true`, `"on"` and `{"enabled": true}` are all rejected as invalid JSON.
+- Through the API, `PUT` replaces the whole rule list. If the phase already holds rules, send them back along with the new one, or they are deleted.
+- The OAuth token from `npx wrangler login` carries only `zone:read` and gets a 403 from the cache endpoints. Create a separate API token with `Cache Rules → Edit`.
+
+To check it: the first request is `MISS` and later ones `HIT`, while `/api/views` stays `DYNAMIC` throughout.
+
 ### Sitemap and 404
 
 The build produces `sitemap-index.xml` plus an identical `sitemap.xml`, with post entries carrying `lastmod` (`updated`, else `published`). `robots.txt` points at the index.

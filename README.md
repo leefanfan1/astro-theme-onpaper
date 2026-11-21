@@ -519,6 +519,40 @@ KV 未绑定时返回 503，文章页自动隐藏计数，不影响阅读。`npm
 
 > Astro 自带的 `security.csp` 试过，它会拦 Shiki 生成的 inline style，所以这里改用手写的静态头部。
 
+### HTML 边缘缓存
+
+Cloudflare Pages 默认给 HTML 的响应头是 `Cache-Control: public, max-age=0, must-revalidate`，每次访问都回源，境内用户尤其慢。边缘缓存要在 Cloudflare 那边配，`public/_headers` 改不了它 —— 那个文件只影响浏览器缓存。
+
+在 **Caching → Cache Rules** 加一条规则，或者用 API 写到 `http_request_cache_settings` phase：
+
+- **匹配**：本站域名，且路径不以 `/api/` 开头。阅读计数接口要实时查 KV，不能缓存。
+- **Edge TTL**：覆盖源站，1 小时。
+- **Browser TTL**：覆盖源站，5 分钟。
+- **Serve stale**：开启，回源失败时先给旧页面。
+
+```json
+{
+  "description": "Cache HTML at the edge",
+  "expression": "(http.host eq \"example.com\" and not starts_with(http.request.uri.path, \"/api/\"))",
+  "action": "set_cache_settings",
+  "action_parameters": {
+    "cache": true,
+    "edge_ttl": { "mode": "override_origin", "default": 3600 },
+    "browser_ttl": { "mode": "override_origin", "default": 300 },
+    "serve_stale": {}
+  },
+  "enabled": true
+}
+```
+
+几个容易踩的地方：
+
+- `serve_stale` 只接受空对象 `{}`。传 `true`、`"on"` 或 `{"enabled": true}` 都会被判成非法 JSON。
+- 用 API 时 `PUT` 是整体替换。已经在同一条 phase 上有别的规则时，要把它们读出来一起发回去，否则等于删掉。
+- 用 `npx wrangler login` 拿到的 OAuth token 只有 `zone:read`，调缓存接口会 403。要单独建一个带 `Cache Rules → Edit` 权限的 API Token。
+
+验证：连发几次应该是第一次 `MISS`、之后 `HIT`；`/api/views` 始终是 `DYNAMIC`。
+
 ### 站点地图与 404
 
 构建产出 `sitemap-index.xml` 和同内容的 `sitemap.xml`，文章条目带 `lastmod`（取 `updated`，没有则取 `published`）。`robots.txt` 指向 index。
