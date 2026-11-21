@@ -116,7 +116,8 @@ async function compose({ width, height, background = '#E9EBEF', items }) {
 console.log('taking screenshots…')
 const homeLight = await shot('/', { width: 1440, height: 1000 })
 const homeDark = await shot('/', { width: 1440, height: 1000, scheme: 'dark' })
-const article = await shot('/posts/getting-started/', { width: 1440, height: 1000, scheme: 'light' })
+const articlePath = homeLight.lang === 'en' ? '/posts/leave-a-little-margin/' : '/posts/getting-started/'
+const article = await shot(articlePath, { width: 1440, height: 1000, scheme: 'light' })
 const shelf = await shot('/shelf/', { width: 1440, height: 1000, scheme: 'light' })
 const homePhone = await shot('/', { width: 390, height: 844, scheme: 'light' })
 const nowPhone = await shot('/now/', { width: 390, height: 844, scheme: 'light' })
@@ -185,11 +186,17 @@ await page.waitForFunction(() => {
   return Boolean(hint) && !/index|索引/i.test(hint.textContent || '')
 }, { timeout: 25000 }).catch(() => {})
 await page.waitForTimeout(500)
+// The dialog sizes itself to its results, and with one result it is a short
+// strip that cuts the row off. Give it a height for the picture, the way the
+// original did, so the sheet reads as a sheet.
+await page.addStyleTag({ content: '#search-dialog { min-height: 22rem; }' })
+await page.waitForTimeout(300)
 const searchShot = await page.locator('#search-dialog').screenshot({ type: 'png' })
 await page.keyboard.press('Escape')
 await page.waitForTimeout(400)
 
-await page.goto(`${base}/posts/headphones-on/`, { waitUntil: 'domcontentloaded', timeout: 60000 })
+// The English build has its own post with a music card.
+await page.goto(`${base}/posts/${lang === 'en' ? 'headphones-and-the-city' : 'headphones-on'}/`, { waitUntil: 'domcontentloaded', timeout: 60000 })
 await page.waitForTimeout(1200)
 const musicShot = await page.evaluate(() => document.fonts.ready).then(() => page.locator('.mc-card').first().screenshot({ type: 'png' }))
 await page.goto(`${base}/posts/format-showcase/`, { waitUntil: 'domcontentloaded', timeout: 60000 })
